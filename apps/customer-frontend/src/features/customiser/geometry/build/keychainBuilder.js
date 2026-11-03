@@ -1,0 +1,599 @@
+// Ported from Open Keychain (MIT) — src/domain/keychain/build/keychain-builder.ts.
+// Logic unchanged; TS type annotations replaced with JSDoc. WASM loading
+// reuses Giftora's existing manifoldRuntime.js (same Module({locateFile})+
+// wasm.setup() pattern as upstream's own createWasm()) rather than
+// duplicating it — a consolidation, not a behaviour change.
+// See THIRD-PARTY-NOTICES.md.
+
+import { MANIFOLD_SCALE, asMesh, disposeGeometry, finiteBounds, mergeMeshes, partitionMaterialSolids, sectionArea, validateMesh } from './manifoldUtils.js'
+import { effectiveFontWeightMm, fontDefinition, fontSupportsArticulatedName } from '../fonts/catalog.js'
+import { loadFont } from '../fonts/fontLoader.js'
+import {
+  ARTICULATED_PRINT_APPEARANCE,
+  DEFAULT_GEOMETRY_CONSTRAINTS,
+  DEFAULT_PRINT_APPEARANCE,
+  DEFAULT_PRINT_PROFILE,
+  keyringMetrics,
+  normalizeParams,
+  geometryConstraintsFor,
+  printProfileFor,
+  MAGNET_SUBTITLE_MAX_LENGTH,
+} from '../model/types.js'
+import { archWarp } from '../styles/styleBuilder.js'
+import { buildNameplate } from '../templates/nameplateBuilder.js'
+import { buildTemplate, isArticulatedBuild, releaseArticulatedBuild } from '../templates/templateBuilder.js'
+import { flattenText, hasRequiredGlyphs, layoutText } from '../textOutline.js'
+import { validateArticulatedBuild } from './articulatedValidation.js'
+import { extrudeTextFinished, extrudeFinished, baseFinishLimits, assertBaseFinishAmount, textFinishLimits, intersectTextFinishLimits, assertTextFinishAmount, regularizeFinishedSolid } from './edgeFinish.js'
+import { applyFeatureGraph } from './featureGraph.js'
+
+const MAX_WIDTH_MM = 120
+const MIN_TEXT_HEIGHT_MM = 12
+const WIDTH_FIT_ITERATIONS = 6
+
+/**
+ * opentype.js reads the default instance of Google variable TTFs and does not expose their `wght` axis.
+ * Dilation in final model space keeps the articulated result at the advertised heavy weight while preserving
+ * one source of truth for the printable glyph outline and its counters.
+ */
+function articulatedGlyphDilationMm(templateId, definition) {
+  if (templateId !== 'articulated-name') return 0
+  return definition.articulatedDilationMm ?? 0.55
+}
+
+function scalePolygons(polygons, factor) {
+  return polygons.map((polygon) => polygon.map(([x, y]) => [Math.round(x * factor * MANIFOLD_SCALE), Math.round(y * factor * MANIFOLD_SCALE)]))
+}
+
+function scaleGlyphs(glyphs, factor) {
+  return glyphs.map((glyph) => ({
+    ...glyph,
+    polygons: glyph.polygons.map((polygon) => polygon.map(([x, y]) => [x * factor, y * factor])),
+    bounds: { minX: glyph.bounds.minX * factor, minY: glyph.bounds.minY * factor, maxX: glyph.bounds.maxX * factor, maxY: glyph.bounds.maxY * factor },
+    width: glyph.width * factor,
+    height: glyph.height * factor,
+    advance: glyph.advance * factor,
+  }))
+}
+
+const deleteAll = disposeGeometry
+
+function releaseStyledGeometry(geometry) {
+  if (geometry.kind === 'articulated') {
+    releaseArticulatedBuild(geometry.build)
+    geometry.rawText.delete()
+    return
+  }
+  deleteAll([
+    geometry.backing,
+    ...new Set([geometry.rawText, geometry.relief]),
+    ...(geometry.subtitle ? [geometry.subtitle] : []),
+    ...geometry.recesses.map((item) => item.section),
+    ...geometry.rearRecesses.map((item) => item.section),
+    ...(geometry.throughCuts ?? []),
+  ])
+}
+
+function finalizeArticulated(wasm, build, rawText, scale, params, issues, includeExport) {
+  const structural = wasm.Manifold.union([...build.parts.map((part) => part.body), ...build.connectors])
+  const relief = wasm.Manifold.union(build.parts.map((part) => part.cap))
+  const { base, model: partitionModel } = partitionMaterialSolids(structural, relief)
+  const exportMesh = includeExport ? mergeMeshes([...build.parts.map((part) => asMesh(part.solid)), ...build.connectors.map(asMesh)]) : undefined
+  const bounds = build.bounds
+  structural.delete()
+  const baseMesh = asMesh(base)
+  const reliefMesh = asMesh(relief)
+  const valid = validateArticulatedBuild(build, params, issues)
+  if (params.reliefDepthMm < 0.5) issues.push({ severity: 'warning', code: 'shallow-relief', message: 'A slightly taller text relief is easier to see after printing.' })
+  const triangleCount = exportMesh?.indices.length ? exportMesh.indices.length / 3 : build.parts.reduce((sum, part) => sum + part.solid.numTri(), 0)
+  if (triangleCount > 12000) issues.push({ severity: 'warning', code: 'dense-mesh', message: 'This articulated model exceeds 12,000 triangles and may take longer to slice.' })
+  const result = {
+    generationId: 0,
+    baseMesh,
+    reliefMesh,
+    dimensions: {
+      widthMm: (bounds.max[0] - bounds.min[0]) / MANIFOLD_SCALE,
+      heightMm: (bounds.max[1] - bounds.min[1]) / MANIFOLD_SCALE,
+      thicknessMm: (bounds.max[2] - bounds.min[2]) / MANIFOLD_SCALE,
+      centerMm: [(bounds.max[0] + bounds.min[0]) / (MANIFOLD_SCALE * 2), (bounds.max[1] + bounds.min[1]) / (MANIFOLD_SCALE * 2), (bounds.max[2] + bounds.min[2]) / (MANIFOLD_SCALE * 2)],
+    },
+    issues,
+    printable: valid && finiteBounds(bounds) && validateMesh(baseMesh) && validateMesh(reliefMesh),
+    appearance: ARTICULATED_PRINT_APPEARANCE,
+    textFinishLimits: build.textFinishLimits,
+    edgeFinish: { style: 'sharp', textStyle: params.textEdgeFinish ?? 'sharp', topMm: 0, bottomMm: 0, textMm: params.textEdgeMm ?? 0, quality: 'verified' },
+    constraints: geometryConstraintsFor(params),
+    printProfile: printProfileFor(geometryConstraintsFor(params)),
+    solidCount: build.parts.length * 2 - 1,
+  }
+  releaseArticulatedBuild(build)
+  rawText.delete()
+  base.delete()
+  relief.delete()
+  partitionModel.delete()
+  void scale
+  return { result, exportMesh }
+}
+
+function invalidResult(issues, code, message) {
+  issues.push({ severity: 'error', code, message })
+  return {
+    result: {
+      generationId: 0,
+      baseMesh: { positions: new Float32Array(), indices: new Uint32Array() },
+      reliefMesh: { positions: new Float32Array(), indices: new Uint32Array() },
+      dimensions: { widthMm: 0, heightMm: 0, thicknessMm: 0, centerMm: [0, 0, 0] },
+      issues,
+      printable: false,
+      appearance: DEFAULT_PRINT_APPEARANCE,
+      constraints: DEFAULT_GEOMETRY_CONSTRAINTS,
+      printProfile: DEFAULT_PRINT_PROFILE,
+      solidCount: 0,
+    },
+  }
+}
+
+/** Build validated printable geometry, fitting dimensions before tessellation. */
+async function buildKeychainGeometry(wasm, input, includeExport = false, fontOverride, subtitleFontOverride) {
+  const params = normalizeParams(input)
+  const issues = []
+  if (input.templateId === 'articulated-name' && input.baseThicknessMm < 3.4)
+    issues.push({ severity: 'warning', code: 'articulated-base-adjusted', message: 'Base thickness was adjusted to 3.4 mm so the captive joints retain printable top and bottom walls.' })
+  if (input.templateId === 'magnet' && input.baseThicknessMm < 4.4)
+    issues.push({ severity: 'warning', code: 'magnet-base-adjusted', message: 'Base thickness was adjusted to 4.4 mm so the 3.2 mm rear magnet pocket retains a 1.2 mm roof.' })
+  if (!params.text && !(params.styleId === 'heart-split' && params.subtitle))
+    return invalidResult(issues, params.styleId === 'heart-split' ? 'heart-empty' : 'empty-text', 'Enter at least one word to create your keychain.')
+  const leftText = params.text || (params.styleId === 'heart-split' ? params.subtitle : params.subtitle)
+  const contentText = `${params.text}${params.styleId === 'heart-split' ? params.subtitle : ''}`
+  if ([...contentText].length > 24) return invalidResult(issues, 'text-too-long', 'Shorten the name to 24 characters or fewer.')
+  const definition = fontOverride ?? fontDefinition(params.fontId)
+  const subtitleDefinition = params.styleId === 'heart-split' ? definition : (subtitleFontOverride ?? fontDefinition(params.subtitleFontId ?? params.fontId))
+  if (params.templateId === 'articulated-name' && !fontSupportsArticulatedName(definition, leftText))
+    return invalidResult(issues, 'articulated-font', `${definition.name} is not available for articulated letters. Choose a supported heavy font.`)
+  let font
+  try {
+    font = await loadFont(definition)
+  } catch {
+    return invalidResult(issues, 'font-load', `Could not load the ${definition.name} font.`)
+  }
+  let subtitleFont
+  if (params.subtitle && params.templateId !== 'articulated-name') {
+    try {
+      subtitleFont = await loadFont(subtitleDefinition)
+    } catch {
+      return invalidResult(issues, 'subtitle-font-load', `Could not load the ${subtitleDefinition.name} font.`)
+    }
+  }
+  const missing = hasRequiredGlyphs(font, leftText)
+  if (missing) return invalidResult(issues, 'missing-glyph', `The ${definition.name} font does not contain "${missing}".`)
+  if (params.templateId === 'magnet' && [...params.subtitle].length > MAGNET_SUBTITLE_MAX_LENGTH)
+    return invalidResult(issues, 'subtitle-too-long', 'Shorten the subtitle to 24 characters or fewer.')
+  if (subtitleFont && hasRequiredGlyphs(subtitleFont, params.subtitle))
+    return invalidResult(issues, 'subtitle-missing-glyph', `The ${subtitleDefinition.name} font does not contain all subtitle characters.`)
+  const textLayout =
+    params.templateId === 'articulated-name'
+      ? layoutText(font, leftText, params.textSizeMm, 0, true)
+      : { outline: flattenText(font, leftText, params.textSizeMm, params.letterSpacingMm), glyphs: [], advances: [], kerning: [] }
+  const outline = textLayout.outline
+  if ((!outline.polygons.length || outline.width <= 0 || outline.height <= 0) && !(params.styleId === 'heart-split' && params.subtitle))
+    return invalidResult(issues, 'empty-outline', 'This name does not produce a usable outline.')
+  const articulatedGlyphs = params.templateId === 'articulated-name' ? textLayout.glyphs : undefined
+  if (params.templateId === 'articulated-name' && !articulatedGlyphs?.some((glyph) => glyph.polygons.length))
+    return invalidResult(issues, 'empty-outline', 'This name does not produce usable articulated glyphs.')
+  const keyring = keyringMetrics(params.holeDiameterMm)
+  const articulatedOutlineExpansionMm = articulatedGlyphDilationMm(params.templateId, definition)
+  const effectiveWeightMm = effectiveFontWeightMm(definition, leftText, params.fontWeightMm)
+  const minimumFittedTextHeightMm = definition.minimumFittedTextHeightMm
+
+  const buildStyledGeometry = (scale) => {
+    const rawText = wasm.CrossSection.ofPolygons(scalePolygons(outline.polygons, scale), 'EvenOdd')
+    let text = params.templateId === 'articulated-name' || effectiveWeightMm <= 0 ? rawText.translate([0, 0]) : rawText.offset(effectiveWeightMm * MANIFOLD_SCALE, 'Round', 2, 64)
+    rawText.delete()
+    const rawBounds = text.bounds()
+    const textBounds = { min: [rawBounds.min[0], rawBounds.min[1]], max: [rawBounds.max[0], rawBounds.max[1]] }
+    let subtitle
+    if (subtitleFont && params.subtitle) {
+      const subtitleOutline = flattenText(
+        subtitleFont,
+        params.subtitle,
+        params.styleId === 'heart-split' ? params.textSizeMm : (params.subtitleTextSizeMm ?? Math.max(4, params.textSizeMm * 0.32)),
+        params.styleId === 'heart-split' ? params.letterSpacingMm : (params.subtitleLetterSpacingMm ?? 0),
+      )
+      if (subtitleOutline.polygons.length) {
+        subtitle = wasm.CrossSection.ofPolygons(scalePolygons(subtitleOutline.polygons, scale), 'EvenOdd')
+        const subtitleWeight = params.styleId === 'heart-split' ? params.fontWeightMm : (params.subtitleFontWeightMm ?? 0)
+        if (subtitleWeight > 0) {
+          const weighted = subtitle.offset(subtitleWeight * MANIFOLD_SCALE, 'Round', 2, 64)
+          subtitle.delete()
+          subtitle = weighted
+        }
+        const subtitleBounds = subtitle.bounds()
+        const primaryHeight = Math.max(1, rawBounds.max[1] - rawBounds.min[1])
+        const subtitleHeight = subtitleBounds.max[1] - subtitleBounds.min[1]
+        const subtitleSizeRatio = Math.min(1, subtitleHeight / primaryHeight)
+        const requestedSubtitleGapMm = params.subtitleGapMm ?? 1.5
+        const joinBiasMm = params.styleId === 'contour' || params.styleId === 'arch' ? subtitleSizeRatio * 1.65 : 0
+        const effectiveSubtitleGapMm = Math.max(-0.15, requestedSubtitleGapMm - joinBiasMm)
+        const positionedSubtitle =
+          params.styleId === 'heart-split'
+            ? subtitle.translate([0, 0])
+            : subtitle.translate([
+                (rawBounds.min[0] + rawBounds.max[0] - subtitleBounds.max[0] - subtitleBounds.min[0]) / 2 + (params.subtitleOffsetXRatio ?? 0) * (rawBounds.max[0] - rawBounds.min[0]),
+                rawBounds.min[1] - subtitleBounds.max[1] - effectiveSubtitleGapMm * MANIFOLD_SCALE + (params.subtitleOffsetYRatio ?? 0) * (rawBounds.max[1] - rawBounds.min[1]),
+              ])
+        subtitle.delete()
+        subtitle = positionedSubtitle
+      }
+    }
+    let layoutBounds = subtitle
+      ? {
+          min: [Math.min(rawBounds.min[0], subtitle.bounds().min[0]), Math.min(rawBounds.min[1], subtitle.bounds().min[1])],
+          max: [Math.max(rawBounds.max[0], subtitle.bounds().max[0]), Math.max(rawBounds.max[1], subtitle.bounds().max[1])],
+        }
+      : textBounds
+    if (subtitle && params.styleId !== 'heart-split') {
+      const centerX = (layoutBounds.min[0] + layoutBounds.max[0]) / 2
+      const centerY = (layoutBounds.min[1] + layoutBounds.max[1]) / 2
+      const shift = [-centerX, -centerY]
+      const centeredText = text.translate(shift)
+      text.delete()
+      text = centeredText
+      const centeredSubtitle = subtitle.translate(shift)
+      subtitle.delete()
+      subtitle = centeredSubtitle
+      const centeredTextBounds = text.bounds()
+      const centeredSubtitleBounds = subtitle.bounds()
+      layoutBounds = {
+        min: [Math.min(centeredTextBounds.min[0], centeredSubtitleBounds.min[0]), Math.min(centeredTextBounds.min[1], centeredSubtitleBounds.min[1])],
+        max: [Math.max(centeredTextBounds.max[0], centeredSubtitleBounds.max[0]), Math.max(centeredTextBounds.max[1], centeredSubtitleBounds.max[1])],
+      }
+    }
+    if (subtitle && params.styleId === 'arch') {
+      const archedSubtitle = archWarp(subtitle, layoutBounds, params.archCurveMm)
+      subtitle.delete()
+      subtitle = archedSubtitle
+    }
+    const style = buildTemplate(wasm, params.templateId, params.styleId, {
+      text,
+      textBounds: layoutBounds,
+      padding: params.paddingMm * MANIFOLD_SCALE,
+      textInset: params.templateId === 'articulated-name' ? undefined : params.edgeInsetMm * MANIFOLD_SCALE,
+      letterSpacing: params.templateId === 'articulated-name' ? 0 : params.letterSpacingMm,
+      holeDiameter: params.holeDiameterMm * MANIFOLD_SCALE,
+      keyringOpeningShape: params.keyringOpeningShape,
+      keyringPosition: params.keyringPosition,
+      keyringSlotLength: (params.keyringSlotLengthMm ?? params.holeDiameterMm) * MANIFOLD_SCALE,
+      keyringWall: keyring.wallMm * MANIFOLD_SCALE,
+      templateId: params.templateId,
+      connectorWidth: params.connectorWidthMm,
+      cornerRadius: params.cornerRadiusMm * MANIFOLD_SCALE,
+      stakeLength: params.stakeLengthMm,
+      plantAccentEnabled: params.plantAccentEnabled,
+      nameplateTiltDeg: params.nameplateTiltDeg,
+      nameplateEmbedMm: params.nameplateEmbedMm,
+      glyphs: articulatedGlyphs ? scaleGlyphs(articulatedGlyphs, scale) : undefined,
+      baseThickness: params.baseThicknessMm,
+      reliefDepth: params.reliefDepthMm,
+      textEdgeFinish: params.textEdgeFinish,
+      textEdgeMm: params.textEdgeMm,
+      jointClearance: params.jointClearanceMm,
+      mechanicalGap: params.mechanicalGapMm,
+      maxJointAngleDeg: params.maxJointAngleDeg,
+      minimumWall: params.minimumWallMm,
+      bottomClearance: params.bottomClearanceMm,
+      articulatedOutlineExpansionMm,
+      reliefHaloMm: params.reliefHaloMm,
+      ringOffsetMm: params.ringOffsetMm,
+      bubbleLobeMm: params.bubbleLobeMm,
+      tagTailMm: params.tagTailMm,
+      archCurveMm: params.archCurveMm,
+      stakeShoulderMm: params.stakeShoulderMm,
+      jointBossMm: params.jointBossMm,
+      ribbonTailMm: params.ribbonTailMm,
+      ribbonNotchMm: params.ribbonNotchMm,
+      magnetPocketPreset: params.magnetPocketPreset,
+      magnetPocketPlacement: params.magnetPocketPlacement,
+      heartSizeMm: params.heartSizeMm,
+      heartBorderMm: params.heartBorderMm,
+      heartLeftGapMm: params.heartLeftGapMm,
+      heartRightGapMm: params.heartRightGapMm,
+      heartVerticalOffsetMm: params.heartVerticalOffsetMm,
+      heartInteriorMode: params.heartInteriorMode,
+      heartLeftPresent: params.styleId !== 'heart-split' || Boolean(params.text),
+      subtitle,
+      constraints: geometryConstraintsFor(params),
+      printProfile: printProfileFor(geometryConstraintsFor(params)),
+    })
+    if (isArticulatedBuild(style))
+      return { kind: 'articulated', scale, rawText: text, build: style, widthMm: style.widthMm, heightMm: (style.bounds.max[1] - style.bounds.min[1]) / MANIFOLD_SCALE }
+    const bounds = style.backing.bounds()
+    return {
+      kind: 'standard',
+      scale,
+      rawText: text,
+      relief: style.relief,
+      subtitle: style.subtitle,
+      backing: style.backing,
+      recesses: style.recesses ?? [],
+      rearRecesses: style.rearRecesses ?? [],
+      throughCuts: style.throughCuts ?? [],
+      magnetPocket: style.magnetPocket,
+      parameterLimits: style.parameterLimits,
+      reliefDepthMm: style.reliefDepthMm,
+      widthMm: (bounds.max[0] - bounds.min[0]) / MANIFOLD_SCALE,
+      heightMm: (bounds.max[1] - bounds.min[1]) / MANIFOLD_SCALE,
+    }
+  }
+
+  let styled = buildStyledGeometry(1)
+  if (styled.widthMm > MAX_WIDTH_MM && minimumFittedTextHeightMm !== undefined) {
+    issues.push({
+      severity: 'warning',
+      code: 'text-over-width',
+      message: `The name remains ${params.textSizeMm.toFixed(1)} mm high and is ${styled.widthMm.toFixed(1)} mm wide; the 120 mm recommended width was not enforced for this font.`,
+    })
+  } else if (styled.widthMm > MAX_WIDTH_MM) {
+    let highWidth = styled.widthMm
+    const minimumScale = MIN_TEXT_HEIGHT_MM / params.textSizeMm
+    if (minimumScale >= 1) {
+      issues.push({ severity: 'warning', code: 'text-over-width', message: 'This name is wider than the recommended 120 mm at the minimum 12 mm text height; export remains available.' })
+    } else {
+      const minimum = buildStyledGeometry(minimumScale)
+      if (minimum.widthMm > MAX_WIDTH_MM) {
+        releaseStyledGeometry(minimum)
+        issues.push({ severity: 'warning', code: 'text-over-width', message: `This name is ${styled.widthMm.toFixed(1)} mm wide even at the minimum 12 mm text height; export remains available.` })
+      } else {
+        releaseStyledGeometry(styled)
+        styled = minimum
+        let lowWidth = minimum.widthMm
+        let high = 1
+        for (let iteration = 0; iteration < WIDTH_FIT_ITERATIONS; iteration += 1) {
+          const interpolated = minimumScale + ((high - minimumScale) * (MAX_WIDTH_MM - lowWidth)) / Math.max(highWidth - lowWidth, 0.001)
+          const candidateScale = Math.max(minimumScale + (high - minimumScale) * 0.1, Math.min(high - (high - minimumScale) * 0.1, interpolated))
+          const candidate = buildStyledGeometry(candidateScale)
+          if (candidate.widthMm <= MAX_WIDTH_MM) {
+            releaseStyledGeometry(styled)
+            styled = candidate
+            lowWidth = candidate.widthMm
+            if (MAX_WIDTH_MM - candidate.widthMm <= 0.1) break
+          } else {
+            highWidth = candidate.widthMm
+            releaseStyledGeometry(candidate)
+            high = candidateScale
+          }
+        }
+        issues.push({ severity: 'warning', code: 'scaled-to-fit', message: `The name was adjusted to ${(params.textSizeMm * styled.scale).toFixed(1)} mm high to keep the finished keychain within 120 mm.` })
+      }
+    }
+  }
+  if (params.sizeEnvelope) {
+    const { widthMm, heightMm } = params.sizeEnvelope
+    const fits = (geometry) => geometry.widthMm <= widthMm + 0.05 && geometry.heightMm <= heightMm + 0.05
+    if (!fits(styled)) {
+      const minimumScale = Math.min(styled.scale, 6 / params.textSizeMm)
+      const smallest = buildStyledGeometry(minimumScale)
+      if (!fits(smallest)) {
+        releaseStyledGeometry(styled)
+        releaseStyledGeometry(smallest)
+        return invalidResult(issues, 'size-envelope-unavailable', `This name and template cannot fit within ${widthMm} × ${heightMm} mm. Choose a larger size or a shorter name.`)
+      }
+      let low = minimumScale
+      let high = styled.scale
+      releaseStyledGeometry(styled)
+      styled = smallest
+      for (let iteration = 0; iteration < WIDTH_FIT_ITERATIONS; iteration += 1) {
+        const middle = (low + high) / 2
+        const candidate = buildStyledGeometry(middle)
+        if (fits(candidate)) {
+          releaseStyledGeometry(styled)
+          styled = candidate
+          low = middle
+        } else {
+          releaseStyledGeometry(candidate)
+          high = middle
+        }
+      }
+      issues.push({ severity: 'warning', code: 'size-envelope-fit', message: `The design was fitted within ${widthMm} × ${heightMm} mm. Its actual dimensions are shown in the preview.` })
+    }
+  }
+  if (styled.kind === 'articulated') return finalizeArticulated(wasm, styled.build, styled.rawText, styled.scale, params, issues, includeExport)
+  if (params.templateId === 'nameplate') return buildNameplate(wasm, styled, params, issues, includeExport)
+  if (params.templateId === 'magnet' && styled.magnetPocket?.adjusted)
+    issues.push({ severity: 'warning', code: 'magnet-pocket-adjusted', message: 'The requested magnet pocket position was adjusted to preserve the surrounding wall.' })
+  if (params.templateId === 'magnet' && styled.magnetPocket?.safe === false)
+    issues.push({ severity: 'error', code: 'magnet-pocket-unsafe', message: 'No safe position was found for the requested magnet pocket and backing.' })
+  const textSection = styled.relief
+  const subtitleSection = styled.subtitle
+  const styleBase = styled.backing
+  const uncoveredRelief = textSection.subtract(styleBase)
+  const uncoveredSubtitle = subtitleSection?.subtract(styleBase)
+  const reliefContained = sectionArea(uncoveredRelief) <= 1 && (!uncoveredSubtitle || sectionArea(uncoveredSubtitle) <= 1)
+  uncoveredRelief.delete()
+  uncoveredSubtitle?.delete()
+  if (!reliefContained) issues.push({ severity: 'error', code: 'relief-outside-backing', message: 'The raised text extends beyond its foundation. Choose another style or adjust the name.' })
+  const baseThickness = Math.round(params.baseThicknessMm * MANIFOLD_SCALE)
+  const baseFinishStyle = params.edgeFinish ?? 'sharp'
+  const backingFinishLimits = baseFinishLimits(wasm, styleBase, baseThickness, params.minimumWallMm, [textSection, ...(subtitleSection ? [subtitleSection] : [])], baseFinishStyle !== 'sharp')
+  const textFinishStyle = params.textEdgeFinish ?? 'sharp'
+  let base
+  try {
+    assertBaseFinishAmount(baseFinishStyle, params.topEdgeMm ?? 0, params.bottomEdgeMm ?? 0, backingFinishLimits, params.baseThicknessMm, params.minimumWallMm)
+    base = extrudeFinished(wasm, styleBase, baseThickness, { style: baseFinishStyle, topMm: params.topEdgeMm ?? 0, bottomMm: params.bottomEdgeMm ?? 0 })
+  } catch (error) {
+    releaseStyledGeometry(styled)
+    throw error
+  }
+  const maxRecessDepth = Math.max(0, baseThickness - 600)
+  const recessDepth = styled.recesses.length ? Math.min(maxRecessDepth, Math.round(Math.max(...styled.recesses.map((item) => item.depthMm * MANIFOLD_SCALE)))) : 0
+  if (recessDepth > 0) {
+    for (const item of styled.recesses) {
+      const cutSolid = item.section.extrude(recessDepth).translate([0, 0, baseThickness - recessDepth])
+      const nextBase = base.subtract(cutSolid)
+      base.delete()
+      cutSolid.delete()
+      base = nextBase
+    }
+  }
+  const rearRecesses = styled.rearRecesses ?? []
+  for (const item of rearRecesses) {
+    const depth = Math.min(baseThickness - 600, Math.round(item.depthMm * MANIFOLD_SCALE))
+    if (depth <= 0) continue
+    const cutSolid = item.section.extrude(depth)
+    const nextBase = base.subtract(cutSolid)
+    base.delete()
+    cutSolid.delete()
+    base = nextBase
+  }
+  for (const section of styled.throughCuts ?? []) {
+    const cutSolid = section.extrude(baseThickness)
+    const nextBase = base.subtract(cutSolid)
+    base.delete()
+    cutSolid.delete()
+    base = nextBase
+  }
+  const effectiveReliefDepthMm = styled.reliefDepthMm ?? params.reliefDepthMm
+  let reliefSource
+  let limits
+  try {
+    limits = intersectTextFinishLimits([
+      textFinishLimits(wasm, textSection, Math.round((effectiveReliefDepthMm + 0.15) * MANIFOLD_SCALE), effectiveReliefDepthMm, textFinishStyle !== 'sharp'),
+      ...(subtitleSection
+        ? [
+            textFinishLimits(
+              wasm,
+              subtitleSection,
+              Math.round(((params.subtitleReliefDepthMm ?? effectiveReliefDepthMm) + 0.15) * MANIFOLD_SCALE),
+              params.subtitleReliefDepthMm ?? effectiveReliefDepthMm,
+              textFinishStyle !== 'sharp',
+            ),
+          ]
+        : []),
+    ])
+    assertTextFinishAmount(textFinishStyle, params.textEdgeMm ?? 0, limits)
+    reliefSource = extrudeTextFinished(wasm, textSection, Math.round((effectiveReliefDepthMm + 0.15) * MANIFOLD_SCALE), textFinishStyle, params.textEdgeMm ?? 0)
+  } catch (error) {
+    base.delete()
+    releaseStyledGeometry(styled)
+    throw error
+  }
+  const relief = reliefSource.translate([0, 0, baseThickness - Math.max(recessDepth, 0) - 150])
+  reliefSource.delete()
+  let subtitleSource
+  try {
+    subtitleSource = subtitleSection
+      ? extrudeTextFinished(wasm, subtitleSection, Math.round(((params.subtitleReliefDepthMm ?? effectiveReliefDepthMm) + 0.15) * MANIFOLD_SCALE), textFinishStyle, params.textEdgeMm ?? 0)
+      : undefined
+  } catch (error) {
+    base.delete()
+    relief.delete()
+    releaseStyledGeometry(styled)
+    throw error
+  }
+  const subtitleRelief = subtitleSource?.translate([0, 0, baseThickness - 150])
+  subtitleSource?.delete()
+  const reliefCombined = subtitleRelief ? relief.add(subtitleRelief) : relief
+  const model = regularizeFinishedSolid(wasm, base.add(reliefCombined))
+  const partition = partitionMaterialSolids(base, reliefCombined, model)
+  base.delete()
+  const partitionedBase = partition.base
+  const bounds = model.boundingBox()
+  const baseMesh = asMesh(partitionedBase)
+  const reliefMesh = asMesh(reliefCombined)
+  const exportMesh = includeExport ? asMesh(model) : undefined
+  const components = model.decompose()
+  // Enclosed negative shells are cavities inside a printable body.
+  const solidCount = components.filter((component) => component.volume() > 0).length
+  const connected = solidCount === 1
+  deleteAll(components)
+  let printable = model.status() === 'NoError' && styled.magnetPocket?.safe !== false && reliefContained && finiteBounds(bounds) && validateMesh(baseMesh) && validateMesh(reliefMesh)
+  const intentionalAssembly = params.styleId === 'heart-split'
+  if (!connected)
+    issues.push({
+      severity: intentionalAssembly ? 'warning' : 'error',
+      code: 'disconnected',
+      message: intentionalAssembly
+        ? 'Heart Split is a multi-part assembly. Keep its parts together in the selected print job.'
+        : 'The selected style keeps some letters as separate printable parts; no automatic connections were added.',
+    })
+  if (!connected && !intentionalAssembly) printable = false
+  if (!connected && params.styleId === 'heart-split' && params.heartInteriorMode === 'through-cut') {
+    issues.push({ severity: 'error', code: 'heart-cut-unsafe', message: 'The through-cut heart split is disconnected from its printable supports.' })
+    printable = false
+  }
+  if (model.numTri() > 12000) issues.push({ severity: 'warning', code: 'dense-mesh', message: 'This curved model exceeds 12,000 triangles and may take longer to slice.' })
+  if (params.reliefDepthMm < 0.5) issues.push({ severity: 'warning', code: 'shallow-relief', message: 'A slightly taller text relief is easier to see after printing.' })
+  const result = {
+    generationId: 0,
+    baseMesh,
+    reliefMesh,
+    dimensions: {
+      widthMm: (bounds.max[0] - bounds.min[0]) / MANIFOLD_SCALE,
+      heightMm: (bounds.max[1] - bounds.min[1]) / MANIFOLD_SCALE,
+      thicknessMm: (bounds.max[2] - bounds.min[2]) / MANIFOLD_SCALE,
+      centerMm: [(bounds.max[0] + bounds.min[0]) / (MANIFOLD_SCALE * 2), (bounds.max[1] + bounds.min[1]) / (MANIFOLD_SCALE * 2), (bounds.max[2] + bounds.min[2]) / (MANIFOLD_SCALE * 2)],
+    },
+    issues,
+    printable,
+    appearance: DEFAULT_PRINT_APPEARANCE,
+    textFinishLimits: limits,
+    baseFinishLimits: backingFinishLimits,
+    parameterLimits: styled.parameterLimits,
+    edgeFinish: {
+      style: baseFinishStyle,
+      textStyle: textFinishStyle,
+      topMm: params.topEdgeMm ?? 0,
+      bottomMm: params.bottomEdgeMm ?? 0,
+      textMm: params.textEdgeMm ?? 0,
+      quality:
+        (input.edgeFinish ?? 'sharp') !== baseFinishStyle ||
+        (input.topEdgeMm ?? 0) !== (params.topEdgeMm ?? 0) ||
+        (input.bottomEdgeMm ?? 0) !== (params.bottomEdgeMm ?? 0) ||
+        (input.textEdgeMm ?? 0) !== (params.textEdgeMm ?? 0)
+          ? 'degraded'
+          : 'verified',
+    },
+    constraints: geometryConstraintsFor(params),
+    printProfile: printProfileFor(geometryConstraintsFor(params)),
+    magnetPocket: styled.magnetPocket,
+    baseShading: params.templateId === 'plant-label' ? 'flat' : 'creased',
+    solidCount,
+  }
+  deleteAll([
+    model,
+    reliefCombined,
+    ...(subtitleRelief ? [relief] : []),
+    partitionedBase,
+    styleBase,
+    ...new Set([styled.rawText, textSection]),
+    ...(subtitleSection ? [subtitleSection] : []),
+    ...(subtitleRelief ? [subtitleRelief] : []),
+    ...styled.recesses.map((item) => item.section),
+    ...rearRecesses.map((item) => item.section),
+  ])
+  return { result, exportMesh }
+}
+
+/** The same evaluated geometry and checks are used by previews, batches, and exports. */
+export async function buildKeychain(wasm, params, includeExport, fontOverride, subtitleFontOverride) {
+  const started = performance.now()
+  let built = await buildKeychainGeometry(wasm, params, includeExport, fontOverride, subtitleFontOverride)
+  if (params.modelFeatures?.length) built = applyFeatureGraph(wasm, built.result, params, includeExport ?? false)
+  const result = built.result
+  const envelope = params.sizeEnvelope
+  if (envelope && result.printable && (result.dimensions.widthMm > envelope.widthMm + 0.1 || result.dimensions.heightMm > envelope.heightMm + 0.1)) {
+    result.printable = false
+    result.issues.push({ severity: 'error', code: 'size-envelope-unavailable', message: `This design cannot fit within ${envelope.widthMm} × ${envelope.heightMm} mm. Choose a larger size or simplify the design.` })
+  }
+  result.parts = [
+    { id: 'base', name: result.appearance.base.name, role: 'base', mesh: result.baseMesh },
+    { id: 'relief', name: result.appearance.relief.name, role: 'relief', mesh: result.reliefMesh },
+  ]
+  result.validation = {
+    mesh: validateMesh(result.baseMesh) && validateMesh(result.reliefMesh) && result.baseMesh.indices.length + result.reliefMesh.indices.length > 0 ? 'passed' : 'failed',
+    connectivity: params.templateId === 'articulated-name' || params.styleId === 'heart-split' ? 'assembly' : (result.solidCount ?? 0) > 1 ? 'separate-parts' : 'connected',
+    manufacturing: params.modelFeatures?.length ? 'unverified' : 'software-checked',
+    physical: 'unverified',
+  }
+  result.timings = { ...result.timings, generationMs: performance.now() - started }
+  return built
+}

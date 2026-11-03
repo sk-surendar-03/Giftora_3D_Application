@@ -1,0 +1,48 @@
+# Physical print validation
+
+Use 0.4 mm PLA, 0.2 mm layers, and no supports for the baseline. The broad product-readiness gate is
+one row for each supported template/style combination. For the first narrow seller pilot, the user
+approved a recipe-specific gate: physically validate the exact Name-keychain preset recipe(s) the
+pilot sellers will use before inviting them. This does not validate other presets, templates, styles,
+printers, or materials; keep those claims provisional. Keep any pilot protocol and evidence separate
+from this broader print-readiness matrix.
+
+## Repeatable PrusaSlicer smoke check
+
+The opt-in `pnpm validate:slicer` command slices every generated STL and 3MF fixture with the
+checked-in `tools/slicer/prusaslicer-minimal-fff.ini` profile and writes a result manifest
+under `artifacts/`. Generate fixtures first with `pnpm validation:fixtures`. Set
+`PRUSASLICER_BIN` when the executable is not on `PATH`. This is an automated load-and-slice
+compatibility check, not physical-print proof; it does not replace inspection in the target
+slicer or a physical print.
+
+The same check is available from the manually dispatched and weekly
+`.github/workflows/slicer-validation.yml` workflow. Record the exact slicer version and
+profile in the manual evidence template for release decisions.
+
+For the multi-slicer matrix, `pnpm validate:slicers` first checks all 26 generated 3MF pairs for
+archive/XML structure, millimeter units, one build item, and both separate-color regions, then runs
+the PrusaSlicer CLI smoke check. It fails when PrusaSlicer is unavailable and writes
+`slicer-validation/compatibility.json` with the result and remaining pending application rows.
+Import, filament/extruder assignment, slicing, and round-trip checks in the GUI still need recorded
+evidence for each exact build listed in `docs/slicer-compatibility.json`; pending rows are not passes.
+
+| Fixture | Template/style           | Printer/profile | Dimensions | Holes/joints/stake | Relief | Supports | Status  | Evidence |
+| ------- | ------------------------ | --------------- | ---------- | ------------------ | ------ | -------- | ------- | -------- |
+| ALEX    | name-keychain / contour  |                 |            |                    |        | no       | pending |          |
+| ALEX    | name-keychain / capsule  |                 |            |                    |        | no       | pending |          |
+| ALEX    | name-keychain / soft-tag |                 |            |                    |        | no       | pending |          |
+| ALEX    | name-keychain / bubble   |                 |            |                    |        | no       | pending |          |
+| ALEX    | name-keychain / arch     |                 |            |                    |        | no       | pending |          |
+| ALEX    | plant-label / contour    |                 |            |                    |        | no       | pending |          |
+| ALEX    | plant-label / capsule    |                 |            |                    |        | no       | pending |          |
+| ALEX    | plant-label / soft-tag   |                 |            |                    |        | no       | pending |          |
+| ALEX    | plant-label / bubble     |                 |            |                    |        | no       | pending |          |
+| ALEX    | plant-label / arch       |                 |            |                    |        | no       | pending |          |
+| ALEX    | articulated-name         |                 |            | joint motion       |        | no       | pending |          |
+| ALEX    | nameplate                |                 |            |                    |        | no       | pending |          |
+
+After the baseline set, repeat the highest-risk fixtures: a long Latin name, a long
+Cyrillic name, a thin font, a heavy font, maximum nameplate tilt/embed, maximum stake
+length, and tight articulated clearance. Record slicer warnings, measured dimensions,
+and photos or links to evidence in the final column.

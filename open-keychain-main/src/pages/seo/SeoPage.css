@@ -1,0 +1,396 @@
+:root {
+  --seo-ink: #27323a;
+  --seo-muted: #66717a;
+  --seo-border: #ddd7cd;
+  --seo-surface: #fffdf8;
+  --seo-paper: #f6f4ef;
+  --seo-accent: #d8664d;
+  --seo-accent-dark: #a94635;
+}
+
+.seo-shell {
+  display: flex;
+  flex-direction: column;
+}
+
+.seo-main {
+  flex: 1 0 auto;
+  position: relative;
+  width: min(100% - 2rem, 70rem);
+  min-height: calc(100vh - 10rem);
+  margin: 0 auto;
+  padding: clamp(3.5rem, 8vw, 7rem) 0 clamp(4rem, 8vw, 7rem);
+  color: var(--seo-ink);
+}
+
+.seo-shell #how-it-works {
+  scroll-margin-top: 6rem;
+}
+
+.seo-eyebrow {
+  margin: 0 0 1rem;
+  color: var(--seo-accent-dark);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.seo-main h1 {
+  max-width: 52rem;
+  margin: 0 0 1.2rem;
+  color: var(--seo-ink);
+  font-family: OpenBree, OpenNunito, sans-serif;
+  font-size: clamp(2.5rem, 7vw, 5.75rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+}
+
+.seo-main h2 {
+  max-width: 48rem;
+  margin: clamp(2.75rem, 6vw, 5rem) 0 0.8rem;
+  color: var(--seo-ink);
+  font-family: OpenBree, OpenNunito, sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+
+.seo-lede {
+  max-width: 48rem;
+  margin: 0;
+  color: var(--seo-muted);
+  font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+  line-height: 1.65;
+}
+
+.seo-comparison {
+  max-width: 48rem;
+  margin-block: 2.5rem;
+}
+
+.seo-comparison h2 {
+  margin-top: 0;
+}
+
+.seo-comparison table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: var(--seo-ink);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.seo-comparison th,
+.seo-comparison td {
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--seo-border);
+  padding: 0.9rem 0.75rem;
+  vertical-align: top;
+}
+
+.seo-comparison th:first-child {
+  width: 24%;
+}
+
+.seo-comparison thead th {
+  color: var(--seo-muted);
+  font-size: 0.83rem;
+  font-weight: 800;
+}
+
+.seo-comparison tbody th {
+  font-weight: 800;
+}
+
+.seo-main p {
+  max-width: 48rem;
+  line-height: 1.7;
+}
+
+.seo-main img {
+  display: block;
+  width: min(100%, 42rem);
+  height: auto;
+  margin: 2.25rem 0;
+  border: 1px solid var(--seo-border);
+  border-radius: 1.25rem;
+  background: var(--seo-surface);
+  box-shadow: 0 1.5rem 3rem rgb(39 50 58 / 8%);
+}
+
+.seo-main > ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 0.75rem;
+  max-width: 60rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.seo-feature-list,
+.seo-main > ul:not(.seo-resource-list) {
+  max-width: 60rem;
+}
+
+.seo-feature-card,
+.seo-main > ul:not(.seo-resource-list) li {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: 6.25rem;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--seo-border);
+  border-radius: 0.55rem;
+  padding: 1.25rem 1.35rem;
+  background: var(--seo-surface);
+  color: var(--seo-muted);
+  font-size: clamp(0.95rem, 1.25vw, 1.1rem);
+  font-weight: 700;
+  line-height: 1.45;
+  box-shadow: 0 0.35rem 1rem rgb(39 50 58 / 4%);
+  transition:
+    border-color var(--workshop-motion-control) var(--workshop-ease),
+    transform var(--workshop-motion-control) var(--workshop-ease-hover);
+}
+
+.seo-feature-card:focus-within,
+.seo-main > ul:not(.seo-resource-list) li:focus-within {
+  border-color: #d9a08f;
+  box-shadow: 0 0.8rem 1.5rem rgb(39 50 58 / 10%);
+}
+
+.seo-feature-card:hover,
+.seo-main > ul:not(.seo-resource-list) li:hover {
+  border-color: #d9a08f;
+  box-shadow: 0 0.8rem 1.5rem rgb(39 50 58 / 10%);
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .seo-feature-card:hover,
+  .seo-main > ul:not(.seo-resource-list) li:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.seo-cta {
+  display: inline-flex;
+  min-height: 2.9rem;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 1.6rem;
+  border-radius: 0.7rem;
+  padding: 0.8rem 1.15rem;
+  background: var(--seo-accent);
+  box-shadow: 0 0.6rem 1rem rgb(216 102 77 / 20%);
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-decoration: none;
+  transition:
+    background-color 0.16s ease,
+    transform var(--workshop-motion-control) var(--workshop-ease-hover);
+}
+
+.seo-guide-related,
+.seo-template-related {
+  margin-block: 2rem;
+}
+
+.seo-guide-related h2,
+.seo-template-related h2 {
+  margin-top: 0;
+}
+
+.seo-guide-related .seo-feature-list,
+.seo-template-related .seo-feature-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 0.75rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.seo-related-link {
+  color: var(--seo-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.seo-related-link:focus-visible {
+  border-radius: 0.15rem;
+  outline: 3px solid var(--seo-accent);
+  outline-offset: 3px;
+}
+
+.seo-cta::after {
+  content: '→';
+  font-size: 1.1rem;
+}
+
+.seo-cta:focus-visible {
+  background: var(--seo-accent-dark);
+  box-shadow: 0 0.8rem 1.25rem rgb(169 70 53 / 24%);
+}
+
+.seo-cta:hover {
+  background: var(--seo-accent-dark);
+  box-shadow: 0 0.8rem 1.25rem rgb(169 70 53 / 24%);
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .seo-cta:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.seo-cta:active {
+  box-shadow: 0 0.3rem 0.6rem rgb(169 70 53 / 18%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-input-modality='pointer'] .seo-cta:active {
+    transform: translateY(1px);
+    transition-duration: var(--workshop-motion-fast);
+    transition-timing-function: var(--workshop-ease);
+  }
+}
+
+.seo-faq {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 52rem;
+}
+
+.seo-faq details {
+  border: 1px solid var(--seo-border);
+  border-radius: 0.9rem;
+  background: var(--seo-surface);
+  box-shadow: 0 0.5rem 1.25rem rgb(39 50 58 / 4%);
+}
+
+.seo-faq summary {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  color: var(--seo-ink);
+  font-size: 0.95rem;
+  font-weight: 900;
+  list-style: none;
+}
+
+.seo-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.seo-faq summary::after {
+  flex: 0 0 auto;
+  color: var(--seo-accent);
+  content: '+';
+  font-size: 1.35rem;
+  font-weight: 400;
+}
+
+.seo-faq details[open] summary::after {
+  content: '−';
+}
+
+.seo-faq details > p {
+  margin: 0;
+  border-top: 1px solid var(--seo-border);
+  padding: 0.9rem 1.1rem 1.1rem;
+  color: var(--seo-muted);
+  font-size: 0.92rem;
+}
+
+.seo-cta:focus-visible,
+.seo-main a:focus-visible,
+.seo-main button:focus-visible,
+.seo-faq summary:focus-visible {
+  outline: 2px solid var(--seo-accent);
+  outline-offset: 3px;
+}
+
+.seo-privacy-consent {
+  margin-block: 1.5rem;
+  border: 1px solid var(--seo-border);
+  border-radius: 0.8rem;
+  padding: 0.2rem 1rem 1rem;
+}
+
+.seo-privacy-consent p {
+  margin-bottom: 0;
+  color: var(--seo-muted);
+}
+
+.seo-privacy-consent .seo-cta {
+  margin: 0.8rem 0.6rem 0 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.seo-privacy-consent .seo-privacy-decline {
+  border: 1px solid var(--seo-border);
+  background: var(--seo-surface, #fff);
+  box-shadow: none;
+  color: var(--seo-ink);
+}
+
+.seo-privacy-consent .seo-privacy-decline:hover,
+.seo-privacy-consent .seo-privacy-decline:focus-visible {
+  background: var(--seo-surface, #fff);
+  box-shadow: 0 0 0 2px var(--seo-accent);
+}
+
+@media (max-width: 760px) {
+  .seo-main {
+    width: min(100% - 2rem, 42rem);
+    min-height: auto;
+    padding: 3.25rem 0 4rem;
+  }
+
+  .seo-main h1 {
+    font-size: clamp(2.7rem, 14vw, 4.2rem);
+  }
+
+  .seo-main > ul {
+    grid-template-columns: 1fr;
+  }
+
+  .seo-comparison table {
+    font-size: 0.82rem;
+  }
+
+  .seo-comparison th,
+  .seo-comparison td {
+    padding: 0.7rem 0.4rem;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1000px) {
+  .seo-shell #how-it-works {
+    scroll-margin-top: 7.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seo-feature-card,
+  .seo-main > ul li,
+  .seo-cta {
+    transition: none;
+    transform: none;
+  }
+
+  .seo-cta:active {
+    transform: none;
+  }
+}

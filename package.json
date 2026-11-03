@@ -1,0 +1,16 @@
+{
+  "name": "stl-keychain-store",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:customer": "npm run dev --workspace=apps/customer-frontend",
+    "dev:admin": "npm run dev --workspace=apps/admin-frontend",
+    "dev:backend": "npm run dev --workspace=apps/backend",
+    "build:customer": "npm run build --workspace=apps/customer-frontend",
+    "build:admin": "npm run build --workspace=apps/admin-frontend"
+  }
+}

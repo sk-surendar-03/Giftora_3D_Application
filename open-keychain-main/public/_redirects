@@ -1,0 +1,6 @@
+/privacy.html /privacy 301
+# The official deployment proxies this public contract to the private hosted service.
+/api/* https://api.open-keychain.com/api/:splat 200
+/create /create/index.html 200
+/create/ /create/index.html 200
+/* /index.html 200

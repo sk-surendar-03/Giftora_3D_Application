@@ -1,0 +1,102 @@
+.preview-photo {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  justify-items: stretch;
+  gap: var(--workshop-space-3);
+  padding: var(--workshop-space-1);
+}
+
+.photo-resolution-choices {
+  display: grid;
+  gap: var(--workshop-space-2);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.photo-format-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.photo-format-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  box-sizing: border-box;
+  padding: 2px;
+  border: 1px solid var(--workshop-border-strong);
+  border-radius: var(--workshop-radius-control);
+  background: var(--workshop-surface-control);
+}
+
+.photo-format-option {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: var(--workshop-touch-target);
+  border-radius: calc(var(--workshop-radius-control) - 2px);
+  color: var(--workshop-text-muted);
+  font-size: var(--workshop-font-label);
+  cursor: pointer;
+  transition:
+    color var(--workshop-motion-control) var(--workshop-ease),
+    background-color var(--workshop-motion-control) var(--workshop-ease);
+}
+
+.photo-format-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.photo-format-option:hover:not(:has(input:disabled)) {
+  color: var(--workshop-accent-strong);
+  background: var(--workshop-surface-subtle);
+}
+.photo-format-option:active:not(:has(input:disabled)) {
+  transition-duration: var(--workshop-motion-fast);
+}
+.photo-format-option:has(input:checked) {
+  color: var(--workshop-text-strong);
+  background: var(--workshop-selected-surface);
+  box-shadow: inset 0 0 0 1px var(--workshop-border-strong);
+}
+
+.photo-format-option:has(input:focus-visible) {
+  outline: var(--workshop-focus-ring);
+  outline-offset: 2px;
+}
+
+.photo-format-fieldset:disabled .photo-format-option {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.preview-photo-status {
+  min-height: 1.2em;
+  justify-self: stretch;
+  margin: 0;
+  color: var(--workshop-text);
+  font-size: var(--workshop-font-description);
+}
+
+.preview-photo-status:empty {
+  display: none;
+}
+
+@media (forced-colors: active) {
+  .photo-format-option {
+    border: 2px solid Canvas;
+  }
+
+  .photo-format-option:has(input:checked) {
+    border-color: Highlight;
+    font-weight: 800;
+  }
+}
