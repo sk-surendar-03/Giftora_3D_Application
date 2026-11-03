@@ -1,7 +1,0 @@
-.root {
-  min-width: 0;
-}
-
-:global(.landing-product-grid) {
-  min-width: 0;
-}

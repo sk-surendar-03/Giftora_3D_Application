@@ -1,1 +1,0 @@
-export { LandingSectionHeading } from './LandingSectionHeading';

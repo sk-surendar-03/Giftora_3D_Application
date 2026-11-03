@@ -1,1 +1,0 @@
-export { CustomizerWorkspace } from './CustomizerWorkspace';

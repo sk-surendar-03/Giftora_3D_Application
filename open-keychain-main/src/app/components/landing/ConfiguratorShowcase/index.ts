@@ -1,1 +1,0 @@
-export { ConfiguratorShowcase } from './ConfiguratorShowcase';
