@@ -73,15 +73,6 @@ function ProductDetailView({ slug }) {
     return <ProductUnavailable />
   }
 
-  const customiseState = {
-    productId: product.id,
-    productName: product.name,
-    material,
-    color,
-    size,
-    quantity,
-  }
-
   async function handleAddToCart() {
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/products/${product.slug}` } })
@@ -126,13 +117,8 @@ function ProductDetailView({ slug }) {
             <QuantitySelector value={quantity} onChange={setQuantity} />
           </div>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link to={`/customise/${product.id}`} state={customiseState}>
-              <Button variant="accent" size="lg">
-                Customize This Keychain
-              </Button>
-            </Link>
-            <Button variant="secondary" size="lg" onClick={handleAddToCart} disabled={mutating}>
+          <div className="mt-8">
+            <Button variant="accent" size="lg" onClick={handleAddToCart} disabled={mutating}>
               {mutating ? 'Adding…' : 'Add to Cart'}
             </Button>
           </div>

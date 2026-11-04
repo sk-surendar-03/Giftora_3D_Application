@@ -1,6 +1,5 @@
 import useProducts from '../features/products/useProducts'
 import Hero from '../components/home/Hero'
-import CategoryGrid from '../components/home/CategoryGrid'
 import ProductSection from '../components/product/ProductSection'
 import ProductGridSkeleton from '../components/product/ProductGridSkeleton'
 import HowItWorks from '../components/home/HowItWorks'
@@ -14,7 +13,6 @@ export default function Home() {
   return (
     <div>
       <Hero heroProduct={hasProducts ? products[0] : undefined} />
-      <CategoryGrid />
 
       {isLoading && (
         <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">

@@ -1,4 +1,3 @@
-import Input from '../ui/Input'
 import Button from '../ui/Button'
 
 function CheckboxGroup({ title, options, selected, onToggle }) {
@@ -26,11 +25,9 @@ function CheckboxGroup({ title, options, selected, onToggle }) {
 export default function CatalogFilters({
   categories,
   materials,
-  priceBounds,
   filters,
   onToggleCategory,
   onToggleMaterial,
-  onPriceChange,
   onClearAll,
   hasActiveFilters,
 }) {
@@ -58,34 +55,6 @@ export default function CatalogFilters({
         selected={filters.materials}
         onToggle={onToggleMaterial}
       />
-
-      <div>
-        <h3 className="text-sm font-semibold text-ink">Price</h3>
-        <div className="mt-3 flex items-center gap-3">
-          <Input
-            aria-label="Minimum price"
-            type="number"
-            min={priceBounds.min}
-            max={priceBounds.max}
-            value={filters.priceMin}
-            onChange={(e) => onPriceChange('priceMin', e.target.value)}
-            className="w-full"
-          />
-          <span className="text-sm text-muted">to</span>
-          <Input
-            aria-label="Maximum price"
-            type="number"
-            min={priceBounds.min}
-            max={priceBounds.max}
-            value={filters.priceMax}
-            onChange={(e) => onPriceChange('priceMax', e.target.value)}
-            className="w-full"
-          />
-        </div>
-        <p className="mt-2 text-xs text-muted">
-          Available range: ₹{priceBounds.min} – ₹{priceBounds.max}
-        </p>
-      </div>
 
       {hasActiveFilters && (
         <Button variant="secondary" className="w-full sm:hidden" onClick={onClearAll}>

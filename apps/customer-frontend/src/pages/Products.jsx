@@ -4,7 +4,6 @@ import {
   filterProducts,
   getCategories,
   getMaterials,
-  getPriceBounds,
   sortProducts,
 } from '../features/products/filters'
 import Input from '../components/ui/Input'
@@ -16,7 +15,7 @@ import ProductCard from '../components/product/ProductCard'
 import ProductGridSkeleton from '../components/product/ProductGridSkeleton'
 import Button from '../components/ui/Button'
 
-const INITIAL_FILTERS = { search: '', categories: [], materials: [], priceMin: '', priceMax: '' }
+const INITIAL_FILTERS = { search: '', categories: [], materials: [] }
 
 export default function Products() {
   const { data: products, isLoading, error } = useProducts()
@@ -26,31 +25,22 @@ export default function Products() {
 
   const categories = useMemo(() => getCategories(products), [products])
   const materials = useMemo(() => getMaterials(products), [products])
-  const priceBounds = useMemo(() => getPriceBounds(products), [products])
 
   const filteredProducts = useMemo(() => {
-    const priceMin = filters.priceMin === '' ? undefined : Number(filters.priceMin)
-    const priceMax = filters.priceMax === '' ? undefined : Number(filters.priceMax)
-    const filtered = filterProducts(products, { ...filters, priceMin, priceMax })
+    const filtered = filterProducts(products, filters)
     return sortProducts(filtered, sortBy)
   }, [products, filters, sortBy])
 
   const hasActiveFilters =
     filters.search.trim() !== '' ||
     filters.categories.length > 0 ||
-    filters.materials.length > 0 ||
-    filters.priceMin !== '' ||
-    filters.priceMax !== ''
+    filters.materials.length > 0
 
   function toggleValue(key, value) {
     setFilters((prev) => ({
       ...prev,
       [key]: prev[key].includes(value) ? prev[key].filter((v) => v !== value) : [...prev[key], value],
     }))
-  }
-
-  function handlePriceChange(key, value) {
-    setFilters((prev) => ({ ...prev, [key]: value }))
   }
 
   function resetFilters() {
@@ -60,11 +50,9 @@ export default function Products() {
   const filterProps = {
     categories,
     materials,
-    priceBounds,
     filters,
     onToggleCategory: (value) => toggleValue('categories', value),
     onToggleMaterial: (value) => toggleValue('materials', value),
-    onPriceChange: handlePriceChange,
     onClearAll: resetFilters,
     hasActiveFilters,
   }
