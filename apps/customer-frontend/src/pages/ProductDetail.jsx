@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import useProduct from '../features/products/useProduct'
-import { sampleProducts, colorsForMaterial } from '../data/sampleProducts'
+import useProducts from '../features/products/useProducts'
+import { colorsForMaterial } from '../data/sampleProducts'
+import { useCart } from '../features/cart/useCart.js'
+import { useAuth } from '../features/auth/useAuth.js'
 import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
 import ProductGallery from '../components/product/ProductGallery'
@@ -23,6 +26,11 @@ export default function ProductDetail() {
 
 function ProductDetailView({ slug }) {
   const { data: product, isLoading, error } = useProduct(slug)
+  const { data: allProducts } = useProducts()
+  const { isAuthenticated } = useAuth()
+  const { addToCart, mutating, mutationError } = useCart()
+  const navigate = useNavigate()
+  const [addedMessage, setAddedMessage] = useState(null)
 
   const [material, setMaterial] = useState(product?.materials?.[0])
   const [color, setColor] = useState(product ? colorsForMaterial(product, product.materials?.[0])?.[0] : undefined)
@@ -44,10 +52,10 @@ function ProductDetailView({ slug }) {
 
   const relatedProducts = useMemo(() => {
     if (!product) return []
-    const sameCategory = sampleProducts.filter((p) => p.id !== product.id && p.category === product.category)
+    const sameCategory = allProducts.filter((p) => p.id !== product.id && p.category === product.category)
     if (sameCategory.length > 0) return sameCategory
-    return sampleProducts.filter((p) => p.id !== product.id)
-  }, [product])
+    return allProducts.filter((p) => p.id !== product.id)
+  }, [product, allProducts])
 
   if (isLoading) {
     return <ProductDetailSkeleton />
@@ -72,6 +80,20 @@ function ProductDetailView({ slug }) {
     color,
     size,
     quantity,
+  }
+
+  async function handleAddToCart() {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/products/${product.slug}` } })
+      return
+    }
+    setAddedMessage(null)
+    try {
+      await addToCart({ productId: product.id, quantity, customization: { material, color, size } })
+      setAddedMessage('Added to cart.')
+    } catch {
+      // mutationError (from useCart) already surfaces the real message below.
+    }
   }
 
   return (
@@ -104,13 +126,18 @@ function ProductDetailView({ slug }) {
             <QuantitySelector value={quantity} onChange={setQuantity} />
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link to={`/customise/${product.id}`} state={customiseState}>
               <Button variant="accent" size="lg">
                 Customize This Keychain
               </Button>
             </Link>
+            <Button variant="secondary" size="lg" onClick={handleAddToCart} disabled={mutating}>
+              {mutating ? 'Adding…' : 'Add to Cart'}
+            </Button>
           </div>
+          {addedMessage && <p className="mt-2 text-sm text-accent-dark">{addedMessage}</p>}
+          {mutationError && <p className="mt-2 text-sm text-danger">{mutationError}</p>}
 
           <div className="mt-10">
             <ProductSpecs product={product} />
