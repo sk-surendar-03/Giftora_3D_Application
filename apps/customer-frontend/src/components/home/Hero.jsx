@@ -1,10 +1,7 @@
 import { Link } from 'react-router-dom'
 import Button from '../ui/Button'
-import { sampleProducts } from '../../data/sampleProducts'
 
-const heroProduct = sampleProducts[0]
-
-export default function Hero() {
+export default function Hero({ heroProduct }) {
   return (
     <section className="border-b border-border bg-surface">
       <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
@@ -20,11 +17,13 @@ export default function Hero() {
             live 3D studio, and we print it exactly how you designed it.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Link to={`/customise/${heroProduct.id}`}>
-              <Button variant="accent" size="lg">
-                Customize Your Keychain
-              </Button>
-            </Link>
+            {heroProduct && (
+              <Link to={`/customise/${heroProduct.id}`}>
+                <Button variant="accent" size="lg">
+                  Customize Your Keychain
+                </Button>
+              </Link>
+            )}
             <Link to="/products">
               <Button variant="secondary" size="lg">
                 Browse Products

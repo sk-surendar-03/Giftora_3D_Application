@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../features/auth/useAuth.js'
 
 const navLinks = [
   { to: '/', label: 'Home' },
@@ -32,6 +33,14 @@ function MenuIcon({ open }) {
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { isAuthenticated, logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    setMenuOpen(false)
+    navigate('/')
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur">
@@ -62,9 +71,27 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3 sm:gap-5">
-          <Link to="/login" className="hidden text-sm font-medium text-muted hover:text-ink sm:block">
-            Login
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link to="/my-orders" className="hidden text-sm font-medium text-muted hover:text-ink sm:block">
+                My Orders
+              </Link>
+              <Link to="/addresses" className="hidden text-sm font-medium text-muted hover:text-ink sm:block">
+                Addresses
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="hidden text-sm font-medium text-muted hover:text-ink sm:block"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="hidden text-sm font-medium text-muted hover:text-ink sm:block">
+              Login
+            </Link>
+          )}
           <Link
             to="/cart"
             className="rounded-control bg-ink px-4 py-2 text-sm font-medium text-paper hover:bg-ink/90"
@@ -100,14 +127,42 @@ export default function Header() {
                 </NavLink>
               </li>
             ))}
+            {isAuthenticated && (
+              <>
+                <li>
+                  <Link
+                    to="/my-orders"
+                    onClick={() => setMenuOpen(false)}
+                    className="block py-2.5 text-sm font-medium text-muted"
+                  >
+                    My Orders
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/addresses"
+                    onClick={() => setMenuOpen(false)}
+                    className="block py-2.5 text-sm font-medium text-muted"
+                  >
+                    Addresses
+                  </Link>
+                </li>
+              </>
+            )}
             <li>
-              <Link
-                to="/login"
-                onClick={() => setMenuOpen(false)}
-                className="block py-2.5 text-sm font-medium text-muted"
-              >
-                Login
-              </Link>
+              {isAuthenticated ? (
+                <button type="button" onClick={handleLogout} className="block py-2.5 text-sm font-medium text-muted">
+                  Logout
+                </button>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="block py-2.5 text-sm font-medium text-muted"
+                >
+                  Login
+                </Link>
+              )}
             </li>
           </ul>
         </nav>

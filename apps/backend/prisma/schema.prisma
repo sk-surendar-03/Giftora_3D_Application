@@ -1,0 +1,218 @@
+// Giftora backend database schema.
+// Migrated from PostgreSQL to MySQL 8.0 in Phase 17 (no PostgreSQL data or
+// migration history existed to carry over — see DEVELOPMENT_PROGRESS.md).
+// Run `npx prisma migrate dev --name init` against a real DATABASE_URL to
+// create the actual database tables — not run in this environment (no
+// reachable MySQL instance here).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(CUSTOMER)
+  // Account activation/deactivation (Phase 13 — Admin Customer Management).
+  // Defaults true so every existing account stays active.
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  addresses Address[]
+  cart      Cart?
+  orders    Order[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String   @db.Text
+  priceCents  Int
+  // JSON columns holding array data. MySQL has no native array type (and
+  // Prisma doesn't support scalar lists on MySQL at all — these were
+  // `String[]` under the earlier PostgreSQL schema), so `images`/
+  // `materials`/`sizes` are stored as JSON arrays instead. The JS shape the
+  // rest of the app already works with (plain arrays in/out) is unchanged
+  // — only the underlying column type and the `materials` query filter
+  // (`array_contains` instead of `has`, see productService.js) changed.
+  images           Json     @default("[]")
+  materials        Json     @default("[]")
+  sizes            Json     @default("[]")
+  colorsByMaterial Json?
+  isActive    Boolean  @default(true)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName   String
+  phone      String
+  line1      String
+  line2      String?
+  city       String
+  state      String
+  postalCode String
+  country    String
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id             String   @id @default(cuid())
+  cartId         String
+  cart           Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  quantity       Int      @default(1)
+  // Customization is stored as JSON (text, font, material, colors,
+  // thickness, etc.) — the shape mirrors the real customizer's params, but
+  // isn't schema-validated at the DB layer; the backend API layer (Phase 6)
+  // is responsible for validating it against the real geometry/catalog
+  // rules before it's trusted.
+  customization  Json?
+  unitPriceCents Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([cartId])
+  @@index([productId])
+  @@map("cart_items")
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  // Set once by the client per checkout attempt — lets a retried/duplicated
+  // request return the order that already exists instead of creating a
+  // second one (see Phase 9's order creation service).
+  idempotencyKey  String?     @unique
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  addressId       String?
+  address         Address?    @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  // A snapshot of the address as it was at order time (fullName, phone,
+  // line1, line2, city, state, postalCode, country) — `addressId` above is
+  // only a live reference and would silently go stale if the customer
+  // later edits or deletes that address.
+  shippingAddress Json
+  status          OrderStatus @default(PENDING)
+  subtotalCents   Int
+  shippingCents   Int         @default(0)
+  totalCents      Int
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items   OrderItem[]
+  payment Payment?
+
+  @@index([userId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id             String  @id @default(cuid())
+  orderId        String
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product @relation(fields: [productId], references: [id])
+  // Snapshots of the product as it was at order time — same reasoning as
+  // Order.shippingAddress: `productId` is a live reference, but the
+  // product's name/slug/image can change, or the product can be
+  // deactivated/deleted, after the order is placed.
+  productName    String
+  productSlug    String
+  productImage   String?
+  quantity       Int
+  customization  Json?
+  unitPriceCents Int
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  orderId         String        @unique
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider        String
+  providerRef     String?
+  amountCents     Int
+  status          PaymentStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("payments")
+}

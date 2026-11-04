@@ -5,12 +5,23 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:validate": "prisma validate",
+    "db:seed:catalog": "node prisma/seedCatalog.js"
   },
   "dependencies": {
+    "@prisma/client": "6.19.3",
+    "bcryptjs": "3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.21.0"
+    "express": "^4.21.0",
+    "jsonwebtoken": "9.0.3"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "prisma": "6.19.3"
+  }
 }
