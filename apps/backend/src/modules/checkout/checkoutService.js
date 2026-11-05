@@ -1,6 +1,8 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
 import { getOrCreateCart } from '../cart/cartService.js'
+import { getPricingConfig } from '../settings/settingsService.js'
+import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 
 /**
  * Builds a checkout review purely from the current, authoritative state of
@@ -21,11 +23,16 @@ export async function reviewCheckout(userId, addressId) {
     throw new HttpError(404, 'Address not found.')
   }
 
+  const { perCharacterPriceCents } = await getPricingConfig()
+
   let subtotalCents = 0
   const items = cart.items.map((item) => {
     const product = item.product
     const available = product.isActive
-    const currentUnitPriceCents = product.priceCents
+    // Customizer products have no separate base price — the per-character
+    // rate (possibly changed by an admin since this item was added) is the
+    // only current price source, same as cartService.js's addItem.
+    const currentUnitPriceCents = calculateTotalCustomizationPriceCents(item.customization?.text, item.customization?.subtitle, perCharacterPriceCents)
     const priceChanged = currentUnitPriceCents !== item.unitPriceCents
     const lineTotalCents = available ? currentUnitPriceCents * item.quantity : 0
     if (available) subtotalCents += lineTotalCents

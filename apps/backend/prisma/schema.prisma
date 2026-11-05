@@ -55,6 +55,20 @@ model User {
   @@map("users")
 }
 
+// Generic admin-configurable key/value store. Currently holds the
+// customizer's per-character pricing rate (key "customizer_pricing"); a
+// generic table rather than a dedicated one-row table so future admin
+// settings can reuse the same model instead of each needing a migration.
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
 model Category {
   id        String    @id @default(cuid())
   slug      String    @unique

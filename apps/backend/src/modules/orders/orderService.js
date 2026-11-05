@@ -54,7 +54,11 @@ export async function createOrder(userId, { addressId, idempotencyKey }) {
           throw new HttpError(409, `${unavailable.map((i) => i.product.name).join(', ')} ${unavailable.length > 1 ? 'are' : 'is'} no longer available. Please remove ${unavailable.length > 1 ? 'them' : 'it'} from your cart before placing this order.`)
         }
 
-        const subtotalCents = cart.items.reduce((sum, item) => sum + item.product.priceCents * item.quantity, 0)
+        // Use each cart item's own snapshotted unitPriceCents (the real,
+        // per-character customizer price computed at add-to-cart time), not
+        // the product's own base priceCents — customizer products have no
+        // separate base price; see cartService.js's addItem.
+        const subtotalCents = cart.items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0)
         const shippingCents = 0
         const totalCents = subtotalCents + shippingCents
 
@@ -76,7 +80,7 @@ export async function createOrder(userId, { addressId, idempotencyKey }) {
                 productImage: item.product.images?.[0] ?? null,
                 quantity: item.quantity,
                 customization: item.customization ?? undefined,
-                unitPriceCents: item.product.priceCents,
+                unitPriceCents: item.unitPriceCents,
               })),
             },
           },
