@@ -11,10 +11,10 @@ const STATUS_LABELS = {
 }
 
 const STATUS_TONES = {
-  PENDING: 'neutral',
+  PENDING: 'warning',
   PAID: 'accent',
-  PROCESSING: 'accent',
-  SHIPPED: 'accent',
+  PROCESSING: 'warning',
+  SHIPPED: 'secondary',
   DELIVERED: 'success',
   CANCELLED: 'danger',
   REFUNDED: 'danger',

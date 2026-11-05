@@ -1,5 +1,5 @@
-import { Suspense, useMemo, useRef, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Canvas, useThree } from '@react-three/fiber'
 import { Environment, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import ProductModel from '../../features/customiser/ProductModel'
@@ -17,6 +17,38 @@ const SURFACE_PRESETS = [
   { id: 'dark', label: 'Dark Room', dotColor: '#202735' },
 ]
 
+const PREVIEW_MAX_WIDTH = 640
+const PREVIEW_BACKGROUND = '#f3f6fb'
+
+// Gives the page a way to snapshot the current 3D view as a PNG (used as the
+// design's preview image in the cart and the admin panel). The canvas is read
+// in the same task as a fresh render, which is when WebGL's drawing buffer is
+// still valid, and drawn onto a fixed light background at a bounded size.
+function PreviewCaptureBridge({ onCaptureReady }) {
+  const { gl, scene, camera } = useThree()
+  useEffect(() => {
+    if (!onCaptureReady) return undefined
+    onCaptureReady(
+      () =>
+        new Promise((resolve, reject) => {
+          gl.render(scene, camera)
+          const source = gl.domElement
+          const scale = Math.min(1, PREVIEW_MAX_WIDTH / source.width)
+          const target = document.createElement('canvas')
+          target.width = Math.max(32, Math.round(source.width * scale))
+          target.height = Math.max(32, Math.round(source.height * scale))
+          const context = target.getContext('2d')
+          context.fillStyle = PREVIEW_BACKGROUND
+          context.fillRect(0, 0, target.width, target.height)
+          context.drawImage(source, 0, 0, target.width, target.height)
+          target.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Could not capture the preview image.'))), 'image/png')
+        }),
+    )
+    return () => onCaptureReady(null)
+  }, [gl, scene, camera, onCaptureReady])
+  return null
+}
+
 export default function Viewport3D({
   text,
   color,
@@ -27,6 +59,7 @@ export default function Viewport3D({
   reliefGeometry,
   geometryStatus,
   dimensions,
+  onCaptureReady,
 }) {
   const controlsRef = useRef(null)
   const [ready, setReady] = useState(false)
@@ -76,9 +109,9 @@ export default function Viewport3D({
 
   const surfaceBackgrounds = {
     matte: {
-      backgroundColor: '#f3efe8',
-      backgroundImage: 'linear-gradient(rgba(168,118,62,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(168,118,62,0.06) 1px, transparent 1px)',
-      backgroundSize: '24px 24px',
+      backgroundColor: '#f3f6fb',
+      backgroundImage: 'linear-gradient(#dbe4f0 1px, transparent 1px), linear-gradient(90deg, #dbe4f0 1px, transparent 1px)',
+      backgroundSize: '32px 32px',
     },
     graph: {
       backgroundColor: '#e6e2da',
@@ -86,9 +119,9 @@ export default function Viewport3D({
       backgroundSize: '16px 16px',
     },
     dark: {
-      backgroundColor: '#1e232d',
-      backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
-      backgroundSize: '24px 24px',
+      backgroundColor: '#0D0D0D',
+      backgroundImage: 'linear-gradient(#262626 1px, transparent 1px), linear-gradient(90deg, #262626 1px, transparent 1px)',
+      backgroundSize: '32px 32px',
     },
   }
 
@@ -98,7 +131,7 @@ export default function Viewport3D({
         <PreviewUnavailable message="The 3D preview couldn't be rendered. Your customization choices are unaffected." />
       }
     >
-      <div className="relative flex flex-col overflow-hidden rounded-card border border-border shadow-card bg-surface">
+      <div className="relative flex flex-col overflow-hidden rounded-card border border-line bg-surface">
         {/* Viewport canvas wrapper */}
         <div
           className="relative aspect-4/3 w-full overflow-hidden transition-colors"
@@ -152,7 +185,7 @@ export default function Viewport3D({
           )}
 
           {/* Drag to rotate hint badge */}
-          <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-full bg-ink/75 px-2.5 py-1 text-[10px] font-medium text-paper backdrop-blur-xs">
+          <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-[#1d2230] shadow-sm">
             Drag to rotate
           </div>
 
@@ -161,6 +194,7 @@ export default function Viewport3D({
             <ambientLight intensity={0.7} />
             <directionalLight position={[3, 4, 3]} intensity={1.1} />
             <directionalLight position={[-3, -2, -2]} intensity={0.3} />
+            <PreviewCaptureBridge onCaptureReady={onCaptureReady} />
             <Suspense fallback={null}>
               <ProductModel
                 text={text}
@@ -182,15 +216,15 @@ export default function Viewport3D({
           </Canvas>
         </div>
 
-        {/* Reference Bottom Inspection Toolbar (Dark Pill Bar) */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-[#212735] px-3 py-2 text-white sm:px-4">
+        {/* Bottom Inspection Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line bg-surface px-3 py-2 text-ink sm:px-4">
           {/* Quick preset views */}
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setViewAngle('isometric')}
               title="Perspective View"
-              className="flex h-7 w-7 items-center justify-center rounded-control bg-white/10 text-xs text-white hover:bg-white/20 transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-control bg-soft border border-line text-xs text-ink hover:border-accent hover:text-accent transition-colors"
             >
               ⬡
             </button>
@@ -198,7 +232,7 @@ export default function Viewport3D({
               type="button"
               onClick={() => setViewAngle('top')}
               title="Top View"
-              className="flex h-7 w-7 items-center justify-center rounded-control bg-white/10 text-xs text-white hover:bg-white/20 transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-control bg-soft border border-line text-xs text-ink hover:border-accent hover:text-accent transition-colors"
             >
               ⊤
             </button>
@@ -206,7 +240,7 @@ export default function Viewport3D({
               type="button"
               onClick={() => setViewAngle('front')}
               title="Front View"
-              className="flex h-7 w-7 items-center justify-center rounded-control bg-white/10 text-xs text-white hover:bg-white/20 transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-control bg-soft border border-line text-xs text-ink hover:border-accent hover:text-accent transition-colors"
             >
               ⊡
             </button>
@@ -218,7 +252,7 @@ export default function Viewport3D({
               type="button"
               onClick={() => zoomBy(0.85)}
               aria-label="Zoom in"
-              className="flex h-7 w-7 items-center justify-center rounded-control bg-white/10 text-sm font-bold text-white hover:bg-white/20 transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-control bg-soft border border-line text-sm font-bold text-ink hover:border-accent hover:text-accent transition-colors"
             >
               +
             </button>
@@ -226,14 +260,14 @@ export default function Viewport3D({
               type="button"
               onClick={() => zoomBy(1 / 0.85)}
               aria-label="Zoom out"
-              className="flex h-7 w-7 items-center justify-center rounded-control bg-white/10 text-sm font-bold text-white hover:bg-white/20 transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-control bg-soft border border-line text-sm font-bold text-ink hover:border-accent hover:text-accent transition-colors"
             >
               −
             </button>
             <button
               type="button"
               onClick={resetView}
-              className="flex h-7 items-center justify-center rounded-control bg-white/10 px-2 text-[11px] font-medium text-white hover:bg-white/20 transition-colors"
+              className="flex h-7 items-center justify-center rounded-control bg-soft border border-line px-2 text-[11px] font-medium text-ink hover:border-accent hover:text-accent transition-colors"
             >
               Reset view
             </button>
@@ -241,7 +275,7 @@ export default function Viewport3D({
 
           {/* Dimensions readout */}
           {dimensions && (
-            <div className="text-[11px] font-medium text-white/80">
+            <div className="text-[11.5px] font-mono text-muted">
               {dimensions.widthMm.toFixed(1)} × {dimensions.heightMm.toFixed(1)} mm
             </div>
           )}

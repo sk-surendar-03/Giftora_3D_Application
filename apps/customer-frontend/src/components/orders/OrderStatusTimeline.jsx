@@ -1,10 +1,7 @@
-// The normal happy-path progression. CANCELLED/REFUNDED aren't steps on
-// this line — they're terminal outcomes shown separately — since an order
-// doesn't "pass through" cancelled on its way to delivered.
 const HAPPY_PATH = [
   { status: 'PENDING', label: 'Order placed' },
   { status: 'PAID', label: 'Payment confirmed' },
-  { status: 'PROCESSING', label: 'Processing' },
+  { status: 'PROCESSING', label: 'Manufacturing' },
   { status: 'SHIPPED', label: 'Shipped' },
   { status: 'DELIVERED', label: 'Delivered' },
 ]
@@ -12,7 +9,7 @@ const HAPPY_PATH = [
 export default function OrderStatusTimeline({ status }) {
   if (status === 'CANCELLED' || status === 'REFUNDED') {
     return (
-      <div className="rounded-card border border-danger/30 bg-danger/5 p-4 text-sm text-danger">
+      <div className="rounded-card border border-danger/40 bg-[#fbe6e2] p-4 text-[13.5px] font-semibold text-danger">
         This order was {status === 'CANCELLED' ? 'cancelled' : 'refunded'}.
       </div>
     )
@@ -21,7 +18,7 @@ export default function OrderStatusTimeline({ status }) {
   const currentIndex = HAPPY_PATH.findIndex((step) => step.status === status)
 
   return (
-    <ol className="flex flex-col gap-0 sm:flex-row sm:items-start">
+    <ol className="flex flex-col gap-0 sm:flex-row sm:items-start list-none p-0 m-0">
       {HAPPY_PATH.map((step, index) => {
         const reached = index <= currentIndex
         const isLast = index === HAPPY_PATH.length - 1
@@ -29,16 +26,16 @@ export default function OrderStatusTimeline({ status }) {
           <li key={step.status} className="flex flex-1 items-start gap-3 sm:flex-col sm:items-center sm:gap-2 sm:text-center">
             <div className="flex items-center sm:w-full">
               <span
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                  reached ? 'bg-ink text-paper' : 'border border-border bg-surface text-muted'
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                  reached ? 'bg-accent text-on-accent font-bold' : 'border border-line bg-surface text-muted'
                 }`}
               >
                 {reached ? '✓' : index + 1}
               </span>
-              {!isLast && <span className={`hidden h-0.5 flex-1 sm:block ${index < currentIndex ? 'bg-ink' : 'bg-border'}`} />}
+              {!isLast && <span className={`hidden h-[2px] flex-1 sm:block ${index < currentIndex ? 'bg-accent' : 'bg-line'}`} />}
             </div>
-            <span className={`text-xs font-medium ${reached ? 'text-ink' : 'text-muted'}`}>{step.label}</span>
-            {!isLast && <span className={`ml-3 h-6 w-0.5 sm:hidden ${index < currentIndex ? 'bg-ink' : 'bg-border'}`} />}
+            <span className={`text-[12.5px] font-medium ${reached ? 'text-ink font-semibold' : 'text-muted'}`}>{step.label}</span>
+            {!isLast && <span className={`ml-3.5 h-6 w-[2px] sm:hidden ${index < currentIndex ? 'bg-accent' : 'bg-line'}`} />}
           </li>
         )
       })}

@@ -18,7 +18,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
         e.preventDefault()
         onSubmit(form)
       }}
-      className="grid grid-cols-1 gap-4 rounded-card border border-border bg-surface p-5 sm:grid-cols-2"
+      className="grid grid-cols-1 gap-4 rounded-card border border-line bg-surface p-5 sm:grid-cols-2"
     >
       <label className="block text-sm font-medium text-ink sm:col-span-2">
         Full name
@@ -26,7 +26,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
           required
           value={form.fullName}
           onChange={(e) => update('fullName', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-border px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       </label>
       <label className="block text-sm font-medium text-ink">
@@ -35,7 +35,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
           required
           value={form.phone}
           onChange={(e) => update('phone', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-border px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       </label>
       <label className="block text-sm font-medium text-ink">
@@ -44,7 +44,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
           required
           value={form.postalCode}
           onChange={(e) => update('postalCode', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-border px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       </label>
       <label className="block text-sm font-medium text-ink sm:col-span-2">
@@ -53,7 +53,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
           required
           value={form.line1}
           onChange={(e) => update('line1', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-border px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       </label>
       <label className="block text-sm font-medium text-ink sm:col-span-2">
@@ -61,7 +61,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
         <input
           value={form.line2}
           onChange={(e) => update('line2', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-border px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       </label>
       <label className="block text-sm font-medium text-ink">
@@ -70,7 +70,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
           required
           value={form.city}
           onChange={(e) => update('city', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-border px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       </label>
       <label className="block text-sm font-medium text-ink">
@@ -79,7 +79,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
           required
           value={form.state}
           onChange={(e) => update('state', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-border px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       </label>
       <label className="block text-sm font-medium text-ink sm:col-span-2">
@@ -88,7 +88,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
           required
           value={form.country}
           onChange={(e) => update('country', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-border px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       </label>
       <label className="flex items-center gap-2 text-sm font-medium text-ink sm:col-span-2">
@@ -185,13 +185,13 @@ export default function Addresses() {
                 submitting={mutating}
               />
             ) : (
-              <div key={address.id} className="rounded-card border border-border bg-surface p-5">
+              <div key={address.id} className="rounded-card border border-line bg-surface p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-semibold text-ink">{address.fullName}</p>
                       {address.isDefault && (
-                        <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-dark">Default</span>
+                        <span className="rounded-full bg-soft border border-line px-2 py-0.5 text-xs font-medium text-accent">Default</span>
                       )}
                     </div>
                     <p className="mt-1 text-sm text-muted">{address.phone}</p>
@@ -205,7 +205,7 @@ export default function Addresses() {
                     <p className="text-sm text-ink">{address.country}</p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-2 text-sm">
-                    <button type="button" onClick={() => setEditingId(address.id)} className="font-medium text-ink hover:text-accent-dark">
+                    <button type="button" onClick={() => setEditingId(address.id)} className="font-medium text-ink hover:text-accent">
                       Edit
                     </button>
                     {!address.isDefault && (
@@ -213,7 +213,7 @@ export default function Addresses() {
                         type="button"
                         disabled={mutating}
                         onClick={() => editAddress(address.id, { isDefault: true })}
-                        className="font-medium text-ink hover:text-accent-dark disabled:opacity-50"
+                        className="font-medium text-ink hover:text-accent disabled:opacity-50"
                       >
                         Set as default
                       </button>

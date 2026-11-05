@@ -8,7 +8,7 @@ const getContrastYIQ = (hexcolor) => {
   const g = parseInt(hex.substr(2, 2), 16)
   const b = parseInt(hex.substr(4, 2), 16)
   const yiq = (r * 299 + g * 587 + b * 114) / 1000
-  return yiq >= 128 ? '#1a1712' : '#ffffff'
+  return yiq >= 128 ? '#000000' : '#ffffff'
 }
 
 export default function KeychainColorSwatches({
@@ -29,62 +29,62 @@ export default function KeychainColorSwatches({
 
   return (
     <div className="space-y-3">
-      {/* Top row showing large hex swatches like reference */}
+      {/* Top row showing large hex swatches */}
       <div className="grid grid-cols-2 gap-3">
         {/* Base Color Box */}
         <button
           type="button"
           onClick={() => setPickerTarget('base')}
-          className={`flex flex-col items-center justify-between rounded-control border-2 p-3 text-center transition-all ${
+          className={`flex flex-col items-center justify-between rounded-control border p-3 text-center transition-all cursor-pointer ${
             pickerTarget === 'base'
-              ? 'border-accent shadow-sm ring-2 ring-accent/20'
-              : 'border-border bg-surface hover:border-ink/40'
+              ? 'border-accent ring-2 ring-accent ring-offset-2 ring-offset-bg'
+              : 'border-line bg-surface hover:border-accent/40'
           }`}
           style={{ backgroundColor: baseHex, color: baseContrast }}
         >
-          <span className="text-[11px] font-semibold opacity-85">Base color</span>
-          <strong className="my-2 font-mono text-sm tracking-wider">
+          <span className="text-[11px] font-semibold opacity-90 uppercase tracking-wider">Base color</span>
+          <strong className="my-2 font-mono text-[13px] tracking-wider">
             {baseHex.toUpperCase()}
           </strong>
-          <span className="text-[10px] opacity-80">{baseColor?.label || 'Custom'}</span>
+          <span className="text-[11px] opacity-85">{baseColor?.label || 'Custom'}</span>
         </button>
 
         {/* Text Color Box */}
         <button
           type="button"
           onClick={() => setPickerTarget('text')}
-          className={`flex flex-col items-center justify-between rounded-control border-2 p-3 text-center transition-all ${
+          className={`flex flex-col items-center justify-between rounded-control border p-3 text-center transition-all cursor-pointer ${
             pickerTarget === 'text'
-              ? 'border-accent shadow-sm ring-2 ring-accent/20'
-              : 'border-border bg-surface hover:border-ink/40'
+              ? 'border-accent ring-2 ring-accent ring-offset-2 ring-offset-bg'
+              : 'border-line bg-surface hover:border-accent/40'
           }`}
           style={{ backgroundColor: textHex, color: textContrast }}
         >
-          <span className="text-[11px] font-semibold opacity-85">Text color</span>
-          <strong className="my-2 font-mono text-sm tracking-wider">
+          <span className="text-[11px] font-semibold opacity-90 uppercase tracking-wider">Text color</span>
+          <strong className="my-2 font-mono text-[13px] tracking-wider">
             {textHex.toUpperCase()}
           </strong>
-          <span className="text-[10px] opacity-80">{textColor?.label || 'Custom'}</span>
+          <span className="text-[11px] opacity-85">{textColor?.label || 'Custom'}</span>
         </button>
       </div>
 
       {/* Palette Swatches for Active Target */}
-      <div className="rounded-control border border-border/80 bg-paper/50 p-2.5">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-[11px] font-medium text-ink">
+      <div className="rounded-control border border-line bg-alt p-3">
+        <div className="mb-2.5 flex items-center justify-between">
+          <span className="font-sans text-[12px] font-semibold text-ink">
             Select {pickerTarget === 'base' ? 'Base' : 'Text'} Palette:
           </span>
           {onResetColors && (
             <button
               type="button"
               onClick={onResetColors}
-              className="text-[11px] text-muted hover:text-ink underline"
+              className="text-[11.5px] text-muted hover:text-accent underline cursor-pointer"
             >
               Reset colors
             </button>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2.5">
           {availableColors?.map((c) => {
             const activeColor = pickerTarget === 'base' ? baseColor : textColor
             const isSelected = activeColor?.hex === c.hex
@@ -101,12 +101,12 @@ export default function KeychainColorSwatches({
                   }
                 }}
                 title={c.label}
-                className={`relative h-7 w-7 rounded-full border-2 transition-all ${
-                  isSelected ? 'border-accent scale-110 shadow-xs ring-2 ring-accent/30' : 'border-transparent hover:scale-105'
+                className={`relative h-7 w-7 rounded-full transition-all cursor-pointer ${
+                  isSelected ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg scale-105' : 'hover:scale-105'
                 }`}
                 style={{
                   backgroundColor: c.hex,
-                  boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.15)',
+                  boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.3)',
                 }}
               >
                 {isSelected && (

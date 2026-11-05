@@ -23,7 +23,7 @@ export function mapApiProduct(apiProduct) {
     createdAt: apiProduct.createdAt,
     materials,
     colorsByMaterial: apiProduct.colorsByMaterial ?? undefined,
-    colors: apiProduct.colorsByMaterial?.[defaultMaterial] ?? [],
+    colors: apiProduct.colorsByMaterial?.[defaultMaterial] ?? Object.values(apiProduct.colorsByMaterial ?? {})[0] ?? [],
     sizes: apiProduct.sizes ?? [],
   }
 }

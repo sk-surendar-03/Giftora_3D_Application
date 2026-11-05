@@ -36,19 +36,21 @@ export default function OrderDetails() {
   }, [orderId])
 
   if (state.isLoading) {
-    return <div className="mx-auto max-w-3xl px-4 py-24 text-center text-sm text-muted sm:px-6">Loading order…</div>
+    return <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center text-[15px] text-muted">Loading order details…</div>
   }
 
   if (state.error) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-6">
-        <h1 className="text-2xl font-semibold text-ink">Order not found</h1>
-        <p className="mt-3 text-sm text-muted">
-          We couldn't find that order, or it doesn't belong to your account.{' '}
-          <Link to="/my-orders" className="font-medium text-ink hover:text-accent-dark">
-            Back to My Orders
-          </Link>
-        </p>
+      <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center">
+        <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-6">
+          <h1 className="font-display text-[32px] font-semibold text-ink">Order not found</h1>
+          <p className="mt-3 font-sans text-[15px] text-muted">
+            We couldn't find that order, or it doesn't belong to your account.{' '}
+            <Link to="/my-orders" className="font-semibold text-accent hover:underline">
+              Back to My Orders
+            </Link>
+          </p>
+        </div>
       </div>
     )
   }
@@ -56,58 +58,68 @@ export default function OrderDetails() {
   const order = state.data
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <nav className="mb-6 text-sm text-muted">
-        <Link to="/my-orders" className="hover:text-ink">
-          My Orders
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-ink">{order.orderNumber}</span>
-      </nav>
+    <div className="bg-bg text-ink min-h-[80vh] pb-20">
+      <div className="mx-auto max-w-[900px] px-10 max-[760px]:px-[18px] py-12">
+        <nav className="mb-6 text-[13px] text-muted">
+          <Link to="/my-orders" className="hover:text-ink">
+            My Orders
+          </Link>
+          <span className="mx-2 text-muted/60">/</span>
+          <span className="text-ink font-semibold">{order.orderNumber}</span>
+        </nav>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-ink">{order.orderNumber}</h1>
-          <p className="mt-1 text-sm text-muted">Placed on {formatDate(order.createdAt)}</p>
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-line mb-8">
+          <div>
+            <h1 className="font-mono text-[30px] max-[760px]:text-[24px] font-bold text-accent m-0">
+              {order.orderNumber}
+            </h1>
+            <p className="mt-1 font-sans text-[13.5px] text-muted m-0">Placed on {formatDate(order.createdAt)}</p>
+          </div>
+          <OrderStatusBadge status={order.status} />
         </div>
-        <OrderStatusBadge status={order.status} />
+
+        <section className="mb-10 rounded-card border border-line bg-surface p-6">
+          <h2 className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent m-0 mb-6">
+            Manufacturing & Dispatch Progress
+          </h2>
+          <div>
+            <OrderStatusTimeline status={order.status} />
+          </div>
+        </section>
+
+        <section className="mb-10">
+          <h2 className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent m-0 mb-4">
+            Items in this order
+          </h2>
+          <div>
+            <OrderItemsList items={order.items} />
+          </div>
+
+          <div className="mt-6 ml-auto max-w-xs space-y-2.5 rounded-card border border-line bg-surface p-5 text-[14px]">
+            <div className="flex justify-between text-muted">
+              <span>Subtotal</span>
+              <span className="text-ink font-semibold">{formatPrice(order.subtotalCents)}</span>
+            </div>
+            <div className="flex justify-between text-muted">
+              <span>Shipping</span>
+              <span className="text-[#17683f] font-semibold">{formatPrice(order.shippingCents)}</span>
+            </div>
+            <div className="pt-2 border-t border-line flex justify-between font-sans">
+              <span className="text-[16px] font-semibold text-ink">Total</span>
+              <span className="text-[20px] font-bold text-accent">{formatPrice(order.totalCents)}</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-10">
+          <h2 className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent m-0 mb-4">
+            Delivery destination
+          </h2>
+          <div>
+            <OrderAddressSummary address={order.shippingAddress} />
+          </div>
+        </section>
       </div>
-
-      <section className="mt-8">
-        <h2 className="text-sm font-semibold tracking-wide text-ink uppercase">Tracking</h2>
-        <div className="mt-4">
-          <OrderStatusTimeline status={order.status} />
-        </div>
-      </section>
-
-      <section className="mt-10">
-        <h2 className="text-sm font-semibold tracking-wide text-ink uppercase">Items</h2>
-        <div className="mt-3">
-          <OrderItemsList items={order.items} />
-        </div>
-
-        <div className="mt-4 ml-auto max-w-xs space-y-2">
-          <div className="flex justify-between text-sm text-muted">
-            <span>Subtotal</span>
-            <span>{formatPrice(order.subtotalCents)}</span>
-          </div>
-          <div className="flex justify-between text-sm text-muted">
-            <span>Shipping</span>
-            <span>{formatPrice(order.shippingCents)}</span>
-          </div>
-          <div className="flex justify-between text-base font-semibold text-ink">
-            <span>Total</span>
-            <span>{formatPrice(order.totalCents)}</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-8">
-        <h2 className="text-sm font-semibold tracking-wide text-ink uppercase">Delivery address</h2>
-        <div className="mt-3">
-          <OrderAddressSummary address={order.shippingAddress} />
-        </div>
-      </section>
     </div>
   )
 }

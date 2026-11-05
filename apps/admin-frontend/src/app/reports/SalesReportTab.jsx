@@ -46,7 +46,7 @@ export default function SalesReportTab() {
       <Banner tone="error">{error}</Banner>
 
       {isLoading ? (
-        <p className="mt-6 text-sm text-gray-500">Loading sales report…</p>
+        <p className="mt-6 text-sm text-muted">Loading sales report…</p>
       ) : report ? (
         <>
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -55,8 +55,8 @@ export default function SalesReportTab() {
             <StatCard label="Average order value" value={formatPrice(report.averageOrderValueCents)} />
           </div>
 
-          <div className="mt-6 rounded-lg border border-gray-200 bg-white p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Sales by {granularity}</h2>
+          <div className="mt-6 rounded-lg border border-line bg-surface p-5">
+            <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">Sales by {granularity}</h2>
             <div className="mt-4">
               <SimpleBarChart data={report.salesByDate.map((d) => ({ label: d.date, value: d.totalCents }))} formatValue={formatPrice} />
             </div>

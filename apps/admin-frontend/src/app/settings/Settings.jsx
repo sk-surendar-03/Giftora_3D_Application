@@ -54,8 +54,8 @@ export default function Settings() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
-      <p className="mt-1 text-sm text-gray-500">Configure pricing used by the customer 3D customizer.</p>
+      <h1 className="text-xl font-semibold text-ink">Settings</h1>
+      <p className="mt-1 text-sm text-muted">Configure pricing used by the customer 3D customizer.</p>
 
       <div className="mt-4">
         <Banner tone="error">{formError ?? loadError}</Banner>
@@ -63,10 +63,10 @@ export default function Settings() {
       </div>
 
       {isLoading ? (
-        <p className="mt-6 text-sm text-gray-500">Loading settings…</p>
+        <p className="mt-6 text-sm text-muted">Loading settings…</p>
       ) : (
-        <form onSubmit={handleSubmit} className="mt-6 max-w-sm space-y-4 rounded-lg border border-gray-200 bg-white p-4">
-          <label className="block text-sm font-medium text-gray-700">
+        <form onSubmit={handleSubmit} className="mt-6 max-w-sm space-y-4 rounded-lg border border-line bg-surface p-4">
+          <label className="block text-sm font-medium text-ink">
             Price per character (₹)
             <input
               type="number"
@@ -74,10 +74,10 @@ export default function Settings() {
               step="0.01"
               value={pricePerCharacter}
               onChange={(e) => setPricePerCharacter(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
               placeholder="5.00"
             />
-            <span className="mt-1 block text-xs text-gray-500">
+            <span className="mt-1 block text-xs text-muted">
               Charged per printable, non-space character in the customer's engraved text. Example: at ₹5/character,
               "SURENDAR" (8 characters) costs ₹40.
             </span>
@@ -85,7 +85,7 @@ export default function Settings() {
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Save
           </button>

@@ -1,9 +1,41 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Banner from '../../components/Banner.jsx'
-import { fetchOrder, updateOrderStatus } from '../../features/orders/ordersApi.js'
+import AdminDesignPreview from '../../components/AdminDesignPreview.jsx'
+import { fetchOrder, updateOrderStatus, fetchOrderItemStlBlob } from '../../features/orders/ordersApi.js'
 
 const STATUS_OPTIONS = ['PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED']
+
+const TEMPLATE_LABELS = {
+  'name-keychain': 'Name Keychain',
+  'articulated-name': 'Articulated Name',
+  nameplate: 'Nameplate',
+}
+
+const STYLE_LABELS = {
+  plain: 'Plain',
+  contour: 'Contour',
+  capsule: 'Capsule',
+  'soft-tag': 'Soft Tag',
+  bubble: 'Bubble',
+  arch: 'Arch',
+  ribbon: 'Ribbon',
+  'heart-split': 'Heart Split',
+}
+
+const THICKNESS_LABELS = {
+  standard: 'Standard',
+  premium: 'Premium',
+}
+
+const KEYRING_LABELS = {
+  left: 'Left',
+  right: 'Right',
+  top: 'Top',
+  bottom: 'Bottom',
+  'top-left': 'Top Left',
+  'top-right': 'Top Right',
+}
 
 function extractError(err) {
   return err.response?.data?.error ?? err.message ?? 'Something went wrong.'
@@ -17,6 +49,31 @@ function formatDate(isoString) {
   return new Date(isoString).toLocaleString()
 }
 
+function formatBytes(bytes) {
+  if (!bytes) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`
+}
+
+function describeAdminDesign(params) {
+  if (!params) return []
+  return [
+    { label: 'Template', value: TEMPLATE_LABELS[params.templateId] ?? params.templateId },
+    params.styleId && { label: 'Style', value: STYLE_LABELS[params.styleId] ?? params.styleId },
+    { label: 'Text', value: params.text },
+    params.subtitle && { label: 'Subtitle', value: params.subtitle },
+    { label: 'Font', value: params.fontId },
+    { label: 'Material', value: params.material },
+    params.color && { label: 'Base colour', value: params.color.label, hex: params.color.hex },
+    params.textColor && { label: 'Text colour', value: params.textColor.label, hex: params.textColor.hex },
+    { label: 'Size', value: params.size },
+    { label: 'Thickness', value: THICKNESS_LABELS[params.thickness] ?? params.thickness },
+    params.keyringPosition && { label: 'Keyring', value: KEYRING_LABELS[params.keyringPosition] ?? params.keyringPosition },
+  ].filter(Boolean)
+}
+
 export default function OrderDetail() {
   const { id } = useParams()
   const [order, setOrder] = useState(null)
@@ -25,6 +82,8 @@ export default function OrderDetail() {
   const [statusChoice, setStatusChoice] = useState('')
   const [updating, setUpdating] = useState(false)
   const [successMessage, setSuccessMessage] = useState(null)
+  const [downloadingItemId, setDownloadingItemId] = useState(null)
+  const [downloadError, setDownloadError] = useState(null)
 
   function load() {
     const timer = setTimeout(() => {
@@ -58,13 +117,33 @@ export default function OrderDetail() {
     }
   }
 
-  if (isLoading) return <p className="text-sm text-gray-500">Loading order…</p>
+  async function handleDownloadStl(itemId, filename = 'design.stl') {
+    setDownloadError(null)
+    setDownloadingItemId(itemId)
+    try {
+      const blob = await fetchOrderItemStlBlob(id, itemId)
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(downloadUrl)
+    } catch (err) {
+      setDownloadError(extractError(err))
+    } finally {
+      setDownloadingItemId(null)
+    }
+  }
+
+  if (isLoading) return <div className="py-12 text-center text-sm text-muted">Loading order…</div>
 
   if (error && !order) {
     return (
       <div>
         <Banner tone="error">{error}</Banner>
-        <Link to="/orders" className="text-sm text-gray-600 hover:underline">
+        <Link to="/orders" className="text-sm text-brand hover:underline mt-4 inline-block">
           ← Back to orders
         </Link>
       </div>
@@ -75,94 +154,223 @@ export default function OrderDetail() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">{order.orderNumber}</h1>
-          <p className="text-sm text-gray-500">Placed {formatDate(order.createdAt)}</p>
+          <div className="flex items-center gap-3">
+            <h1 className="font-display text-2xl font-bold text-ink tracking-tight m-0">{order.orderNumber}</h1>
+            <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-soft text-accent border border-line">
+              {order.status}
+            </span>
+          </div>
+          <p className="text-sm text-muted mt-1">Placed {formatDate(order.createdAt)}</p>
         </div>
-        <Link to="/orders" className="text-sm text-gray-600 hover:underline">
+        <Link to="/orders" className="text-sm font-semibold text-brand hover:underline">
           ← Back to orders
         </Link>
       </div>
 
       <Banner tone="error">{error}</Banner>
+      <Banner tone="error">{downloadError}</Banner>
       <Banner tone="success">{successMessage}</Banner>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Left 2 Columns: Items, Manufacturing Specifications & Delivery */}
         <div className="space-y-6 lg:col-span-2">
-          <div className="rounded-lg border border-gray-200 bg-white p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Items</h2>
-            <div className="mt-3 divide-y divide-gray-100">
-              {order.items.map((item) => (
-                <div key={item.id} className="flex gap-4 py-3">
-                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-gray-100">
-                    {item.productImage && <img src={item.productImage} alt={item.productName} className="h-full w-full object-cover" />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900">{item.productName}</p>
-                    {item.customization && (
-                      <dl className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500">
+          
+          {/* Order Items */}
+          <div className="rounded-card border border-line bg-surface p-6">
+            <h2 className="font-display text-sm font-bold tracking-wider text-muted uppercase mb-4">
+              Order Items ({order.items.length})
+            </h2>
+
+            <div className="divide-y divide-line">
+              {order.items.map((item) => {
+                const isCustom = item.itemType === 'CUSTOM_DESIGN' && item.design
+                const design = item.design
+                const stlMeta = design?.stl
+                const designRows = isCustom ? describeAdminDesign(design.params) : []
+
+                return (
+                  <div key={item.id} className="py-5 space-y-4">
+                    <div className="flex gap-4 items-start">
+                      {/* Image or 3D Preview Thumbnail */}
+                      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-control border border-line bg-soft flex items-center justify-center">
+                        {isCustom ? (
+                          <AdminDesignPreview orderId={order.id} itemId={item.id} hasPreview={design.hasPreview} alt={item.productName} />
+                        ) : item.productImage ? (
+                          <img src={item.productImage} alt={item.productName} className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="text-xs text-muted">3D</span>
+                        )}
+                      </div>
+
+                      {/* Header Info */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-sans text-base font-semibold text-ink m-0">{item.productName}</p>
+                              {isCustom ? (
+                                <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
+                                  Custom 3D
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium bg-soft text-muted border border-line">
+                                  Catalog
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-1 text-xs text-muted">Qty {item.quantity} · {formatPrice(item.unitPriceCents)} each</p>
+                          </div>
+                          <p className="shrink-0 text-base font-semibold text-ink m-0">
+                            {formatPrice(item.unitPriceCents * item.quantity)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Custom Design Details Card */}
+                    {isCustom && (
+                      <div className="rounded-control border border-line/80 bg-alt/60 p-4 space-y-3.5">
+                        <div className="flex items-center justify-between border-b border-line/60 pb-2.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-accent">
+                            3D Manufacturing Specifications
+                          </span>
+                          {design.hasStl && (
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadStl(item.id, `${item.productName.replace(/[^a-z0-9_-]/gi, '_')}.stl`)}
+                              disabled={downloadingItemId === item.id}
+                              className="inline-flex items-center gap-1.5 rounded-control bg-brand px-3 py-1.5 text-xs font-semibold text-on-accent hover:bg-brand-d transition-colors disabled:opacity-50"
+                            >
+                              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                              </svg>
+                              {downloadingItemId === item.id ? 'Downloading…' : 'Download STL'}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Parameter Grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+                          {designRows.map((r) => (
+                            <div key={r.label} className="flex flex-col">
+                              <span className="text-muted">{r.label}</span>
+                              <span className="font-medium text-ink flex items-center gap-1.5 mt-0.5">
+                                {r.hex && (
+                                  <span
+                                    className="h-3 w-3 rounded-full border border-line inline-block shrink-0"
+                                    style={{ backgroundColor: r.hex }}
+                                  />
+                                )}
+                                {r.value}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* STL File Metadata */}
+                        {stlMeta && (
+                          <div className="pt-2.5 border-t border-line/50 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[11.5px] text-muted">
+                            <div>
+                              Size: <span className="text-ink font-medium">{formatBytes(stlMeta.sizeBytes)}</span>
+                            </div>
+                            <div>
+                              Triangles: <span className="text-ink font-medium">{stlMeta.triangleCount?.toLocaleString()}</span>
+                            </div>
+                            {stlMeta.bboxMm && (
+                              <div>
+                                Bounds: <span className="text-ink font-medium">{stlMeta.bboxMm.x} × {stlMeta.bboxMm.y} × {stlMeta.bboxMm.z} mm</span>
+                              </div>
+                            )}
+                            {stlMeta.sha256 && (
+                              <div className="truncate max-w-xs" title={stlMeta.sha256}>
+                                SHA-256: <span className="font-mono text-ink text-[10.5px]">{stlMeta.sha256.slice(0, 12)}…</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Standard Catalog Customization (e.g. engraving) */}
+                    {!isCustom && item.customization && (
+                      <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted bg-alt/40 p-3 rounded-control border border-line">
                         {Object.entries(item.customization).map(([key, value]) =>
                           value ? (
-                            <div key={key} className="flex gap-1">
-                              <dt className="capitalize">{key}:</dt>
-                              <dd>{typeof value === 'object' ? (value.label ?? JSON.stringify(value)) : String(value)}</dd>
+                            <div key={key} className="flex gap-1.5">
+                              <dt className="capitalize font-medium text-muted">{key}:</dt>
+                              <dd className="text-ink font-medium">
+                                {typeof value === 'object' ? (value.label ?? JSON.stringify(value)) : String(value)}
+                              </dd>
                             </div>
                           ) : null,
                         )}
                       </dl>
                     )}
-                    <p className="mt-1 text-xs text-gray-500">Qty {item.quantity}</p>
                   </div>
-                  <p className="shrink-0 text-sm font-medium text-gray-900">{formatPrice(item.unitPriceCents * item.quantity)}</p>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
-            <div className="mt-4 ml-auto max-w-xs space-y-1 border-t border-gray-100 pt-3">
-              <div className="flex justify-between text-sm text-gray-500">
+            {/* Totals Summary */}
+            <div className="mt-6 ml-auto max-w-xs space-y-2 border-t border-line pt-4">
+              <div className="flex justify-between text-sm text-muted">
                 <span>Subtotal</span>
-                <span>{formatPrice(order.subtotalCents)}</span>
+                <span className="text-ink">{formatPrice(order.subtotalCents)}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-500">
+              <div className="flex justify-between text-sm text-muted">
                 <span>Shipping</span>
-                <span>{formatPrice(order.shippingCents)}</span>
+                <span className="text-ink">{formatPrice(order.shippingCents)}</span>
               </div>
-              <div className="flex justify-between text-sm font-semibold text-gray-900">
+              <div className="flex justify-between text-base font-bold text-ink border-t border-line/60 pt-2">
                 <span>Total</span>
-                <span>{formatPrice(order.totalCents)}</span>
+                <span className="text-brand">{formatPrice(order.totalCents)}</span>
               </div>
             </div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Delivery address</h2>
-            <div className="mt-3 text-sm text-gray-700">
-              <p className="font-medium text-gray-900">{order.shippingAddress.fullName}</p>
-              <p className="mt-0.5 text-gray-500">{order.shippingAddress.phone}</p>
-              <p className="mt-1">
+          {/* Delivery Address */}
+          <div className="rounded-card border border-line bg-surface p-6">
+            <h2 className="font-display text-sm font-bold tracking-wider text-muted uppercase mb-3">
+              Delivery address
+            </h2>
+            <div className="text-sm text-ink leading-relaxed">
+              <p className="font-semibold text-ink text-base">{order.shippingAddress.fullName}</p>
+              <p className="text-muted text-sm">{order.shippingAddress.phone}</p>
+              <p className="mt-1.5 text-ink">
                 {order.shippingAddress.line1}
-                {order.shippingAddress.line2 ? `, ${order.shippingAddress.line2}` : ''}, {order.shippingAddress.city}, {order.shippingAddress.state}{' '}
-                {order.shippingAddress.postalCode}, {order.shippingAddress.country}
+                {order.shippingAddress.line2 ? `, ${order.shippingAddress.line2}` : ''}
+                <br />
+                {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}
+                <br />
+                {order.shippingAddress.country}
               </p>
             </div>
           </div>
         </div>
 
+        {/* Right Column: Customer & Status Controls */}
         <div className="space-y-6">
-          <div className="rounded-lg border border-gray-200 bg-white p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Customer</h2>
-            <p className="mt-2 text-sm font-medium text-gray-900">{order.user.name}</p>
-            <p className="text-sm text-gray-500">{order.user.email}</p>
+          <div className="rounded-card border border-line bg-surface p-6">
+            <h2 className="font-display text-sm font-bold tracking-wider text-muted uppercase mb-3">
+              Customer
+            </h2>
+            <p className="text-base font-semibold text-ink">{order.user.name}</p>
+            <p className="text-sm text-muted">{order.user.email}</p>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Status</h2>
-            <p className="mt-2 text-sm text-gray-500">Current: <span className="font-medium text-gray-900">{order.status}</span></p>
+          <div className="rounded-card border border-line bg-surface p-6">
+            <h2 className="font-display text-sm font-bold tracking-wider text-muted uppercase mb-3">
+              Fulfillment Status
+            </h2>
+            <div className="text-sm text-muted mb-3">
+              Current: <span className="font-semibold text-ink">{order.status}</span>
+            </div>
             <select
               value={statusChoice}
               onChange={(e) => setStatusChoice(e.target.value)}
-              className="mt-3 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded-control border border-line bg-surface px-3.5 py-2 text-sm text-ink outline-none focus:border-brand"
             >
               {STATUS_OPTIONS.map((s) => (
                 <option key={s} value={s}>
@@ -174,12 +382,12 @@ export default function OrderDetail() {
               type="button"
               disabled={updating || statusChoice === order.status}
               onClick={handleUpdateStatus}
-              className="mt-3 w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-3.5 w-full rounded-control bg-brand px-4 py-2.5 text-sm font-semibold text-on-accent hover:bg-brand-d transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               {updating ? 'Updating…' : 'Update status'}
             </button>
-            <p className="mt-2 text-xs text-gray-400">
-              Only valid workflow transitions are accepted (e.g. a cancelled or refunded order can't be reopened).
+            <p className="mt-3 text-xs text-muted leading-normal">
+              State transitions conform to store fulfillment validation (e.g. CANCELLED or REFUNDED orders are permanent).
             </p>
           </div>
         </div>

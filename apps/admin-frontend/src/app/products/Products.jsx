@@ -66,8 +66,8 @@ export default function Products() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Products</h1>
-        <Link to="/products/new" className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
+        <h1 className="text-xl font-semibold text-ink">Products</h1>
+        <Link to="/products/new" className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
           New product
         </Link>
       </div>
@@ -76,12 +76,12 @@ export default function Products() {
       <Banner tone="success">{successMessage}</Banner>
 
       {isLoading ? (
-        <p className="text-sm text-gray-500">Loading products…</p>
+        <p className="text-sm text-muted">Loading products…</p>
       ) : products.length === 0 ? (
-        <p className="text-sm text-gray-500">No products yet. Create one to get started.</p>
+        <p className="text-sm text-muted">No products yet. Create one to get started.</p>
       ) : (
-        <table className="w-full overflow-hidden rounded-lg border border-gray-200 bg-white text-sm">
-          <thead className="bg-gray-50 text-left text-xs font-medium tracking-wide text-gray-500 uppercase">
+        <table className="w-full overflow-hidden rounded-lg border border-line bg-surface text-sm">
+          <thead className="bg-bg text-left text-xs font-medium tracking-wide text-muted uppercase">
             <tr>
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Category</th>
@@ -92,12 +92,12 @@ export default function Products() {
           </thead>
           <tbody>
             {products.map((product) => (
-              <tr key={product.id} className="border-t border-gray-100">
-                <td className="px-4 py-2 text-gray-900">{product.name}</td>
-                <td className="px-4 py-2 text-gray-500">{product.category?.name ?? '—'}</td>
-                <td className="px-4 py-2 text-gray-500">₹{(product.priceCents / 100).toFixed(2)}</td>
+              <tr key={product.id} className="border-t border-line">
+                <td className="px-4 py-2 text-ink">{product.name}</td>
+                <td className="px-4 py-2 text-muted">{product.category?.name ?? '—'}</td>
+                <td className="px-4 py-2 text-muted">₹{(product.priceCents / 100).toFixed(2)}</td>
                 <td className="px-4 py-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${product.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${product.isActive ? 'bg-green-100 text-green-700' : 'bg-soft text-muted'}`}>
                     {product.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </td>
@@ -106,11 +106,11 @@ export default function Products() {
                     type="button"
                     disabled={busyId === product.id}
                     onClick={() => toggleActive(product)}
-                    className="mr-3 text-gray-900 hover:underline disabled:opacity-50"
+                    className="mr-3 text-ink hover:underline disabled:opacity-50"
                   >
                     {product.isActive ? 'Deactivate' : 'Activate'}
                   </button>
-                  <Link to={`/products/${product.id}/edit`} className="mr-3 text-gray-900 hover:underline">
+                  <Link to={`/products/${product.id}/edit`} className="mr-3 text-ink hover:underline">
                     Edit
                   </Link>
                   <button

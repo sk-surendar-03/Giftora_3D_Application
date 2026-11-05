@@ -111,15 +111,24 @@ export async function getOrderReport({ from, to, status, granularity }) {
 export async function getProductReport({ from, to, limit }) {
   const itemsInRange = await prisma.orderItem.findMany({
     where: { order: { createdAt: { gte: from, lt: to }, status: { in: REVENUE_STATUSES } } },
-    select: { productId: true, productName: true, quantity: true, unitPriceCents: true },
+    select: { itemType: true, productId: true, productName: true, quantity: true, unitPriceCents: true },
   })
 
+  // Standalone custom designs have no productId (and each has its own title),
+  // so all of them are reported together as one "Custom 3D designs" row.
+  const CUSTOM_KEY = 'custom-designs'
   const byProduct = new Map()
   for (const item of itemsInRange) {
-    const existing = byProduct.get(item.productId) ?? { productId: item.productId, productName: item.productName, quantitySold: 0, revenueCents: 0 }
+    const isCustom = item.itemType === 'CUSTOM_DESIGN'
+    const key = isCustom ? CUSTOM_KEY : item.productId
+    const existing =
+      byProduct.get(key) ??
+      (isCustom
+        ? { productId: null, productName: 'Custom 3D designs', isCustomDesign: true, quantitySold: 0, revenueCents: 0 }
+        : { productId: item.productId, productName: item.productName, quantitySold: 0, revenueCents: 0 })
     existing.quantitySold += item.quantity
     existing.revenueCents += item.quantity * item.unitPriceCents
-    byProduct.set(item.productId, existing)
+    byProduct.set(key, existing)
   }
 
   const soldProducts = [...byProduct.values()]

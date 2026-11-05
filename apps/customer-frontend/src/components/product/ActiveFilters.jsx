@@ -1,12 +1,12 @@
 function Chip({ children, onRemove }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft py-1 pr-1.5 pl-3 text-xs font-medium text-accent-dark">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-soft border border-line py-1 pr-2 pl-3 text-[12px] font-semibold text-accent">
       {children}
       <button
         type="button"
         onClick={onRemove}
         aria-label={`Remove filter ${children}`}
-        className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-accent-dark/15"
+        className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-line text-muted hover:text-ink cursor-pointer"
       >
         ×
       </button>
@@ -33,7 +33,11 @@ export default function ActiveFilters({ filters, onRemoveCategory, onRemoveMater
           {material}
         </Chip>
       ))}
-      <button type="button" onClick={onClearAll} className="text-xs font-medium text-muted hover:text-ink">
+      <button
+        type="button"
+        onClick={onClearAll}
+        className="text-[12.5px] font-medium text-muted hover:text-ink cursor-pointer ml-1"
+      >
         Clear all
       </button>
     </div>

@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 import { authenticate } from '../auth/authMiddleware.js'
-import { getCart, addCartItem, updateCartItem, deleteCartItem } from './cartController.js'
+import { getCart, addCartItem, addCustomCartItem, updateCartItem, deleteCartItem } from './cartController.js'
 
 export const cartRouter = Router()
 
@@ -12,5 +12,6 @@ cartRouter.use(authenticate)
 
 cartRouter.get('/', asyncHandler(getCart))
 cartRouter.post('/items', asyncHandler(addCartItem))
+cartRouter.post('/custom-items', asyncHandler(addCustomCartItem))
 cartRouter.patch('/items/:itemId', asyncHandler(updateCartItem))
 cartRouter.delete('/items/:itemId', asyncHandler(deleteCartItem))

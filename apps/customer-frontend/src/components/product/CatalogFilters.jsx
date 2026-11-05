@@ -4,19 +4,35 @@ function CheckboxGroup({ title, options, selected, onToggle }) {
   if (options.length === 0) return null
   return (
     <div>
-      <h3 className="text-sm font-semibold text-ink">{title}</h3>
-      <div className="mt-3 space-y-2.5">
-        {options.map((option) => (
-          <label key={option} className="flex items-center gap-2.5 text-sm text-ink">
-            <input
-              type="checkbox"
-              checked={selected.includes(option)}
-              onChange={() => onToggle(option)}
-              className="h-4 w-4 rounded border-border text-accent focus:ring-accent/30"
-            />
-            {option}
-          </label>
-        ))}
+      <h4 className="font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ink mb-3">
+        {title}
+      </h4>
+      <div className="space-y-2.5">
+        {options.map((option) => {
+          const isChecked = selected.includes(option)
+          return (
+            <label key={option} className="flex items-center gap-2.5 text-[14px] text-ink cursor-pointer group">
+              <span className={`flex h-5 w-5 items-center justify-center rounded-[4px] border transition-colors ${
+                isChecked
+                  ? 'border-accent bg-accent text-on-accent'
+                  : 'border-line bg-surface group-hover:border-accent/60'
+              }`}>
+                {isChecked && (
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m5 12 5 5 9-10" />
+                  </svg>
+                )}
+              </span>
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={() => onToggle(option)}
+                className="sr-only"
+              />
+              <span>{option}</span>
+            </label>
+          )
+        })}
       </div>
     </div>
   )
@@ -32,11 +48,17 @@ export default function CatalogFilters({
   hasActiveFilters,
 }) {
   return (
-    <div className="space-y-7">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold tracking-wide text-ink uppercase">Filters</h2>
+    <div className="space-y-7 rounded-card border border-line bg-surface p-5">
+      <div className="flex items-center justify-between pb-3 border-b border-line">
+        <h3 className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent m-0">
+          Filters
+        </h3>
         {hasActiveFilters && (
-          <button type="button" onClick={onClearAll} className="text-sm font-medium text-accent-dark hover:underline">
+          <button
+            type="button"
+            onClick={onClearAll}
+            className="text-[13px] font-semibold text-accent hover:underline cursor-pointer"
+          >
             Clear all
           </button>
         )}
@@ -57,8 +79,8 @@ export default function CatalogFilters({
       />
 
       {hasActiveFilters && (
-        <Button variant="secondary" className="w-full sm:hidden" onClick={onClearAll}>
-          Clear all filters
+        <Button variant="secondary" size="sm" className="w-full sm:hidden" onClick={onClearAll}>
+          Reset all filters
         </Button>
       )}
     </div>

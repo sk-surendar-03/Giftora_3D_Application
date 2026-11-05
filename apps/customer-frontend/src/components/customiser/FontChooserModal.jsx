@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import '../customiser/fontPreview.css'
 import { FONT_UI_CATEGORIES, fontsForUiCategory } from '../../features/customiser/fontUiCategories'
+import Button from '../ui/Button'
 
 export default function FontChooserModal({ open, onClose, fonts, value, onChange }) {
   const [activeCategory, setActiveCategory] = useState('all')
@@ -14,18 +15,18 @@ export default function FontChooserModal({ open, onClose, fonts, value, onChange
   )
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-      <div className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-card border border-border bg-surface shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs">
+      <div className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-card border border-line bg-surface shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <div>
-            <h2 className="text-lg font-semibold text-ink">Choose Font Style</h2>
-            <p className="text-xs text-muted">Browse all compatible fonts with live typography previews</p>
+            <h2 className="font-sans text-[17px] font-semibold text-ink m-0">Choose Font Style</h2>
+            <p className="font-sans text-[12.5px] text-muted m-0 mt-0.5">Browse all compatible fonts with live typography previews</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-control border border-border text-muted hover:border-ink hover:text-ink"
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-line text-muted hover:border-accent hover:text-ink cursor-pointer"
             aria-label="Close dialog"
           >
             ✕
@@ -33,13 +34,13 @@ export default function FontChooserModal({ open, onClose, fonts, value, onChange
         </div>
 
         {/* Filter bar */}
-        <div className="space-y-3 border-b border-border bg-paper/50 px-5 py-3">
+        <div className="space-y-3 border-b border-line bg-alt px-5 py-3">
           <input
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search fonts by name…"
-            className="w-full rounded-control border border-border bg-surface px-3 py-1.5 text-xs text-ink placeholder:text-muted focus:border-accent focus:outline-none"
+            className="w-full h-9 rounded-[4px] border border-line bg-surface px-3 text-[13px] text-ink placeholder:text-muted focus:border-accent focus:outline-none"
           />
 
           <div className="flex flex-wrap gap-1.5">
@@ -48,10 +49,10 @@ export default function FontChooserModal({ open, onClose, fonts, value, onChange
                 key={cat.id}
                 type="button"
                 onClick={() => setActiveCategory(cat.id)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                className={`rounded-[4px] border px-3 py-1 text-[12px] font-medium transition-colors cursor-pointer ${
                   activeCategory === cat.id
-                    ? 'border-ink bg-ink text-paper'
-                    : 'border-border bg-surface text-ink hover:border-ink/40'
+                    ? 'border-accent bg-soft text-accent ring-1 ring-accent'
+                    : 'border-line bg-surface text-ink hover:border-accent/40'
                 }`}
               >
                 {cat.label}
@@ -70,10 +71,10 @@ export default function FontChooserModal({ open, onClose, fonts, value, onChange
                 onChange(font.id)
                 onClose()
               }}
-              className={`flex flex-col items-center justify-center rounded-control border-2 p-3 text-center transition-all ${
+              className={`flex flex-col items-center justify-center rounded-[4px] border p-3 text-center transition-all cursor-pointer ${
                 value === font.id
-                  ? 'border-accent bg-accent/5 ring-2 ring-accent/20'
-                  : 'border-border bg-surface hover:border-ink/40'
+                  ? 'border-accent bg-soft text-accent ring-1 ring-accent'
+                  : 'border-line bg-surface hover:border-accent/40'
               }`}
             >
               <span className="truncate text-xl text-ink" style={{ fontFamily: font.previewFamily }}>
@@ -88,14 +89,10 @@ export default function FontChooserModal({ open, onClose, fonts, value, onChange
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end border-t border-border px-5 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-control border border-border bg-surface px-4 py-2 text-xs font-semibold text-ink hover:border-ink"
-          >
+        <div className="flex justify-end border-t border-line px-5 py-3">
+          <Button variant="secondary" size="sm" onClick={onClose}>
             Done
-          </button>
+          </Button>
         </div>
       </div>
     </div>

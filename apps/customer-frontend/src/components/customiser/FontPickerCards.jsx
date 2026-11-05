@@ -17,10 +17,10 @@ export default function FontPickerCards({ fonts, value, onChange }) {
             key={category.id}
             type="button"
             onClick={() => setActiveCategory(category.id)}
-            className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+            className={`shrink-0 rounded-[4px] border px-3 py-1 text-[12px] font-medium transition-colors cursor-pointer ${
               activeCategory === category.id
-                ? 'border-ink bg-ink text-paper'
-                : 'border-border bg-surface text-ink hover:border-ink/40'
+                ? 'border-accent bg-soft text-accent ring-1 ring-accent'
+                : 'border-line bg-surface text-ink hover:border-accent/40'
             }`}
           >
             {category.label}
@@ -38,10 +38,10 @@ export default function FontPickerCards({ fonts, value, onChange }) {
               type="button"
               onClick={() => onChange(font.id)}
               aria-pressed={isSelected}
-              className={`group flex w-28 shrink-0 flex-col items-center justify-between rounded-control border-2 p-2.5 text-center transition-all ${
+              className={`group flex w-28 shrink-0 flex-col items-center justify-between rounded-[4px] border p-2.5 text-center transition-all cursor-pointer ${
                 isSelected
-                  ? 'border-accent bg-accent/5 shadow-xs'
-                  : 'border-border bg-surface hover:border-ink/30 hover:shadow-xs'
+                  ? 'border-accent bg-soft text-accent ring-1 ring-accent'
+                  : 'border-line bg-surface hover:border-accent/40'
               }`}
             >
               <div className="my-auto flex h-10 w-full items-center justify-center">
@@ -51,7 +51,7 @@ export default function FontPickerCards({ fonts, value, onChange }) {
               </div>
               <span
                 className={`block w-full truncate border-t pt-1.5 text-[11px] font-medium transition-colors ${
-                  isSelected ? 'border-accent/30 text-accent-dark font-semibold' : 'border-border/60 text-muted group-hover:text-ink'
+                  isSelected ? 'border-accent/30 text-accent font-semibold' : 'border-line text-muted group-hover:text-ink'
                 }`}
               >
                 {font.name}
@@ -68,10 +68,10 @@ export default function FontPickerCards({ fonts, value, onChange }) {
       <button
         type="button"
         onClick={() => setModalOpen(true)}
-        className="flex w-full items-center justify-center gap-1.5 rounded-control border border-border bg-surface py-2 text-xs font-semibold text-ink transition-colors hover:border-ink/40 hover:bg-paper/40"
+        className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-line bg-surface py-2 text-[12.5px] font-semibold text-ink transition-colors hover:border-accent hover:text-accent cursor-pointer"
       >
         <span>Browse all fonts</span>
-        <span className="text-[10px] text-muted">({fonts.length})</span>
+        <span className="text-[11px] text-muted">({fonts.length})</span>
       </button>
 
       {/* Full Modal */}

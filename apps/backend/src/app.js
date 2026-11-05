@@ -13,6 +13,7 @@ import { adminOrderRouter } from './modules/orders/adminOrderRoutes.js'
 import { customerRouter } from './modules/customers/customerRoutes.js'
 import { reportRouter } from './modules/reports/reportRoutes.js'
 import { settingsRouter, adminSettingsRouter } from './modules/settings/settingsRoutes.js'
+import { customizerRouter, customDesignRouter } from './modules/customizer/customizerRoutes.js'
 
 const app = express()
 
@@ -47,6 +48,8 @@ app.use('/api/v1/admin/customers', customerRouter)
 app.use('/api/v1/admin/reports', reportRouter)
 app.use('/api/v1/settings', settingsRouter)
 app.use('/api/v1/admin/settings', adminSettingsRouter)
+app.use('/api/v1/customizer', customizerRouter)
+app.use('/api/v1/custom-designs', customDesignRouter)
 
 app.use(notFoundHandler)
 app.use(errorHandler)

@@ -138,21 +138,21 @@ export default function ProductForm() {
     }
   }
 
-  if (isLoading) return <p className="text-sm text-gray-500">Loading…</p>
+  if (isLoading) return <p className="text-sm text-muted">Loading…</p>
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">{isEditing ? 'Edit product' : 'New product'}</h1>
-        <Link to="/products" className="text-sm text-gray-600 hover:underline">
+        <h1 className="text-xl font-semibold text-ink">{isEditing ? 'Edit product' : 'New product'}</h1>
+        <Link to="/products" className="text-sm text-muted hover:underline">
           ← Back to products
         </Link>
       </div>
 
       <Banner tone="error">{error}</Banner>
 
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-5 rounded-lg border border-gray-200 bg-white p-6">
-        <label className="block text-sm font-medium text-gray-700">
+      <form onSubmit={handleSubmit} className="max-w-2xl space-y-5 rounded-lg border border-line bg-surface p-6">
+        <label className="block text-sm font-medium text-ink">
           Name
           <input
             value={form.name}
@@ -160,11 +160,11 @@ export default function ProductForm() {
               update('name', e.target.value)
               if (!slugTouched) update('slug', slugify(e.target.value))
             }}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
           />
         </label>
 
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-ink">
           Slug
           <input
             value={form.slug}
@@ -172,21 +172,21 @@ export default function ProductForm() {
               update('slug', e.target.value)
               setSlugTouched(true)
             }}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
           />
         </label>
 
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-ink">
           Description
           <textarea
             value={form.description}
             onChange={(e) => update('description', e.target.value)}
             rows={3}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
           />
         </label>
 
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-ink">
           Price (₹)
           <input
             type="number"
@@ -194,16 +194,16 @@ export default function ProductForm() {
             step="0.01"
             value={form.price}
             onChange={(e) => update('price', e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
           />
         </label>
 
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-ink">
           Category
           <select
             value={form.categoryId}
             onChange={(e) => update('categoryId', e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
           >
             <option value="">No category</option>
             {categories.map((category) => (
@@ -214,49 +214,49 @@ export default function ProductForm() {
           </select>
         </label>
 
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-ink">
           Materials (comma-separated)
           <input
             value={form.materials}
             onChange={(e) => update('materials', e.target.value)}
             placeholder="Standard PLA, Silk Metallic PLA"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
           />
         </label>
 
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-ink">
           Sizes (comma-separated)
           <input
             value={form.sizes}
             onChange={(e) => update('sizes', e.target.value)}
             placeholder="Small (4 cm), Medium (5.5 cm)"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
           />
         </label>
 
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-ink">
           Images (comma-separated URLs)
           <input
             value={form.images}
             onChange={(e) => update('images', e.target.value)}
             placeholder="https://.../front.png, https://.../back.png"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
           />
         </label>
 
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-ink">
           Colors by material (JSON)
           <textarea
             value={form.colorsByMaterial}
             onChange={(e) => update('colorsByMaterial', e.target.value)}
             rows={5}
             placeholder={'{\n  "Standard PLA": [{ "label": "White", "hex": "#ffffff" }]\n}'}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-xs"
+            className="mt-1 block w-full rounded-md border border-line px-3 py-2 font-mono text-xs"
           />
-          <span className="mt-1 block text-xs text-gray-400">Optional. Must be valid JSON mapping each material to a list of {'{label, hex}'} colors.</span>
+          <span className="mt-1 block text-xs text-muted">Optional. Must be valid JSON mapping each material to a list of {'{label, hex}'} colors.</span>
         </label>
 
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+        <label className="flex items-center gap-2 text-sm font-medium text-ink">
           <input type="checkbox" checked={form.isActive} onChange={(e) => update('isActive', e.target.checked)} />
           Active (visible to customers)
         </label>
@@ -264,7 +264,7 @@ export default function ProductForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? 'Saving…' : isEditing ? 'Save changes' : 'Create product'}
         </button>

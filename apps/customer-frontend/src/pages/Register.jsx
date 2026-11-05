@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../features/auth/useAuth.js'
+import Button from '../components/ui/Button'
 
 export default function Register() {
   const { register } = useAuth()
@@ -26,60 +27,90 @@ export default function Register() {
   }
 
   return (
-    <div className="mx-auto max-w-sm px-4 py-16 sm:px-6">
-      <h1 className="text-2xl font-semibold text-ink">Create an Account</h1>
-      <p className="mt-1 text-sm text-muted">Sign up to track your orders.</p>
-
-      <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-        <label className="block">
-          <span className="text-sm font-medium text-ink">Name</span>
-          <input
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1.5 block w-full rounded-control border border-border px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+    <div className="bg-bg text-ink min-h-[75vh] flex items-center justify-center py-16 px-4">
+      <div className="w-full max-w-[420px] rounded-card border border-line bg-surface p-8">
+        <div className="text-center mb-6">
+          <img
+            src="/jas-logo.png"
+            alt="Giftora"
+            className="h-12 w-12 rounded-full mx-auto object-contain border border-line mb-3"
+            onError={(e) => { e.target.style.display = 'none' }}
           />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium text-ink">Email</span>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1.5 block w-full rounded-control border border-border px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
-          />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium text-ink">Password</span>
-          <input
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1.5 block w-full rounded-control border border-border px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
-          />
-          <span className="mt-1 block text-xs text-muted">At least 8 characters.</span>
-        </label>
+          <h1 className="font-display text-[28px] font-semibold text-ink m-0">Create Account</h1>
+          <p className="mt-1 font-sans text-[14px] text-muted">Join Giftora for personalized 3D precision keepsakes.</p>
+        </div>
 
-        {error && <p className="text-sm text-danger">{error}</p>}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-[13px] font-semibold text-ink mb-1.5" htmlFor="reg-name">
+              Full Name
+            </label>
+            <input
+              id="reg-name"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Aarav Sharma"
+              className="h-11 w-full rounded-control border border-line bg-surface px-3.5 text-[14.5px] text-ink placeholder:text-muted focus:border-accent focus:outline-none"
+            />
+          </div>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-control bg-ink px-4 py-2.5 text-sm font-medium text-paper hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {submitting ? 'Creating account…' : 'Create account'}
-        </button>
-      </form>
+          <div>
+            <label className="block text-[13px] font-semibold text-ink mb-1.5" htmlFor="reg-email">
+              Email Address
+            </label>
+            <input
+              id="reg-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@domain.com"
+              className="h-11 w-full rounded-control border border-line bg-surface px-3.5 text-[14.5px] text-ink placeholder:text-muted focus:border-accent focus:outline-none"
+            />
+          </div>
 
-      <p className="mt-6 text-sm text-muted">
-        Already have an account?{' '}
-        <Link to="/login" className="font-medium text-ink hover:text-accent-dark">
-          Sign in
-        </Link>
-      </p>
+          <div>
+            <label className="block text-[13px] font-semibold text-ink mb-1.5" htmlFor="reg-pass">
+              Password
+            </label>
+            <input
+              id="reg-pass"
+              type="password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="h-11 w-full rounded-control border border-line bg-surface px-3.5 text-[14.5px] text-ink placeholder:text-muted focus:border-accent focus:outline-none"
+            />
+            <span className="mt-1 block text-[11.5px] text-muted">Minimum 8 characters.</span>
+          </div>
+
+          {error && (
+            <p className="rounded-control bg-[#fbe6e2] p-3 text-[13px] text-danger font-medium">{error}</p>
+          )}
+
+          <div className="pt-2">
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              disabled={submitting}
+              className="w-full text-base font-semibold"
+            >
+              {submitting ? 'Creating account…' : 'Create Account'}
+            </Button>
+          </div>
+        </form>
+
+        <p className="mt-6 text-center text-[13.5px] text-muted border-t border-line/60 pt-5">
+          Already have an account?{' '}
+          <Link to="/login" className="font-semibold text-accent hover:underline">
+            Sign in
+          </Link>
+        </p>
+      </div>
     </div>
   )
 }

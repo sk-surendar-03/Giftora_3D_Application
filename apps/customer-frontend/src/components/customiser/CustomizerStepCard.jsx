@@ -1,16 +1,23 @@
-export default function CustomizerStepCard({ step, title, description, children }) {
+export default function CustomizerStepCard({ step, title, description, children, valueSummary }) {
   return (
-    <section className="py-5 first:pt-0 last:pb-0">
-      <div className="flex items-start gap-3">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[11px] font-semibold text-accent-dark">
-          {step}
-        </span>
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-ink">{title}</h2>
-          {description && <p className="mt-0.5 text-xs text-muted">{description}</p>}
+    <section className="rounded-card border border-line bg-surface p-5 mb-3.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-[13px] font-bold text-on-accent">
+            {step}
+          </span>
+          <div>
+            <h2 className="font-sans text-[15px] font-semibold text-ink m-0 leading-tight">{title}</h2>
+            {description && <p className="font-sans text-[12.5px] text-muted m-0 mt-0.5 leading-tight">{description}</p>}
+          </div>
         </div>
+        {valueSummary && (
+          <span className="font-sans text-[13px] font-medium text-muted">
+            {valueSummary}
+          </span>
+        )}
       </div>
-      <div className="mt-3.5 pl-9">{children}</div>
+      <div className="mt-4">{children}</div>
     </section>
   )
 }
