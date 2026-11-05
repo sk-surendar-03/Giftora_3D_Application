@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { to: '/orders', label: 'Orders' },
   { to: '/customers', label: 'Customers' },
   { to: '/reports', label: 'Reports' },
+  { to: '/settings', label: 'Settings' },
 ]
 
 export default function AdminLayout() {

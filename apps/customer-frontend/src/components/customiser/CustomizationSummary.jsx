@@ -4,7 +4,7 @@ import { useCart } from '../../features/cart/useCart.js'
 import { useAuth } from '../../features/auth/useAuth.js'
 import Button from '../ui/Button'
 
-export default function CustomizationSummary({ product, text, font, material, color, size, quantity }) {
+export default function CustomizationSummary({ product, text, subtitle, font, material, color, size, quantity, totalPriceRupees }) {
   const { isAuthenticated } = useAuth()
   const { addToCart, mutating, mutationError } = useCart()
   const navigate = useNavigate()
@@ -13,11 +13,13 @@ export default function CustomizationSummary({ product, text, font, material, co
   const rows = [
     { label: 'Product', value: product.name },
     { label: 'Text', value: text || '—' },
+    subtitle && { label: 'Subtitle', value: subtitle },
     { label: 'Font', value: font },
     { label: 'Material', value: material ?? product.materials?.[0] },
     { label: 'Colour', value: color?.label },
     { label: 'Size', value: size },
     { label: 'Quantity', value: quantity },
+    totalPriceRupees != null && { label: 'Price', value: `₹${(totalPriceRupees * quantity).toFixed(2)}` },
   ].filter((row) => row.value)
 
   async function handleAddToCart() {
@@ -27,7 +29,7 @@ export default function CustomizationSummary({ product, text, font, material, co
     }
     setAddedMessage(null)
     try {
-      await addToCart({ productId: product.id, quantity, customization: { text, font, material, color, size } })
+      await addToCart({ productId: product.id, quantity, customization: { text, subtitle, font, material, color, size } })
       setAddedMessage('Added to cart.')
     } catch {
       // mutationError (from useCart) already surfaces the real message below.

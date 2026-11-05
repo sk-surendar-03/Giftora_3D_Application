@@ -1,5 +1,7 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
+import { getPricingConfig } from '../settings/settingsService.js'
+import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 
 const CART_INCLUDE = { items: { include: { product: true }, orderBy: { createdAt: 'asc' } } }
 
@@ -34,6 +36,17 @@ export async function addItem(userId, { productId, quantity, customization }) {
     return updated
   }
 
+  // The admin-configured per-character rate is the ONLY price source for
+  // customizer products — there is no separate base/product price added on
+  // top. Both the main name and the optional subtitle are billed per
+  // character at the same rate (subtitle contributes 0 when empty).
+  // Recomputed here (never trusting a client-sent price) so the live
+  // preview price and the actual cart price always agree, and a later rate
+  // change doesn't retroactively alter what's already in a customer's cart
+  // (see the price-snapshot note below).
+  const { perCharacterPriceCents } = await getPricingConfig()
+  const customizationPriceCents = calculateTotalCustomizationPriceCents(customization?.text, customization?.subtitle, perCharacterPriceCents)
+
   return prisma.cartItem.create({
     data: {
       cartId: cart.id,
@@ -43,7 +56,7 @@ export async function addItem(userId, { productId, quantity, customization }) {
       // Snapshot the price at add-time — standard ecommerce practice, so a
       // later price change doesn't silently alter what's already in a
       // customer's cart.
-      unitPriceCents: product.priceCents,
+      unitPriceCents: customizationPriceCents,
     },
     include: { product: true },
   })

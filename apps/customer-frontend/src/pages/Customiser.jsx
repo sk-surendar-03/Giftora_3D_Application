@@ -16,18 +16,21 @@ import Viewport3D from '../components/customiser/Viewport3D'
 import CustomizationSummary from '../components/customiser/CustomizationSummary'
 import PreflightPanel from '../components/customiser/PreflightPanel'
 import ExportButtons from '../components/customiser/ExportButtons'
-import ShapeParameterSliders from '../components/customiser/ShapeParameterSliders'
-import CustomizerStepCard from '../components/customiser/CustomizerStepCard'
 import FontPickerCards from '../components/customiser/FontPickerCards'
 import ThicknessPicker from '../components/customiser/ThicknessPicker'
+import KeychainColorSwatches from '../components/customiser/KeychainColorSwatches'
+import PrintFactsCard from '../components/customiser/PrintFactsCard'
+import VisualDesignCardRail from '../components/customiser/VisualDesignCardRail'
 import { THICKNESS_OPTIONS } from '../features/customiser/thicknessOptions'
 import OptionPicker from '../components/product/OptionPicker'
-import ColorSwatchPicker from '../components/product/ColorSwatchPicker'
 import QuantitySelector from '../components/product/QuantitySelector'
 import ProductUnavailable from '../components/product/ProductUnavailable'
 import Button from '../components/ui/Button'
+import { TEMPLATE_PREVIEWS, getStylePreview } from '../features/customiser/templateAssets'
+import { usePricing } from '../features/pricing/usePricing.js'
+import { countBillableCharacters, calculateTotalCustomizationPriceCents } from '../features/pricing/pricingCalculator.js'
 
-const MAX_CHARS = 24 // the engine's own hard limit (keychain-builder.js: 'text-too-long')
+const MAX_CHARS = 24
 const DEFAULT_EXAMPLE_TEXT = 'Alex'
 
 const KEYRING_POSITION_LABELS = {
@@ -50,8 +53,6 @@ function pickContrastingColor(baseHex, colors) {
 
 export default function Customiser() {
   const { productId } = useParams()
-  // Keyed by productId so selections reset cleanly when the selected
-  // product changes, same reasoning as Phase 4's ProductDetail view.
   return <CustomiserView key={productId} productId={productId} />
 }
 
@@ -60,15 +61,9 @@ function CustomiserView({ productId }) {
   const { data: product, isLoading, error } = useProductById(productId)
   const passedState = location.state
 
-  // A default example name is shown pre-filled so customers see a real
-  // preview immediately, without being forced to type first — but this is
-  // only a starting value for the (always-editable) text input below, not
-  // baked into the geometry in any special way.
   const [text, setText] = useState(passedState?.text ?? DEFAULT_EXAMPLE_TEXT)
   const [subtitle, setSubtitle] = useState('')
   const [fontId, setFontId] = useState(DEFAULT_PARAMS.fontId)
-  // Material stays fixed to the product's default (Standard PLA) — no
-  // material selector is shown in this customer-facing customizer.
   const [material] = useState(passedState?.material ?? product?.materials?.[0])
   const [color, setColor] = useState(passedState?.color ?? (product ? colorsForMaterial(product, material)?.[0] : undefined))
   const [textColor, setTextColor] = useState(() => (product ? pickContrastingColor(color?.hex, colorsForMaterial(product, material)) : undefined))
@@ -80,36 +75,48 @@ function CustomiserView({ productId }) {
   const [thickness, setThickness] = useState('standard')
   const [shapeOverrides, setShapeOverrides] = useState({})
   const [allowDisconnected, setAllowDisconnected] = useState(false)
-  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   const templateOptions = product ? templateOptionsForCategory(product.category) : { templateIds: ['name-keychain'] }
   const templateDefinition = TEMPLATE_CATALOG.find((t) => t.id === templateId) ?? TEMPLATE_CATALOG[0]
   const effectiveFontId = fontIdForTemplate(templateId, fontId, text)
   const availableColors = product ? colorsForMaterial(product, material) : undefined
 
-  // Colours can differ per material (Silk Metallic PLA vs Standard PLA) —
-  // if the current colour isn't valid for the newly selected material, fall
-  // back to that material's first colour.
   useEffect(() => {
     if (!availableColors?.length) return
     if (availableColors.some((option) => option.label === color?.label)) return
     setColor(availableColors[0])
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to the material/product changing, not every colour-array identity change.
   }, [material, product])
 
   useEffect(() => {
     if (!availableColors?.length) return
     if (availableColors.some((option) => option.label === textColor?.label)) return
     setTextColor(pickContrastingColor(color?.hex, availableColors))
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to the material/product changing, not every colour-array identity change.
   }, [material, product])
 
   const sizeDefaults = useMemo(() => shapeDefaultsForSize(size), [size])
 
+  // Per-character customizer pricing — the admin-configured rate (Settings
+  // page in the admin frontend) is the ONLY price source for the customizer;
+  // there is no separate base/product price added on top. Both the main name
+  // and the optional subtitle are billed per character at the same rate
+  // (subtitle contributes 0 when empty/unsupported by this template). Never
+  // hardcoded here. Only the final cart/order price (cartService.js) is
+  // authoritative; this is the live, as-you-type estimate.
+  const billedSubtitle = templateDefinition.supportsSubtitle ? subtitle : ''
+  const pricing = usePricing()
+  const nameCharacterCount = useMemo(() => countBillableCharacters(text), [text])
+  const subtitleCharacterCount = useMemo(() => countBillableCharacters(billedSubtitle), [billedSubtitle])
+  const billableCharacterCount = nameCharacterCount + subtitleCharacterCount
+  const customizationPriceCents =
+    pricing.perCharacterPriceCents != null
+      ? calculateTotalCustomizationPriceCents(text, billedSubtitle, pricing.perCharacterPriceCents)
+      : null
+  const totalPriceRupees = customizationPriceCents != null ? customizationPriceCents / 100 : null
+
   const params = useMemo(() => {
     return {
       ...DEFAULT_PARAMS,
-      text,
+      text: text,
       subtitle: templateDefinition.supportsSubtitle ? subtitle : '',
       subtitleFontId: effectiveFontId,
       fontId: effectiveFontId,
@@ -170,19 +177,212 @@ function CustomiserView({ productId }) {
     setAllowDisconnected(false)
   }
 
+  const templateRailItems = templateOptions.templateIds.map((id) => ({
+    id,
+    name: TEMPLATE_NAMES[id] ?? id,
+    description: id === 'name-keychain' ? 'Classic extruded text tag' : id === 'articulated-name' ? 'Jingling linked letters' : 'Desktop nameplate',
+    previewSrc: TEMPLATE_PREVIEWS[id],
+  }))
+
+  const styleRailItems = templateDefinition.styles.map((id) => ({
+    id,
+    name: STYLE_NAMES[id] ?? id,
+    description: `${id} outline style`,
+    previewSrc: getStylePreview(templateId, id),
+  }))
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
+      {/* Top action bar */}
       <div className="mb-4 flex items-center justify-between">
-        <Link to={`/products/${product.slug}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-ink hover:text-accent">
-          ← Back
+        <Link
+          to={`/products/${product.slug}`}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-ink hover:text-accent"
+        >
+          ← Back to product
         </Link>
-        <Button variant="secondary" size="sm" disabled title="Cart is coming soon">
-          Cart
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={resetCustomization} title="Reset all custom settings">
+            Reset
+          </Button>
+          <Button variant="secondary" size="sm" disabled title="Cart is coming soon">
+            Cart
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-10 lg:grid-cols-[3fr_2fr]">
-        <div>
+      {/* Main Reference 2-Column Workspace */}
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[440px_minmax(0,1fr)] xl:grid-cols-[460px_minmax(0,1fr)] lg:items-start lg:gap-8">
+        
+        {/* LEFT COLUMN: Controls Panel */}
+        <aside className="min-w-0 space-y-5 order-2 lg:order-1">
+          {/* Core Customization Container */}
+          <div className="divide-y divide-border rounded-card border border-border bg-surface px-5 shadow-card">
+            {/* Step 1: Name / Text */}
+            <section className="py-4 first:pt-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold tracking-wider text-muted uppercase">Name</span>
+                <span className={`text-[11px] ${isAtLimit ? 'text-danger font-medium' : 'text-muted'}`}>
+                  {charsRemaining} left
+                </span>
+              </div>
+              <input
+                type="text"
+                value={text}
+                maxLength={MAX_CHARS}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Enter name or text"
+                className="mt-2 block w-full rounded-control border border-border bg-paper/30 px-3.5 py-2.5 text-sm font-medium text-ink placeholder:text-muted focus:border-accent focus:bg-surface focus:outline-none focus:ring-2 focus:ring-accent/20"
+              />
+            </section>
+
+            {/* Step 2: Print Colors */}
+            <section className="py-4">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-bold tracking-wider text-muted uppercase">Print colors</span>
+              </div>
+              <KeychainColorSwatches
+                baseColor={color}
+                textColor={textColor}
+                availableColors={availableColors}
+                onBaseColorChange={setColor}
+                onTextColorChange={setTextColor}
+                onResetColors={() => {
+                  const defaultCol = colorsForMaterial(product, material)?.[0]
+                  setColor(defaultCol)
+                  setTextColor(pickContrastingColor(defaultCol?.hex, availableColors))
+                }}
+              />
+            </section>
+
+            {/* Step 3: Template & Style Rails */}
+            {templateRailItems.length > 1 && (
+              <section className="py-4">
+                <VisualDesignCardRail
+                  label="Template"
+                  items={templateRailItems}
+                  value={templateId}
+                  onChange={setTemplateId}
+                />
+              </section>
+            )}
+
+            {(styleRailItems.length > 0 || templateDefinition.supportsKeyring) && (
+              <section className="py-4 space-y-4">
+                <span className="block text-xs font-bold tracking-wider text-muted uppercase">Style & Shape</span>
+                {styleRailItems.length > 0 && (
+                  <VisualDesignCardRail items={styleRailItems} value={styleId} onChange={setStyleId} />
+                )}
+                {templateDefinition.supportsKeyring && (
+                  <OptionPicker
+                    label="Keyring hole position"
+                    options={KEYRING_POSITIONS.map((pos) => ({
+                      value: pos,
+                      label: KEYRING_POSITION_LABELS[keyringPositionNameKey(pos)],
+                    }))}
+                    value={keyringPosition}
+                    onChange={setKeyringPosition}
+                  />
+                )}
+              </section>
+            )}
+
+            {templateDefinition.supportsSubtitle && (
+              <section className="py-4">
+                <label className="block">
+                  <span className="text-xs font-bold tracking-wider text-muted uppercase">Subtitle (optional)</span>
+                  <input
+                    type="text"
+                    value={subtitle}
+                    maxLength={MAX_CHARS}
+                    onChange={(e) => setSubtitle(e.target.value)}
+                    placeholder="Optional second line"
+                    className="mt-2 block w-full rounded-control border border-border px-3 py-2 text-xs text-ink placeholder:text-muted focus:border-accent focus:outline-none"
+                  />
+                </label>
+              </section>
+            )}
+
+            {/* Step 4: Font Style */}
+            <section className="py-4">
+              <span className="mb-2 block text-xs font-bold tracking-wider text-muted uppercase">Font style</span>
+              <FontPickerCards
+                fonts={selectableFonts}
+                value={effectiveFontId}
+                onChange={setFontId}
+              />
+            </section>
+
+            {/* Step 5: Thickness & Dimensions */}
+            <section className="py-4">
+              <span className="mb-2 block text-xs font-bold tracking-wider text-muted uppercase">Base thickness</span>
+              <ThicknessPicker value={thickness} onChange={setThickness} />
+            </section>
+
+            {/* Step 6: Size & Quantity */}
+            <section className="py-4">
+              <span className="mb-2 block text-xs font-bold tracking-wider text-muted uppercase">Size & Quantity</span>
+              <div className="space-y-3">
+                <OptionPicker label="Overall Size" options={product.sizes} value={size} onChange={setSize} />
+                <QuantitySelector value={quantity} onChange={setQuantity} />
+              </div>
+            </section>
+          </div>
+
+          {/* Preflight Panel for Print Validation */}
+          <PreflightPanel
+            report={preflight}
+            allowDisconnected={allowDisconnected}
+            onAllowDisconnectedChange={setAllowDisconnected}
+          />
+
+          {/* Export Actions */}
+          <ExportButtons
+            client={engine.client}
+            params={params}
+            fontDefinition={fontDef}
+            subtitleFontDefinition={subtitleFontDef}
+            canExport={preflight.printable}
+            allowDisconnected={allowDisconnected}
+            colorHex={color?.hex}
+            textColorHex={textColor?.hex}
+          />
+        </aside>
+
+        {/* RIGHT COLUMN: 3D Preview + Live Print Facts (Sticky on Desktop) */}
+        <main className="min-w-0 space-y-5 order-1 lg:order-2 lg:sticky lg:top-5">
+          {/* Header Title with live status */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-ink sm:text-2xl">
+                Personalize Your {product.name}
+              </h1>
+              <p className="mt-0.5 text-xs text-muted">
+                {totalPriceRupees != null ? (
+                  <>
+                    <span className="font-semibold text-ink">₹{totalPriceRupees.toFixed(2)}</span>{' '}
+                    <span>
+                      ({billableCharacterCount} character{billableCharacterCount === 1 ? '' : 's'} × ₹
+                      {(pricing.perCharacterPriceCents / 100).toFixed(2)})
+                    </span>
+                  </>
+                ) : (
+                  'Calculating price…'
+                )}{' '}
+                · Real-time 3D solid model preview
+              </p>
+            </div>
+            <div className="hidden sm:block">
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+                engine.status === 'ready' ? 'bg-success/10 text-success' : 'bg-accent/10 text-accent-dark'
+              }`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${engine.status === 'ready' ? 'bg-success' : 'bg-accent animate-pulse'}`} />
+                {engine.status === 'ready' ? 'Preview ready' : 'Rendering 3D solid'}
+              </span>
+            </div>
+          </div>
+
+          {/* 3D Viewport Component */}
           <Viewport3D
             text={text}
             color={color?.hex}
@@ -194,137 +394,23 @@ function CustomiserView({ productId }) {
             geometryStatus={engine.status}
             dimensions={preflight.dimensions}
           />
-          {engine.status === 'error' && (
-            <div className="mt-3 flex items-center gap-3 rounded-control border border-danger/30 bg-danger/5 p-3 text-xs text-danger">
-              <span>{engine.error?.message ?? 'Something went wrong generating this design.'}</span>
-              <Button variant="secondary" size="sm" onClick={engine.retry}>
-                Retry
-              </Button>
-            </div>
-          )}
-        </div>
 
-        <div className="max-h-[calc(100vh-7rem)] space-y-5 overflow-y-auto pb-4 lg:sticky lg:top-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-ink">Personalize Your {product.name}</h1>
-            <p className="mt-1 text-sm text-muted">₹{product.price}</p>
-          </div>
+          {/* Live Print Facts Card */}
+          <PrintFactsCard report={preflight} dimensions={preflight.dimensions} />
 
-          <CustomizerStepCard step={1} title="Custom Name / Text" description="Edit the text shown on your keychain.">
-            <input
-              type="text"
-              value={text}
-              maxLength={MAX_CHARS}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Enter name or text"
-              className="block w-full rounded-control border border-border px-3.5 py-2.5 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
-            />
-            <span className={`mt-1.5 block text-xs ${isAtLimit ? 'text-danger' : 'text-muted'}`}>
-              {charsRemaining} characters remaining
-            </span>
-          </CustomizerStepCard>
-
-          <CustomizerStepCard step={2} title="Choose Font Style" description="Pick a font — browse by category or scroll through all.">
-            <FontPickerCards
-              fonts={selectableFonts}
-              value={effectiveFontId}
-              onChange={setFontId}
-            />
-          </CustomizerStepCard>
-
-          <CustomizerStepCard step={3} title="Choose Colors" description="Pick your base and text colors.">
-            <div className="space-y-4">
-              <ColorSwatchPicker label="Base Color" colors={availableColors} value={color} onChange={setColor} />
-              <ColorSwatchPicker label="Font / Text Color" colors={availableColors} value={textColor} onChange={setTextColor} />
-            </div>
-          </CustomizerStepCard>
-
-          <CustomizerStepCard step={4} title="Thickness" description="Standard or Premium (extra-thick) base.">
-            <ThicknessPicker value={thickness} onChange={setThickness} />
-          </CustomizerStepCard>
-
-          <div className="space-y-5">
-            <OptionPicker label="Size" options={product.sizes} value={size} onChange={setSize} />
-            <QuantitySelector value={quantity} onChange={setQuantity} />
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Button variant="secondary" onClick={resetCustomization}>
-              Reset
-            </Button>
-          </div>
-
-          <details className="rounded-card border border-border bg-surface p-5" open={advancedOpen} onToggle={(e) => setAdvancedOpen(e.target.open)}>
-            <summary className="cursor-pointer text-xs font-semibold tracking-wide text-muted uppercase">More options</summary>
-            <div className="mt-4 space-y-6">
-              {templateDefinition.supportsSubtitle && (
-                <label className="block">
-                  <span className="text-sm font-medium text-ink">Subtitle (optional)</span>
-                  <input
-                    type="text"
-                    value={subtitle}
-                    maxLength={MAX_CHARS}
-                    onChange={(e) => setSubtitle(e.target.value)}
-                    placeholder="Optional second line"
-                    className="mt-1.5 block w-full rounded-control border border-border px-3.5 py-2.5 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
-                  />
-                </label>
-              )}
-
-              {templateOptions.templateIds.length > 1 && (
-                <OptionPicker
-                  label="Keychain type"
-                  options={templateOptions.templateIds.map((id) => ({ value: id, label: TEMPLATE_NAMES[id] }))}
-                  value={templateId}
-                  onChange={setTemplateId}
-                />
-              )}
-
-              {templateDefinition.styles.length > 0 && (
-                <OptionPicker
-                  label="Shape"
-                  options={templateDefinition.styles.map((id) => ({ value: id, label: STYLE_NAMES[id] ?? id }))}
-                  value={styleId}
-                  onChange={setStyleId}
-                />
-              )}
-
-              {templateDefinition.supportsKeyring && (
-                <OptionPicker
-                  label="Keyring position"
-                  options={KEYRING_POSITIONS.map((position) => ({ value: position, label: KEYRING_POSITION_LABELS[keyringPositionNameKey(position)] }))}
-                  value={keyringPosition}
-                  onChange={setKeyringPosition}
-                />
-              )}
-
-              <ShapeParameterSliders params={params} onChange={(key, value) => setShapeOverrides((previous) => ({ ...previous, [key]: value }))} />
-            </div>
-          </details>
-
-          <PreflightPanel report={preflight} allowDisconnected={allowDisconnected} onAllowDisconnectedChange={setAllowDisconnected} />
-
-          <ExportButtons
-            client={engine.client}
-            params={params}
-            fontDefinition={fontDef}
-            subtitleFontDefinition={subtitleFontDef}
-            canExport={preflight.printable}
-            allowDisconnected={allowDisconnected}
-            colorHex={color?.hex}
-            textColorHex={textColor?.hex}
-          />
-
+          {/* Customization Summary & Add to Cart */}
           <CustomizationSummary
             product={product}
             text={text}
+            subtitle={billedSubtitle}
             font={fontDef?.name}
             material={material}
             color={color}
             size={size}
             quantity={quantity}
+            totalPriceRupees={totalPriceRupees}
           />
-        </div>
+        </main>
       </div>
     </div>
   )
