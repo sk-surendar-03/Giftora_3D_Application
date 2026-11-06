@@ -1,24 +1,31 @@
 import { HttpError } from '../../utils/httpError.js'
 import { isNonEmptyString, isPositiveInt } from '../../utils/validation.js'
-import { getOrCreateCart, addItem, updateItemQuantity, removeItem } from './cartService.js'
+import { getOrCreateCart, addItem, addCustomItem, updateItemQuantity, removeItem } from './cartService.js'
+import { toPublicDesign } from '../customizer/designService.js'
 
 const MAX_QUANTITY = 10
 
 function toCartResponse(cart) {
   const items = cart.items.map((item) => ({
     id: item.id,
+    itemType: item.itemType,
     productId: item.productId,
     quantity: item.quantity,
     unitPriceCents: item.unitPriceCents,
     customization: item.customization,
     lineTotalCents: item.unitPriceCents * item.quantity,
-    product: {
-      id: item.product.id,
-      slug: item.product.slug,
-      name: item.product.name,
-      images: item.product.images,
-      isActive: item.product.isActive,
-    },
+    // Catalog lines carry their product; standalone custom designs have none
+    // and carry `design` instead.
+    product: item.product
+      ? {
+          id: item.product.id,
+          slug: item.product.slug,
+          name: item.product.name,
+          images: item.product.images,
+          isActive: item.product.isActive,
+        }
+      : null,
+    design: item.customDesign ? toPublicDesign(item.customDesign) : null,
   }))
   const subtotalCents = items.reduce((sum, item) => sum + item.lineTotalCents, 0)
   return { id: cart.id, items, subtotalCents, totalCents: subtotalCents }
@@ -49,6 +56,18 @@ export async function addCartItem(req, res) {
   const validCustomization = validateCustomization(customization)
 
   await addItem(req.user.id, { productId, quantity: qty, customization: validCustomization })
+  const cart = await getOrCreateCart(req.user.id)
+  res.status(201).json({ cart: toCartResponse(cart) })
+}
+
+export async function addCustomCartItem(req, res) {
+  const { customDesignId, quantity } = req.body ?? {}
+
+  if (!isNonEmptyString(customDesignId, 50)) throw new HttpError(400, 'customDesignId is required.')
+  const qty = quantity ?? 1
+  if (!isPositiveInt(qty) || qty > MAX_QUANTITY) throw new HttpError(400, `quantity must be a whole number from 1 to ${MAX_QUANTITY}.`)
+
+  await addCustomItem(req.user.id, { customDesignId, quantity: qty })
   const cart = await getOrCreateCart(req.user.id)
   res.status(201).json({ cart: toCartResponse(cart) })
 }

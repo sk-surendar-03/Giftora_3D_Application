@@ -44,7 +44,7 @@ export default function CustomersReportTab() {
       <Banner tone="error">{error}</Banner>
 
       {isLoading ? (
-        <p className="mt-6 text-sm text-gray-500">Loading customer report…</p>
+        <p className="mt-6 text-sm text-muted">Loading customer report…</p>
       ) : report ? (
         <>
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -53,20 +53,20 @@ export default function CustomersReportTab() {
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div className="rounded-lg border border-gray-200 bg-white p-5">
-              <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Most orders</h2>
+            <div className="rounded-lg border border-line bg-surface p-5">
+              <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">Most orders</h2>
               {report.topCustomersByOrderCount.length === 0 ? (
-                <p className="mt-3 text-sm text-gray-500">No orders yet.</p>
+                <p className="mt-3 text-sm text-muted">No orders yet.</p>
               ) : (
                 <table className="mt-3 w-full text-sm">
                   <tbody>
                     {report.topCustomersByOrderCount.map((c) => (
-                      <tr key={c.userId} className="border-t border-gray-100">
+                      <tr key={c.userId} className="border-t border-line">
                         <td className="py-2">
-                          <p className="text-gray-900">{c.name}</p>
-                          <p className="text-xs text-gray-400">{c.email}</p>
+                          <p className="text-ink">{c.name}</p>
+                          <p className="text-xs text-muted">{c.email}</p>
                         </td>
-                        <td className="py-2 text-right text-gray-500">{c.orderCount} orders</td>
+                        <td className="py-2 text-right text-muted">{c.orderCount} orders</td>
                       </tr>
                     ))}
                   </tbody>
@@ -74,20 +74,20 @@ export default function CustomersReportTab() {
               )}
             </div>
 
-            <div className="rounded-lg border border-gray-200 bg-white p-5">
-              <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Highest order value</h2>
+            <div className="rounded-lg border border-line bg-surface p-5">
+              <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">Highest order value</h2>
               {report.topCustomersByOrderValue.length === 0 ? (
-                <p className="mt-3 text-sm text-gray-500">No orders yet.</p>
+                <p className="mt-3 text-sm text-muted">No orders yet.</p>
               ) : (
                 <table className="mt-3 w-full text-sm">
                   <tbody>
                     {report.topCustomersByOrderValue.map((c) => (
-                      <tr key={c.userId} className="border-t border-gray-100">
+                      <tr key={c.userId} className="border-t border-line">
                         <td className="py-2">
-                          <p className="text-gray-900">{c.name}</p>
-                          <p className="text-xs text-gray-400">{c.email}</p>
+                          <p className="text-ink">{c.name}</p>
+                          <p className="text-xs text-muted">{c.email}</p>
                         </td>
-                        <td className="py-2 text-right text-gray-500">{formatPrice(c.totalOrderValueCents)}</td>
+                        <td className="py-2 text-right text-muted">{formatPrice(c.totalOrderValueCents)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -95,7 +95,7 @@ export default function CustomersReportTab() {
               )}
             </div>
           </div>
-          <p className="mt-4 text-xs text-gray-400">Emails are partially masked here to limit personal data shown in aggregate reports.</p>
+          <p className="mt-4 text-xs text-muted">Emails are partially masked here to limit personal data shown in aggregate reports.</p>
         </>
       ) : null}
     </div>

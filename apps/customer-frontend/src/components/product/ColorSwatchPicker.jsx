@@ -3,27 +3,33 @@ export default function ColorSwatchPicker({ label, colors, value, onChange }) {
 
   return (
     <div>
-      <span className="block text-sm font-medium text-ink">
-        {label} {value && <span className="font-normal text-muted">— {value.label}</span>}
-      </span>
-      <div className="mt-2 flex flex-wrap gap-3">
-        {colors.map((color) => (
-          <button
-            key={color.label}
-            type="button"
-            onClick={() => onChange(color)}
-            aria-pressed={value?.label === color.label}
-            aria-label={color.label}
-            title={color.label}
-            className={`h-9 w-9 rounded-full border-2 transition-colors ${
-              value?.label === color.label ? 'border-ink' : 'border-transparent'
-            }`}
-            style={{
-              backgroundColor: color.hex,
-              boxShadow: 'inset 0 0 0 1px rgba(26, 23, 18, 0.15)',
-            }}
-          />
-        ))}
+      <div className="flex items-center justify-between">
+        <span className="block font-sans text-[13px] font-bold tracking-[0.04em] text-ink">
+          {label}
+        </span>
+        {value && <span className="font-sans text-[13px] text-muted">{value.label}</span>}
+      </div>
+      <div className="mt-2.5 flex flex-wrap gap-2.5">
+        {colors.map((color) => {
+          const isSelected = value?.label === color.label
+          return (
+            <button
+              key={color.label}
+              type="button"
+              onClick={() => onChange(color)}
+              aria-pressed={isSelected}
+              aria-label={color.label}
+              title={color.label}
+              className={`h-7 w-7 rounded-full transition-transform cursor-pointer relative ${
+                isSelected ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg scale-105' : 'hover:scale-105'
+              }`}
+              style={{
+                backgroundColor: color.hex,
+                boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.4)',
+              }}
+            />
+          )
+        })}
       </div>
     </div>
   )

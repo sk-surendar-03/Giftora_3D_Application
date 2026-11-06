@@ -4,7 +4,12 @@
  * products that only ever had one material.
  */
 export function colorsForMaterial(product, material) {
-  return product.colorsByMaterial?.[material] ?? product.colors
+  const byMaterial = product.colorsByMaterial
+  if (byMaterial && typeof byMaterial === 'object') {
+    // exact match first, then first available material's colors as fallback
+    return byMaterial[material] ?? Object.values(byMaterial)[0] ?? product.colors
+  }
+  return product.colors
 }
 
 export const sampleProducts = [

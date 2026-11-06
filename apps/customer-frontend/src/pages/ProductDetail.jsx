@@ -6,7 +6,6 @@ import { colorsForMaterial } from '../data/sampleProducts'
 import { useCart } from '../features/cart/useCart.js'
 import { useAuth } from '../features/auth/useAuth.js'
 import Button from '../components/ui/Button'
-import Badge from '../components/ui/Badge'
 import ProductGallery from '../components/product/ProductGallery'
 import OptionPicker from '../components/product/OptionPicker'
 import ColorSwatchPicker from '../components/product/ColorSwatchPicker'
@@ -18,9 +17,6 @@ import ProductDetailSkeleton from '../components/product/ProductDetailSkeleton'
 
 export default function ProductDetail() {
   const { slug } = useParams()
-  // Keyed by slug so the view below remounts whenever the product changes —
-  // including navigating from one product's "Related products" to another —
-  // resetting option selections instead of carrying stale ones over.
   return <ProductDetailView key={slug} slug={slug} />
 }
 
@@ -39,19 +35,14 @@ function ProductDetailView({ slug }) {
 
   const availableColors = product ? colorsForMaterial(product, material) : undefined
 
-  // Colours can differ per material (e.g. Silk Metallic PLA vs Standard
-  // PLA) — if the current colour isn't valid for the newly selected
-  // material, fall back to that material's first colour instead of keeping
-  // a colour that no longer applies.
   useEffect(() => {
     if (!availableColors?.length) return
     if (availableColors.some((option) => option.label === color?.label)) return
     setColor(availableColors[0])
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to the material/product changing, not every colour-array identity change.
   }, [material, product])
 
   const relatedProducts = useMemo(() => {
-    if (!product) return []
+    if (!product || !allProducts) return []
     const sameCategory = allProducts.filter((p) => p.id !== product.id && p.category === product.category)
     if (sameCategory.length > 0) return sameCategory
     return allProducts.filter((p) => p.id !== product.id)
@@ -83,62 +74,146 @@ function ProductDetailView({ slug }) {
       await addToCart({ productId: product.id, quantity, customization: { material, color, size } })
       setAddedMessage('Added to cart.')
     } catch {
-      // mutationError (from useCart) already surfaces the real message below.
+      // mutationError already handled
     }
   }
 
+  const hasOriginalPrice = typeof product.originalPrice === 'number' && product.originalPrice > product.price
+  const hasDiscount = typeof product.discountPercent === 'number' && product.discountPercent > 0
+  const hasRating = typeof product.rating === 'number' && product.rating > 0
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-      <nav className="mb-6 text-sm text-muted">
-        <Link to="/products" className="hover:text-ink">
-          Products
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-ink">{product.name}</span>
-      </nav>
+    <div className="bg-bg text-ink pb-20">
+      <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-10">
+        
+        {/* Breadcrumb Navigation */}
+        <nav className="mb-8 flex items-center gap-2 text-[13px] text-muted">
+          <Link to="/" className="hover:text-ink transition-colors">Home</Link>
+          <span className="text-muted/60">/</span>
+          <Link to="/products" className="hover:text-ink transition-colors">Shop all</Link>
+          <span className="text-muted/60">/</span>
+          <span className="text-ink font-semibold">{product.name}</span>
+        </nav>
 
-      <div className="grid gap-10 sm:grid-cols-2">
-        <ProductGallery product={product} activeColor={color?.hex} />
+        {/* 2-column Product View */}
+        <div className="grid gap-12 min-[1041px]:grid-cols-[1.05fr_1fr]">
+          <ProductGallery product={product} activeColor={color?.hex} />
 
-        <div>
-          {product.category && (
-            <Badge tone="accent" className="mb-3">
-              {product.category}
-            </Badge>
-          )}
-          <h1 className="text-2xl font-semibold text-ink sm:text-3xl">{product.name}</h1>
-          <p className="mt-2 text-lg font-medium text-ink">₹{product.price}</p>
-          <p className="mt-4 text-sm text-muted sm:text-base">{product.description}</p>
+          <div className="flex flex-col justify-start">
+            {product.category && (
+              <span className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent mb-2">
+                {product.category}
+              </span>
+            )}
 
-          <div className="mt-8 space-y-6">
-            <OptionPicker label="Material" options={product.materials} value={material} onChange={setMaterial} />
-            <ColorSwatchPicker label="Colour" colors={availableColors} value={color} onChange={setColor} />
-            <OptionPicker label="Size" options={product.sizes} value={size} onChange={setSize} />
-            <QuantitySelector value={quantity} onChange={setQuantity} />
-          </div>
+            <h1 className="font-display text-[38px] max-[760px]:text-[30px] font-semibold text-ink leading-[1.15] tracking-[-0.02em] m-0">
+              {product.name}
+            </h1>
 
-          <div className="mt-8">
-            <Button variant="accent" size="lg" onClick={handleAddToCart} disabled={mutating}>
-              {mutating ? 'Adding…' : 'Add to Cart'}
-            </Button>
-          </div>
-          {addedMessage && <p className="mt-2 text-sm text-accent-dark">{addedMessage}</p>}
-          {mutationError && <p className="mt-2 text-sm text-danger">{mutationError}</p>}
+            {/* Dynamic Rating row — only shown if actual rating data exists */}
+            {hasRating && (
+              <div className="mt-3 flex items-center gap-3">
+                <div className="flex text-accent">
+                  {[...Array(5)].map((_, i) => (
+                    <svg
+                      key={i}
+                      className={`w-4 h-4 ${i < Math.round(product.rating) ? 'fill-accent' : 'fill-line text-line'}`}
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z" stroke="none" />
+                    </svg>
+                  ))}
+                </div>
+                <span className="text-[13px] text-muted">
+                  {product.rating} {product.reviewsCount ? `(${product.reviewsCount} reviews)` : ''}
+                </span>
+              </div>
+            )}
 
-          <div className="mt-10">
-            <ProductSpecs product={product} />
+            {/* Price section with selling price and optional original strikethrough price & discount */}
+            <div className="mt-4 flex flex-wrap items-baseline gap-3">
+              <span className="font-sans text-[30px] font-bold text-ink">
+                ₹{product.price}
+              </span>
+              {hasOriginalPrice && (
+                <s className="font-sans text-[18px] text-muted">
+                  ₹{product.originalPrice}
+                </s>
+              )}
+              {hasDiscount && (
+                <span className="font-sans text-[14px] font-semibold text-[#17683f] bg-[#e3f4ea] px-2.5 py-0.5 rounded-full">
+                  {product.discountPercent}% off
+                </span>
+              )}
+              <span className="font-sans text-[13.5px] font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
+                Free shipping
+              </span>
+            </div>
+
+            <p className="mt-4 text-[15px] leading-relaxed text-muted max-w-[52ch]">
+              {product.description}
+            </p>
+
+            {/* Options configuration */}
+            <div className="mt-8 space-y-6">
+              <OptionPicker label="Material finish" options={product.materials} value={material} onChange={setMaterial} />
+              <ColorSwatchPicker label="Colour palette" colors={availableColors} value={color} onChange={setColor} />
+              <OptionPicker label="Scale / size" options={product.sizes} value={size} onChange={setSize} />
+              <QuantitySelector value={quantity} onChange={setQuantity} />
+            </div>
+
+            {/* Buy / Add to Cart Action */}
+            <div className="mt-8">
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={handleAddToCart}
+                disabled={mutating}
+                className="w-full text-base font-semibold"
+              >
+                {mutating ? 'Processing…' : 'Add to Cart'}
+              </Button>
+            </div>
+
+            {addedMessage && (
+              <p className="mt-3 text-[13.5px] font-semibold text-[#17683f] bg-[#e3f4ea] px-3.5 py-2 rounded-control">
+                ✓ {addedMessage}
+              </p>
+            )}
+            {mutationError && (
+              <p className="mt-3 text-[13.5px] font-semibold text-danger bg-[#fbe6e2] px-3.5 py-2 rounded-control">
+                {mutationError}
+              </p>
+            )}
+
+            {/* Assurance Card */}
+            <div className="mt-8 rounded-card border border-line bg-alt p-5 flex items-center gap-3 text-[14px] text-muted">
+              <svg className="w-5 h-5 text-accent shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6l8-3Z" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+              <span>Manufactured with industrial precision. Guaranteed free of manifold errors and defects.</span>
+            </div>
+
+            <div className="mt-8">
+              <ProductSpecs product={product} />
+            </div>
           </div>
         </div>
-      </div>
 
-      {relatedProducts.length > 0 && (
-        <ProductSection
-          eyebrow="You may also like"
-          title="Related products"
-          products={relatedProducts}
-          className="mt-16 !px-0"
-        />
-      )}
+        {/* Related Products */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-20 pt-12 border-t border-line">
+            <ProductSection
+              eyebrow="You may also like"
+              title="Pairs well with"
+              products={relatedProducts.slice(0, 4)}
+              className="!py-0"
+            />
+          </div>
+        )}
+
+      </div>
     </div>
   )
 }

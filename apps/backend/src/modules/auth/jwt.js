@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken'
 
-const ACCESS_TOKEN_TTL = '1h'
+const ACCESS_TOKEN_TTL = '7d'
 
 function secret() {
   const value = process.env.JWT_SECRET

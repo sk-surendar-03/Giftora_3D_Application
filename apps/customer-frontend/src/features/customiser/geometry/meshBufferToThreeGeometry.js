@@ -12,11 +12,22 @@ import * as THREE from 'three'
 const SCENE_UNITS_PER_MM = 0.1
 
 export function meshBufferToThreeGeometry(meshBuffer) {
-  const geometry = new THREE.BufferGeometry()
+  const indexed = new THREE.BufferGeometry()
   const scaled =
     SCENE_UNITS_PER_MM === 1 ? meshBuffer.positions : Float32Array.from(meshBuffer.positions, (value) => value * SCENE_UNITS_PER_MM)
-  geometry.setAttribute('position', new THREE.BufferAttribute(scaled, 3))
-  geometry.setIndex(new THREE.BufferAttribute(meshBuffer.indices, 1))
+  indexed.setAttribute('position', new THREE.BufferAttribute(scaled, 3))
+  indexed.setIndex(new THREE.BufferAttribute(meshBuffer.indices, 1))
+  // The engine's solids are flat-faced with sharp (90°) edges — e.g. a flat
+  // letter top meeting its vertical side wall. Computing vertex normals on
+  // the *indexed* mesh would average each shared vertex's normal across
+  // every adjacent face, including across those sharp edges, which makes a
+  // perfectly flat, sharp-edged extrusion shade like a rounded, inflated
+  // surface under glossy/metallic lighting. De-indexing first gives each
+  // triangle its own unshared vertices, so computeVertexNormals() produces
+  // one flat normal per face and sharp edges render crisp, matching the
+  // model's real (flat, not rounded) geometry.
+  const geometry = indexed.toNonIndexed()
+  indexed.dispose()
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()
   // Deliberately not calling geometry.center() here: the base and relief

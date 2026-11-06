@@ -1,1 +1,88 @@
 @import "tailwindcss";
+
+@theme {
+  --font-display: "Space Grotesk", system-ui, "Segoe UI", sans-serif;
+  --font-sans: "Inter", system-ui, "Segoe UI", sans-serif;
+
+  /* Industrial Obsidian Theme Tokens */
+  --color-paper: #000000;
+  --color-surface: #0D0D0D;
+  --color-alt: #141414;
+  --color-soft: #161616;
+  --color-band: #000000;
+  --color-border: #262626;
+  --color-ink: #FFFFFF;
+  --color-muted: #8A8A8A;
+  
+  --color-accent: #D9AE4E;
+  --color-accent-dark: #A9823A;
+  --color-accent-soft: #161616;
+  --color-on-accent: #000000;
+
+  --color-secondary: #3D6AA3;
+  --color-on-secondary: #FFFFFF;
+
+  --color-danger: #b3321f;
+  --color-success: #17683f;
+
+  --radius-card: 8px;
+  --radius-control: 4px;
+
+  --shadow-card: none;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #000000;
+  --surf: #0D0D0D;
+  --alt: #141414;
+  --soft: #161616;
+  --band: #000000;
+  --line: #262626;
+  --ink: #FFFFFF;
+  --muted: #8A8A8A;
+  --brand: #D9AE4E;
+  --brand-d: #A9823A;
+  --acc: #3D6AA3;
+  --acc-ink: #FFFFFF;
+  --r: 4px;
+  --card-r: 8px;
+  --disp: "Space Grotesk", system-ui, sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background-color: #000000;
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+.disp {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+/* Base custom input and utility classes for Industrial Obsidian */
+input, select, textarea {
+  background-color: #0D0D0D;
+  border-color: #262626;
+  color: #FFFFFF;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #D9AE4E;
+  outline: none;
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, #D9AE4E 35%, transparent);
+  outline-offset: 2px;
+}

@@ -14,3 +14,19 @@ export async function updateOrderStatus(id, status) {
   const { data } = await api.patch(`/admin/orders/${id}/status`, { status })
   return data.order
 }
+
+export async function fetchOrderItemStlBlob(orderId, itemId, signal) {
+  const { data } = await api.get(`/admin/orders/${orderId}/items/${itemId}/stl`, {
+    responseType: 'blob',
+    signal,
+  })
+  return data
+}
+
+export async function fetchOrderItemPreviewBlob(orderId, itemId, signal) {
+  const { data } = await api.get(`/admin/orders/${orderId}/items/${itemId}/preview`, {
+    responseType: 'blob',
+    signal,
+  })
+  return data
+}

@@ -44,7 +44,7 @@ export default function ProductsReportTab() {
       <Banner tone="error">{error}</Banner>
 
       {isLoading ? (
-        <p className="mt-6 text-sm text-gray-500">Loading product report…</p>
+        <p className="mt-6 text-sm text-muted">Loading product report…</p>
       ) : report ? (
         <>
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -61,17 +61,17 @@ export default function ProductsReportTab() {
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div className="rounded-lg border border-gray-200 bg-white p-5">
-              <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Best-selling (by quantity)</h2>
+            <div className="rounded-lg border border-line bg-surface p-5">
+              <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">Best-selling (by quantity)</h2>
               {report.bestSellingByQuantity.length === 0 ? (
-                <p className="mt-3 text-sm text-gray-500">No sales in this range.</p>
+                <p className="mt-3 text-sm text-muted">No sales in this range.</p>
               ) : (
                 <table className="mt-3 w-full text-sm">
                   <tbody>
                     {report.bestSellingByQuantity.map((p) => (
-                      <tr key={p.productId} className="border-t border-gray-100">
-                        <td className="py-2 text-gray-900">{p.productName}</td>
-                        <td className="py-2 text-right text-gray-500">{p.quantitySold} sold</td>
+                      <tr key={p.productId} className="border-t border-line">
+                        <td className="py-2 text-ink">{p.productName}</td>
+                        <td className="py-2 text-right text-muted">{p.quantitySold} sold</td>
                       </tr>
                     ))}
                   </tbody>
@@ -79,17 +79,17 @@ export default function ProductsReportTab() {
               )}
             </div>
 
-            <div className="rounded-lg border border-gray-200 bg-white p-5">
-              <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Best-selling (by revenue)</h2>
+            <div className="rounded-lg border border-line bg-surface p-5">
+              <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">Best-selling (by revenue)</h2>
               {report.bestSellingByRevenue.length === 0 ? (
-                <p className="mt-3 text-sm text-gray-500">No sales in this range.</p>
+                <p className="mt-3 text-sm text-muted">No sales in this range.</p>
               ) : (
                 <table className="mt-3 w-full text-sm">
                   <tbody>
                     {report.bestSellingByRevenue.map((p) => (
-                      <tr key={p.productId} className="border-t border-gray-100">
-                        <td className="py-2 text-gray-900">{p.productName}</td>
-                        <td className="py-2 text-right text-gray-500">{formatPrice(p.revenueCents)}</td>
+                      <tr key={p.productId} className="border-t border-line">
+                        <td className="py-2 text-ink">{p.productName}</td>
+                        <td className="py-2 text-right text-muted">{formatPrice(p.revenueCents)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -98,16 +98,16 @@ export default function ProductsReportTab() {
             </div>
           </div>
 
-          <div className="mt-6 rounded-lg border border-gray-200 bg-white p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+          <div className="mt-6 rounded-lg border border-line bg-surface p-5">
+            <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">
               Active products with no sales in this range ({report.productsWithNoSales.length})
             </h2>
             {report.productsWithNoSales.length === 0 ? (
-              <p className="mt-3 text-sm text-gray-500">Every active product sold at least once in this range.</p>
+              <p className="mt-3 text-sm text-muted">Every active product sold at least once in this range.</p>
             ) : (
               <ul className="mt-3 flex flex-wrap gap-2">
                 {report.productsWithNoSales.map((p) => (
-                  <li key={p.productId} className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600">
+                  <li key={p.productId} className="rounded-full bg-soft px-3 py-1 text-xs text-muted">
                     {p.productName}
                   </li>
                 ))}

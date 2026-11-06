@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import MainLayout from '../layouts/MainLayout'
 import Home from '../pages/Home'
 import Products from '../pages/Products'
@@ -23,7 +23,8 @@ export default function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/products" element={<Products />} />
         <Route path="/products/:slug" element={<ProductDetail />} />
-        <Route path="/customise/:productId" element={<Customiser />} />
+        <Route path="/customise" element={<Customiser />} />
+        <Route path="/customise/:productId" element={<Navigate to="/customise" replace />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/addresses" element={<Addresses />} />
         <Route path="/checkout" element={<Checkout />} />

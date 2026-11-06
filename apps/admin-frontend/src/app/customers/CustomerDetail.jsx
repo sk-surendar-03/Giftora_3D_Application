@@ -52,13 +52,13 @@ export default function CustomerDetail() {
     }
   }
 
-  if (isLoading) return <p className="text-sm text-gray-500">Loading customer…</p>
+  if (isLoading) return <p className="text-sm text-muted">Loading customer…</p>
 
   if (error && !customer) {
     return (
       <div>
         <Banner tone="error">{error}</Banner>
-        <Link to="/customers" className="text-sm text-gray-600 hover:underline">
+        <Link to="/customers" className="text-sm text-muted hover:underline">
           ← Back to customers
         </Link>
       </div>
@@ -71,10 +71,10 @@ export default function CustomerDetail() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">{customer.name}</h1>
-          <p className="text-sm text-gray-500">{customer.email}</p>
+          <h1 className="text-xl font-semibold text-ink">{customer.name}</h1>
+          <p className="text-sm text-muted">{customer.email}</p>
         </div>
-        <Link to="/customers" className="text-sm text-gray-600 hover:underline">
+        <Link to="/customers" className="text-sm text-muted hover:underline">
           ← Back to customers
         </Link>
       </div>
@@ -84,13 +84,13 @@ export default function CustomerDetail() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <div className="rounded-lg border border-gray-200 bg-white p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Order history</h2>
+          <div className="rounded-lg border border-line bg-surface p-5">
+            <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">Order history</h2>
             {customer.orders.length === 0 ? (
-              <p className="mt-3 text-sm text-gray-500">No orders yet.</p>
+              <p className="mt-3 text-sm text-muted">No orders yet.</p>
             ) : (
               <table className="mt-3 w-full text-sm">
-                <thead className="text-left text-xs text-gray-400 uppercase">
+                <thead className="text-left text-xs text-muted uppercase">
                   <tr>
                     <th className="py-1.5">Order</th>
                     <th className="py-1.5">Date</th>
@@ -100,15 +100,15 @@ export default function CustomerDetail() {
                 </thead>
                 <tbody>
                   {customer.orders.map((order) => (
-                    <tr key={order.id} className="border-t border-gray-100">
+                    <tr key={order.id} className="border-t border-line">
                       <td className="py-2">
-                        <Link to={`/orders/${order.id}`} className="font-medium text-gray-900 hover:underline">
+                        <Link to={`/orders/${order.id}`} className="font-medium text-ink hover:underline">
                           {order.orderNumber}
                         </Link>
                       </td>
-                      <td className="py-2 text-gray-500">{formatDate(order.createdAt)}</td>
-                      <td className="py-2 text-gray-500">{order.status}</td>
-                      <td className="py-2 text-gray-900">{formatPrice(order.totalCents)}</td>
+                      <td className="py-2 text-muted">{formatDate(order.createdAt)}</td>
+                      <td className="py-2 text-muted">{order.status}</td>
+                      <td className="py-2 text-ink">{formatPrice(order.totalCents)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -116,20 +116,20 @@ export default function CustomerDetail() {
             )}
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Saved addresses</h2>
+          <div className="rounded-lg border border-line bg-surface p-5">
+            <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">Saved addresses</h2>
             {customer.addresses.length === 0 ? (
-              <p className="mt-3 text-sm text-gray-500">No saved addresses.</p>
+              <p className="mt-3 text-sm text-muted">No saved addresses.</p>
             ) : (
               <div className="mt-3 space-y-3">
                 {customer.addresses.map((address) => (
-                  <div key={address.id} className="rounded-md border border-gray-100 p-3 text-sm">
+                  <div key={address.id} className="rounded-md border border-line p-3 text-sm">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium text-gray-900">{address.fullName}</p>
-                      {address.isDefault && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">Default</span>}
+                      <p className="font-medium text-ink">{address.fullName}</p>
+                      {address.isDefault && <span className="rounded-full bg-soft px-2 py-0.5 text-xs font-medium text-muted">Default</span>}
                     </div>
-                    <p className="mt-0.5 text-gray-500">{address.phone}</p>
-                    <p className="mt-1 text-gray-700">
+                    <p className="mt-0.5 text-muted">{address.phone}</p>
+                    <p className="mt-1 text-ink">
                       {address.line1}
                       {address.line2 ? `, ${address.line2}` : ''}, {address.city}, {address.state} {address.postalCode}, {address.country}
                     </p>
@@ -141,28 +141,28 @@ export default function CustomerDetail() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-lg border border-gray-200 bg-white p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Summary</h2>
+          <div className="rounded-lg border border-line bg-surface p-5">
+            <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">Summary</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex justify-between">
-                <dt className="text-gray-500">Joined</dt>
-                <dd className="text-gray-900">{formatDate(customer.createdAt)}</dd>
+                <dt className="text-muted">Joined</dt>
+                <dd className="text-ink">{formatDate(customer.createdAt)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">Total orders</dt>
-                <dd className="text-gray-900">{customer.orderCount}</dd>
+                <dt className="text-muted">Total orders</dt>
+                <dd className="text-ink">{customer.orderCount}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">Total order value</dt>
-                <dd className="text-gray-900">{formatPrice(customer.totalOrderValueCents)}</dd>
+                <dt className="text-muted">Total order value</dt>
+                <dd className="text-ink">{formatPrice(customer.totalOrderValueCents)}</dd>
               </div>
             </dl>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Account status</h2>
+          <div className="rounded-lg border border-line bg-surface p-5">
+            <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">Account status</h2>
             <p className="mt-2 text-sm">
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${customer.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${customer.isActive ? 'bg-green-100 text-green-700' : 'bg-soft text-muted'}`}>
                 {customer.isActive ? 'Active' : 'Deactivated'}
               </span>
             </p>
@@ -170,12 +170,12 @@ export default function CustomerDetail() {
               type="button"
               disabled={updating}
               onClick={handleToggleActive}
-              className="mt-3 w-full rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-3 w-full rounded-md border border-line px-4 py-2 text-sm font-medium text-ink hover:bg-bg disabled:cursor-not-allowed disabled:opacity-50"
             >
               {updating ? 'Updating…' : customer.isActive ? 'Deactivate account' : 'Reactivate account'}
             </button>
             {!customer.isActive && (
-              <p className="mt-2 text-xs text-gray-400">A deactivated customer can't log in or place orders until reactivated.</p>
+              <p className="mt-2 text-xs text-muted">A deactivated customer can't log in or place orders until reactivated.</p>
             )}
           </div>
         </div>

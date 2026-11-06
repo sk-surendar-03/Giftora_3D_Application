@@ -1,5 +1,5 @@
-import { Suspense, useMemo, useRef, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Canvas, useThree } from '@react-three/fiber'
 import { Environment, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import ProductModel from '../../features/customiser/ProductModel'
@@ -11,9 +11,60 @@ const INITIAL_CAMERA_POSITION = [0, 0.3, 4]
 const MIN_DISTANCE = 2.2
 const MAX_DISTANCE = 7
 
-export default function Viewport3D({ text, color, textColor, materialName, scale, baseGeometry, reliefGeometry, geometryStatus, dimensions }) {
+const SURFACE_PRESETS = [
+  { id: 'matte', label: 'Matte', dotColor: '#eee8df' },
+  { id: 'graph', label: 'Graph Paper', dotColor: '#b8b0a6' },
+  { id: 'dark', label: 'Dark Room', dotColor: '#202735' },
+]
+
+const PREVIEW_MAX_WIDTH = 640
+const PREVIEW_BACKGROUND = '#f3f6fb'
+
+// Gives the page a way to snapshot the current 3D view as a PNG (used as the
+// design's preview image in the cart and the admin panel). The canvas is read
+// in the same task as a fresh render, which is when WebGL's drawing buffer is
+// still valid, and drawn onto a fixed light background at a bounded size.
+function PreviewCaptureBridge({ onCaptureReady }) {
+  const { gl, scene, camera } = useThree()
+  useEffect(() => {
+    if (!onCaptureReady) return undefined
+    onCaptureReady(
+      () =>
+        new Promise((resolve, reject) => {
+          gl.render(scene, camera)
+          const source = gl.domElement
+          const scale = Math.min(1, PREVIEW_MAX_WIDTH / source.width)
+          const target = document.createElement('canvas')
+          target.width = Math.max(32, Math.round(source.width * scale))
+          target.height = Math.max(32, Math.round(source.height * scale))
+          const context = target.getContext('2d')
+          context.fillStyle = PREVIEW_BACKGROUND
+          context.fillRect(0, 0, target.width, target.height)
+          context.drawImage(source, 0, 0, target.width, target.height)
+          target.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Could not capture the preview image.'))), 'image/png')
+        }),
+    )
+    return () => onCaptureReady(null)
+  }, [gl, scene, camera, onCaptureReady])
+  return null
+}
+
+export default function Viewport3D({
+  text,
+  color,
+  textColor,
+  materialName,
+  scale,
+  baseGeometry,
+  reliefGeometry,
+  geometryStatus,
+  dimensions,
+  onCaptureReady,
+}) {
   const controlsRef = useRef(null)
   const [ready, setReady] = useState(false)
+  const [surfacePreset, setSurfacePreset] = useState('matte')
+  const [surfaceMenuOpen, setSurfaceMenuOpen] = useState(false)
   const webglAvailable = useMemo(() => isWebGLAvailable(), [])
 
   function zoomBy(multiplier) {
@@ -35,101 +86,210 @@ export default function Viewport3D({ text, color, textColor, materialName, scale
     controls.update()
   }
 
+  function setViewAngle(type) {
+    const controls = controlsRef.current
+    if (!controls) return
+    const dist = controls.object.position.length() || 4
+    if (type === 'top') {
+      controls.object.position.set(0, dist, 0.001)
+    } else if (type === 'front') {
+      controls.object.position.set(0, 0, dist)
+    } else if (type === 'isometric') {
+      controls.object.position.set(dist * 0.5, dist * 0.5, dist * 0.7)
+    }
+    controls.target.set(0, 0, 0)
+    controls.update()
+  }
+
   if (!webglAvailable) {
     return (
-      <PreviewUnavailable message="Your browser or device doesn't support 3D previews. You can still choose your customization below." />
+      <PreviewUnavailable message="Your browser or device doesn't support 3D previews. You can still choose your customization." />
     )
+  }
+
+  const surfaceBackgrounds = {
+    matte: {
+      backgroundColor: '#f3f6fb',
+      backgroundImage: 'linear-gradient(#dbe4f0 1px, transparent 1px), linear-gradient(90deg, #dbe4f0 1px, transparent 1px)',
+      backgroundSize: '32px 32px',
+    },
+    graph: {
+      backgroundColor: '#e6e2da',
+      backgroundImage: 'linear-gradient(rgba(100,100,100,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(100,100,100,0.15) 1px, transparent 1px)',
+      backgroundSize: '16px 16px',
+    },
+    dark: {
+      backgroundColor: '#0D0D0D',
+      backgroundImage: 'linear-gradient(#262626 1px, transparent 1px), linear-gradient(90deg, #262626 1px, transparent 1px)',
+      backgroundSize: '32px 32px',
+    },
   }
 
   return (
     <ThreeErrorBoundary
       fallback={
-        <PreviewUnavailable message="The 3D preview couldn't be rendered. Your customization choices below are unaffected." />
+        <PreviewUnavailable message="The 3D preview couldn't be rendered. Your customization choices are unaffected." />
       }
     >
-      <div
-        className="relative aspect-square w-full overflow-hidden rounded-card border border-border"
-        style={{
-          backgroundColor: '#eaf3fb',
-          backgroundImage:
-            'linear-gradient(rgba(148,196,228,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(148,196,228,0.35) 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
-        }}
-      >
-        {!ready && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-paper/80">
-            <span className="text-sm font-medium text-muted">Loading 3D preview…</span>
-          </div>
-        )}
+      <div className="relative flex flex-col overflow-hidden rounded-card border border-line bg-surface">
+        {/* Viewport canvas wrapper */}
+        <div
+          className="relative aspect-4/3 w-full overflow-hidden transition-colors"
+          style={surfaceBackgrounds[surfacePreset] || surfaceBackgrounds.matte}
+        >
+          {/* Surface selector dropdown */}
+          <div className="absolute top-3 right-3 z-20">
+            <button
+              type="button"
+              onClick={() => setSurfaceMenuOpen(!surfaceMenuOpen)}
+              className="flex items-center gap-1.5 rounded-control border border-border/70 bg-surface/90 px-2.5 py-1 text-xs font-medium text-ink shadow-sm backdrop-blur-sm hover:border-ink/40"
+            >
+              <span
+                className="h-2.5 w-2.5 rounded-full border border-black/20"
+                style={{ backgroundColor: SURFACE_PRESETS.find((p) => p.id === surfacePreset)?.dotColor }}
+              />
+              <span className="capitalize">{surfacePreset}</span>
+              <span className="text-[10px] text-muted">▼</span>
+            </button>
 
-        <Canvas camera={{ position: INITIAL_CAMERA_POSITION, fov: 45 }} onCreated={() => setReady(true)}>
-          <ambientLight intensity={0.7} />
-          <directionalLight position={[3, 4, 3]} intensity={1.1} />
-          <directionalLight position={[-3, -2, -2]} intensity={0.3} />
-          <Suspense fallback={null}>
-            <ProductModel
-              text={text}
-              color={color}
-              textColor={textColor}
-              materialName={materialName}
-              scale={scale}
-              baseGeometry={baseGeometry}
-              reliefGeometry={reliefGeometry}
+            {surfaceMenuOpen && (
+              <div className="absolute right-0 mt-1 w-32 rounded-control border border-border bg-surface p-1 shadow-lg z-30">
+                {SURFACE_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => {
+                      setSurfacePreset(preset.id)
+                      setSurfaceMenuOpen(false)
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-left transition-colors ${
+                      surfacePreset === preset.id ? 'bg-accent/10 font-semibold text-accent-dark' : 'hover:bg-paper text-ink'
+                    }`}
+                  >
+                    <span
+                      className="h-2.5 w-2.5 rounded-full border border-black/20"
+                      style={{ backgroundColor: preset.dotColor }}
+                    />
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Loading overlay */}
+          {!ready && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-paper/80">
+              <span className="text-xs font-medium text-muted">Loading 3D preview…</span>
+            </div>
+          )}
+
+          {/* Drag to rotate hint badge */}
+          <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-[#1d2230] shadow-sm">
+            Drag to rotate
+          </div>
+
+          {/* 3D Canvas */}
+          <Canvas camera={{ position: INITIAL_CAMERA_POSITION, fov: 45 }} onCreated={() => setReady(true)}>
+            <ambientLight intensity={0.7} />
+            <directionalLight position={[3, 4, 3]} intensity={1.1} />
+            <directionalLight position={[-3, -2, -2]} intensity={0.3} />
+            <PreviewCaptureBridge onCaptureReady={onCaptureReady} />
+            <Suspense fallback={null}>
+              <ProductModel
+                text={text}
+                color={color}
+                textColor={textColor}
+                materialName={materialName}
+                scale={scale}
+                baseGeometry={baseGeometry}
+                reliefGeometry={reliefGeometry}
+              />
+              <Environment preset="city" />
+            </Suspense>
+            <OrbitControls
+              ref={controlsRef}
+              enablePan={false}
+              minDistance={MIN_DISTANCE}
+              maxDistance={MAX_DISTANCE}
             />
-            <Environment preset="city" />
-          </Suspense>
-          <OrbitControls
-            ref={controlsRef}
-            enablePan={false}
-            minDistance={MIN_DISTANCE}
-            maxDistance={MAX_DISTANCE}
-          />
-        </Canvas>
+          </Canvas>
+        </div>
 
-        {dimensions && (
-          <div className="absolute bottom-3 left-3 rounded-control bg-surface/90 px-2.5 py-1.5 text-xs font-medium text-ink shadow-card">
-            {dimensions.widthMm.toFixed(1)} × {dimensions.heightMm.toFixed(1)} × {dimensions.thicknessMm.toFixed(1)} mm
+        {/* Bottom Inspection Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line bg-surface px-3 py-2 text-ink sm:px-4">
+          {/* Quick preset views */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setViewAngle('isometric')}
+              title="Perspective View"
+              className="flex h-7 w-7 items-center justify-center rounded-control bg-soft border border-line text-xs text-ink hover:border-accent hover:text-accent transition-colors"
+            >
+              ⬡
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewAngle('top')}
+              title="Top View"
+              className="flex h-7 w-7 items-center justify-center rounded-control bg-soft border border-line text-xs text-ink hover:border-accent hover:text-accent transition-colors"
+            >
+              ⊤
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewAngle('front')}
+              title="Front View"
+              className="flex h-7 w-7 items-center justify-center rounded-control bg-soft border border-line text-xs text-ink hover:border-accent hover:text-accent transition-colors"
+            >
+              ⊡
+            </button>
           </div>
-        )}
 
-        <div className="absolute bottom-3 right-3 flex gap-2">
-          <button
-            type="button"
-            onClick={() => zoomBy(0.85)}
-            aria-label="Zoom in"
-            className="flex h-9 w-9 items-center justify-center rounded-control border border-border bg-surface text-ink shadow-card hover:border-ink/30"
-          >
-            +
-          </button>
-          <button
-            type="button"
-            onClick={() => zoomBy(1 / 0.85)}
-            aria-label="Zoom out"
-            className="flex h-9 w-9 items-center justify-center rounded-control border border-border bg-surface text-ink shadow-card hover:border-ink/30"
-          >
-            −
-          </button>
-          <button
-            type="button"
-            onClick={resetView}
-            aria-label="Reset view"
-            className="flex h-9 items-center justify-center rounded-control border border-border bg-surface px-3 text-xs font-medium text-ink shadow-card hover:border-ink/30"
-          >
-            Reset view
-          </button>
+          {/* Zoom & Reset Controls */}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => zoomBy(0.85)}
+              aria-label="Zoom in"
+              className="flex h-7 w-7 items-center justify-center rounded-control bg-soft border border-line text-sm font-bold text-ink hover:border-accent hover:text-accent transition-colors"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={() => zoomBy(1 / 0.85)}
+              aria-label="Zoom out"
+              className="flex h-7 w-7 items-center justify-center rounded-control bg-soft border border-line text-sm font-bold text-ink hover:border-accent hover:text-accent transition-colors"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              onClick={resetView}
+              className="flex h-7 items-center justify-center rounded-control bg-soft border border-line px-2 text-[11px] font-medium text-ink hover:border-accent hover:text-accent transition-colors"
+            >
+              Reset view
+            </button>
+          </div>
+
+          {/* Dimensions readout */}
+          {dimensions && (
+            <div className="text-[11.5px] font-mono text-muted">
+              {dimensions.widthMm.toFixed(1)} × {dimensions.heightMm.toFixed(1)} mm
+            </div>
+          )}
         </div>
       </div>
+
       {geometryStatus === 'loading' && (
-        <p className="mt-2 text-xs text-muted">Generating your design…</p>
+        <p className="mt-2 text-xs text-muted">Updating 3D geometry…</p>
       )}
       {geometryStatus === 'error' && (
         <p className="mt-2 text-xs text-danger">
-          Couldn't generate that design — showing a placeholder shape instead. Try adjusting your text or options.
+          Couldn't generate that shape — showing preview model. Try adjusting your text or style options.
         </p>
       )}
-      <p className="mt-2 text-xs text-muted">
-        Drag to rotate, scroll or pinch to zoom. {baseGeometry ? 'Real generated preview — check the printability status below before ordering.' : 'Placeholder shape, not your final design.'}
-      </p>
     </ThreeErrorBoundary>
   )
 }

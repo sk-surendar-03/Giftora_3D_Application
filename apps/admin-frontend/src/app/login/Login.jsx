@@ -10,6 +10,9 @@ function Login() {
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
+  // Shown when the 401 interceptor redirects here with ?session_expired=1
+  const sessionExpired = new URLSearchParams(window.location.search).get('session_expired') === '1'
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
@@ -25,41 +28,60 @@ function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="text-xl font-semibold text-gray-900">Giftora Admin Login</h1>
-        <p className="mt-1 text-sm text-gray-500">Sign in with an admin account.</p>
+    <div className="flex min-h-screen items-center justify-center bg-bg text-ink p-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-[420px] rounded-card border border-line bg-surface p-8">
+        <div className="text-center mb-6">
+          <img
+            src="/jas-logo.png"
+            alt="Giftora"
+            className="h-12 w-12 rounded-full mx-auto object-contain border border-line mb-3"
+            onError={(e) => { e.target.style.display = 'none' }}
+          />
+          <span className="font-sans text-[11.5px] font-bold uppercase tracking-[0.16em] text-accent block">
+            Industrial Console
+          </span>
+          <h1 className="font-display text-[26px] font-semibold text-ink mt-1 m-0">Giftora Admin</h1>
+          <p className="mt-1 font-sans text-[13.5px] text-muted">Sign in with administrative privileges.</p>
+        </div>
 
-        <label className="mt-6 block text-sm font-medium text-gray-700">
-          Email
+        {sessionExpired && (
+          <p className="mb-4 rounded-control bg-[#fef3cd] border border-[#f0c040] p-3 text-[13px] text-[#7a5700] font-medium">
+            Your admin session expired. Please sign in again.
+          </p>
+        )}
+
+        <label className="block text-[13px] font-semibold text-ink">
+          Email Address
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+            className="mt-1.5 block w-full h-11 rounded-control border border-line bg-surface px-3.5 text-[14.5px] text-ink focus:border-accent focus:outline-none"
           />
         </label>
 
-        <label className="mt-4 block text-sm font-medium text-gray-700">
+        <label className="mt-4 block text-[13px] font-semibold text-ink">
           Password
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+            className="mt-1.5 block w-full h-11 rounded-control border border-line bg-surface px-3.5 text-[14.5px] text-ink focus:border-accent focus:outline-none"
           />
         </label>
 
-        {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+        {error && (
+          <p className="mt-4 rounded-control bg-[#fbe6e2] p-3 text-[13px] text-danger font-medium">{error}</p>
+        )}
 
         <button
           type="submit"
           disabled={submitting}
-          className="mt-6 w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-6 flex h-11 w-full items-center justify-center rounded-control bg-accent text-on-accent text-[14.5px] font-semibold hover:bg-accent-dark transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {submitting ? 'Signing in…' : 'Sign in'}
+          {submitting ? 'Authenticating…' : 'Sign in to Console'}
         </button>
       </form>
     </div>

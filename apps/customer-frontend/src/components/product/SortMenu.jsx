@@ -2,15 +2,15 @@ import { SORT_OPTIONS } from '../../features/products/filters'
 
 export default function SortMenu({ value, onChange }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-ink">
-      <span className="hidden text-muted sm:inline">Sort by</span>
+    <label className="flex items-center gap-2 text-[14px] text-ink font-sans">
+      <span className="hidden text-muted sm:inline text-[13.5px]">Sort by:</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-control border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-accent focus:ring-2 focus:ring-accent/30 focus:outline-none"
+        className="h-10 rounded-control border border-line bg-surface px-3 text-[14px] text-ink focus:border-accent focus:outline-none cursor-pointer"
       >
         {SORT_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
+          <option key={option.value} value={option.value} className="bg-surface text-ink">
             {option.label}
           </option>
         ))}

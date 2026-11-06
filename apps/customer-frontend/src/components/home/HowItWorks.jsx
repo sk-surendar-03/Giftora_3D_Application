@@ -1,45 +1,58 @@
 const steps = [
   {
-    step: '01',
-    title: 'Choose a product',
-    description: 'Pick a keychain, nameplate or metal tag as your starting shape.',
+    n: '01',
+    title: 'Choose a gift',
+    description: 'Pick from custom keychains, desk nameplates, and precision industrial keepsakes.',
   },
   {
-    step: '02',
-    title: 'Personalize in 3D',
-    description: 'Add your name or text, pick a colour, and preview it rotating in real time.',
+    n: '02',
+    title: 'Personalise in 3D',
+    description: 'Add custom names and phrases. Rotate the live 3D geometry to inspect every layer and dimension.',
   },
   {
-    step: '03',
-    title: 'Review & order',
-    description: 'Confirm your design, add it to your cart, and place your order.',
-  },
-  {
-    step: '04',
-    title: 'Made & shipped',
-    description: 'Your piece is produced to your exact design and shipped to your door.',
+    n: '03',
+    title: 'We make and ship',
+    description: 'Manufactured to strict tolerances, hand finished, and dispatched in gift-ready protection.',
   },
 ]
 
 export default function HowItWorks() {
   return (
-    <section className="border-y border-border bg-surface">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="max-w-xl">
-          <h2 className="text-2xl font-semibold text-ink sm:text-3xl">How customization works</h2>
-          <p className="mt-2 text-sm text-muted sm:text-base">
-            From idea to doorstep, in four simple steps.
-          </p>
+    <section className="bg-alt py-21 max-[1040px]:py-16 max-[760px]:py-12 border-y border-line">
+      <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
+        
+        {/* Section Header */}
+        <div className="mb-9 max-[760px]:mb-6">
+          <span className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent">
+            How it works
+          </span>
+          <h2 className="font-display text-[38px] max-[760px]:text-[28px] font-semibold text-ink leading-[1.12] tracking-[-0.02em] mt-3">
+            Three steps to something personal
+          </h2>
         </div>
-        <ol className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+
+        {/* Steps Grid */}
+        <div className="grid grid-cols-1 min-[761px]:grid-cols-3 gap-6">
           {steps.map((item) => (
-            <li key={item.step}>
-              <span className="font-display text-3xl font-semibold text-accent">{item.step}</span>
-              <h3 className="mt-3 text-base font-semibold text-ink">{item.title}</h3>
-              <p className="mt-1.5 text-sm text-muted">{item.description}</p>
-            </li>
+            <div
+              key={item.n}
+              className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between"
+            >
+              <div className="font-display text-[44px] font-semibold text-accent/90 leading-none tracking-[-0.02em]">
+                {item.n}
+              </div>
+              <div className="mt-5">
+                <h3 className="font-sans text-[19px] font-semibold text-ink m-0 leading-snug">
+                  {item.title}
+                </h3>
+                <p className="font-sans text-[15px] text-muted mt-2 leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
+            </div>
           ))}
-        </ol>
+        </div>
+
       </div>
     </section>
   )

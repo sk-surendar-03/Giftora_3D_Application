@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 import { useCart } from '../features/cart/useCart.js'
 import QuantitySelector from '../components/product/QuantitySelector'
 import CustomizationDetails from '../components/product/CustomizationDetails.jsx'
+import DesignDetails from '../components/design/DesignDetails.jsx'
+import DesignPreviewImage from '../components/design/DesignPreviewImage.jsx'
 import Button from '../components/ui/Button'
 
 function formatPrice(cents) {
@@ -13,98 +15,196 @@ export default function Cart() {
 
   if (!isAuthenticated) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-6">
-        <h1 className="text-2xl font-semibold text-ink">Your Cart</h1>
-        <p className="mt-3 text-sm text-muted">Sign in to view and manage your cart.</p>
-        <Link to="/login" state={{ from: '/cart' }} className="mt-6 inline-block">
-          <Button variant="accent">Sign in</Button>
-        </Link>
+      <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center">
+        <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-6">
+          <span className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-soft text-accent mb-4">
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
+            </svg>
+          </span>
+          <h1 className="font-display text-[32px] font-semibold text-ink">Your Cart</h1>
+          <p className="mt-3 font-sans text-[15px] text-muted">Sign in to view and manage your custom 3D orders.</p>
+          <div className="mt-6">
+            <Link to="/login" state={{ from: '/cart' }}>
+              <Button variant="primary" size="md">Sign in</Button>
+            </Link>
+          </div>
+        </div>
       </div>
     )
   }
 
   if (isLoading) {
-    return <div className="mx-auto max-w-4xl px-4 py-24 text-center text-sm text-muted sm:px-6">Loading your cart…</div>
+    return <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center text-[15px] text-muted">Loading your cart…</div>
   }
 
   if (loadError) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-24 text-center text-sm text-danger sm:px-6">
-        Something went wrong loading your cart. Please try again.
+      <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center">
+        <div className="mx-auto max-w-lg px-4 py-24 text-center text-[14px] text-danger">
+          Something went wrong loading your cart. Please try again.
+        </div>
       </div>
     )
   }
 
   if (cart.items.length === 0) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-6">
-        <h1 className="text-2xl font-semibold text-ink">Your Cart</h1>
-        <p className="mt-3 text-sm text-muted">Your cart is empty.</p>
-        <Link to="/products" className="mt-6 inline-block">
-          <Button variant="accent">Browse products</Button>
-        </Link>
+      <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center">
+        <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-6">
+          <span className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-soft text-muted mb-4">
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path d="M5 8h14l-1 12H6L5 8Z" />
+              <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+            </svg>
+          </span>
+          <h1 className="font-display text-[32px] font-semibold text-ink">Your Cart is Empty</h1>
+          <p className="mt-3 font-sans text-[15px] text-muted">Explore our catalog or create a custom piece in 3D.</p>
+          <div className="mt-6">
+            <Link to="/products">
+              <Button variant="primary" size="md">Browse products</Button>
+            </Link>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-      <h1 className="text-2xl font-semibold text-ink">Your Cart</h1>
+    <div className="bg-bg text-ink min-h-[80vh] pb-20">
+      <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-10">
+        <div className="pb-6 border-b border-line mb-8">
+          <span className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent block">
+            Review Order
+          </span>
+          <h1 className="font-display text-[40px] max-[760px]:text-[30px] font-semibold text-ink leading-[1.12] tracking-[-0.02em] mt-2">
+            Your Cart
+          </h1>
+        </div>
 
-      {mutationError && <p className="mt-4 text-sm text-danger">{mutationError}</p>}
+        {mutationError && (
+          <p className="mb-6 rounded-control bg-[#fbe6e2] px-4 py-2.5 text-[13.5px] font-semibold text-danger">
+            {mutationError}
+          </p>
+        )}
 
-      <div className="mt-8 divide-y divide-border rounded-card border border-border bg-surface">
-        {cart.items.map((item) => (
-          <div key={item.id} className="flex gap-4 p-5">
-            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-control bg-ink/5">
-              {item.product.images?.[0] && <img src={item.product.images[0]} alt={item.product.name} className="h-full w-full object-cover" />}
+        <div className="grid grid-cols-1 min-[1041px]:grid-cols-[1.6fr_1fr] gap-9 items-start">
+          {/* Cart items list */}
+          <div className="rounded-card border border-line bg-surface divide-y divide-line p-6">
+            {cart.items.map((item) => {
+              // A line is either a catalog product or a standalone custom design.
+              const isCustom = item.itemType === 'CUSTOM_DESIGN'
+              return (
+              <div key={item.id} className="grid grid-cols-[80px_1fr] sm:grid-cols-[104px_1fr_auto] gap-5 py-5 first:pt-0 last:pb-0">
+                <div className="h-24 w-24 sm:h-[104px] sm:w-[104px] shrink-0 overflow-hidden rounded-control bg-soft border border-line flex items-center justify-center">
+                  {isCustom ? (
+                    <DesignPreviewImage designId={item.design.id} hasPreview={item.design.hasPreview} alt={item.design.title} />
+                  ) : item.product.images?.[0] ? (
+                    <img src={item.product.images[0]} alt={item.product.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <svg className="w-8 h-8 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                      <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" />
+                    </svg>
+                  )}
+                </div>
+
+                <div className="min-w-0 flex flex-col justify-between">
+                  <div>
+                    {isCustom ? (
+                      <>
+                        <span className="font-sans text-[16px] font-semibold text-ink">{item.design.title}</span>
+                        <span className="ml-2 align-middle rounded-full bg-soft px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-accent">Custom design</span>
+                        <div className="mt-1 text-[13px] text-muted">
+                          <DesignDetails params={item.design.params} />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <Link to={`/products/${item.product.slug}`} className="font-sans text-[16px] font-semibold text-ink hover:text-accent transition-colors">
+                          {item.product.name}
+                        </Link>
+                        {!item.product.isActive && <p className="mt-0.5 text-xs text-danger">No longer available</p>}
+                        <div className="mt-1 text-[13px] text-muted">
+                          <CustomizationDetails customization={item.customization} />
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-4">
+                    <QuantitySelector isCart={true} value={item.quantity} onChange={(qty) => updateQuantity(item.id, qty)} />
+                    <button
+                      type="button"
+                      disabled={mutating}
+                      onClick={() => removeItem(item.id)}
+                      className="text-[13px] text-muted underline hover:text-danger cursor-pointer disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+
+                <div className="text-right sm:self-center col-span-2 sm:col-span-1 pt-2 sm:pt-0 border-t sm:border-0 border-line/50 flex sm:flex-col justify-between items-center sm:items-end">
+                  <span className="sm:hidden text-xs text-muted">Price:</span>
+                  <div className="font-sans text-[17px] font-bold text-ink">
+                    {formatPrice(item.lineTotalCents)}
+                  </div>
+                  <div className="text-[12px] text-muted">
+                    {formatPrice(item.unitPriceCents)} each
+                  </div>
+                </div>
+              </div>
+              )
+            })}
+          </div>
+
+          {/* Sticky Summary Card */}
+          <div className="rounded-card border border-line bg-surface p-7 sticky top-24">
+            <h3 className="font-sans text-[19px] font-bold text-ink pb-4 border-b border-line m-0">
+              Order Summary
+            </h3>
+
+            {/* Free shipping progress bar */}
+            <div className="my-5">
+              <div className="flex justify-between text-[12.5px] font-medium text-muted mb-2">
+                <span>Free shipping qualified</span>
+                <span className="text-accent font-semibold">100%</span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-soft overflow-hidden">
+                <div className="h-full bg-accent rounded-full w-full" />
+              </div>
             </div>
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <Link to={`/products/${item.product.slug}`} className="text-sm font-medium text-ink hover:text-accent-dark">
-                    {item.product.name}
-                  </Link>
-                  {!item.product.isActive && <p className="mt-0.5 text-xs text-danger">No longer available</p>}
-                  <CustomizationDetails customization={item.customization} />
-                </div>
-                <p className="shrink-0 text-sm font-medium text-ink">{formatPrice(item.unitPriceCents)} each</p>
+            <div className="space-y-2.5 py-4 border-b border-line text-[14px]">
+              <div className="flex justify-between text-muted">
+                <span>Subtotal</span>
+                <span className="text-ink font-semibold">{formatPrice(cart.subtotalCents)}</span>
               </div>
+              <div className="flex justify-between text-muted">
+                <span>Standard Delivery</span>
+                <span className="text-[#17683f] font-semibold">FREE</span>
+              </div>
+            </div>
 
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <QuantitySelector value={item.quantity} onChange={(qty) => updateQuantity(item.id, qty)} />
-                <div className="flex items-center gap-4">
-                  <p className="text-sm font-semibold text-ink">{formatPrice(item.lineTotalCents)}</p>
-                  <button
-                    type="button"
-                    disabled={mutating}
-                    onClick={() => removeItem(item.id)}
-                    className="text-xs font-medium text-danger hover:underline disabled:opacity-50"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
+            <div className="mt-4 pt-2 flex justify-between items-baseline font-sans">
+              <span className="text-[16px] font-semibold text-ink">Total</span>
+              <span className="text-[22px] font-bold text-ink">{formatPrice(cart.totalCents)}</span>
+            </div>
+
+            <div className="mt-6">
+              <Link to="/checkout" className="block">
+                <Button variant="primary" size="lg" className="w-full text-base font-semibold">
+                  Proceed to Checkout
+                </Button>
+              </Link>
+            </div>
+
+            <div className="mt-4 text-center text-[12.5px] text-muted">
+              Taxes calculated at checkout. Dispatched in 3 working days.
             </div>
           </div>
-        ))}
-      </div>
-
-      <div className="mt-8 ml-auto max-w-xs space-y-2">
-        <div className="flex justify-between text-sm text-muted">
-          <span>Subtotal</span>
-          <span>{formatPrice(cart.subtotalCents)}</span>
         </div>
-        <div className="flex justify-between text-base font-semibold text-ink">
-          <span>Total</span>
-          <span>{formatPrice(cart.totalCents)}</span>
-        </div>
-        <Link to="/checkout" className="block pt-2">
-          <Button variant="accent" className="w-full">
-            Proceed to Checkout
-          </Button>
-        </Link>
       </div>
     </div>
   )
