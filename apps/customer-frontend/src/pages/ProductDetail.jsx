@@ -6,7 +6,6 @@ import { colorsForMaterial } from '../data/sampleProducts'
 import { useCart } from '../features/cart/useCart.js'
 import { useAuth } from '../features/auth/useAuth.js'
 import Button from '../components/ui/Button'
-import Badge from '../components/ui/Badge'
 import ProductGallery from '../components/product/ProductGallery'
 import OptionPicker from '../components/product/OptionPicker'
 import ColorSwatchPicker from '../components/product/ColorSwatchPicker'
@@ -79,6 +78,10 @@ function ProductDetailView({ slug }) {
     }
   }
 
+  const hasOriginalPrice = typeof product.originalPrice === 'number' && product.originalPrice > product.price
+  const hasDiscount = typeof product.discountPercent === 'number' && product.discountPercent > 0
+  const hasRating = typeof product.rating === 'number' && product.rating > 0
+
   return (
     <div className="bg-bg text-ink pb-20">
       <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-10">
@@ -107,22 +110,41 @@ function ProductDetailView({ slug }) {
               {product.name}
             </h1>
 
-            {/* Rating row & price */}
-            <div className="mt-3 flex items-center gap-3">
-              <div className="flex text-accent">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-4 h-4 fill-accent" viewBox="0 0 24 24">
-                    <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z" stroke="none" />
-                  </svg>
-                ))}
+            {/* Dynamic Rating row — only shown if actual rating data exists */}
+            {hasRating && (
+              <div className="mt-3 flex items-center gap-3">
+                <div className="flex text-accent">
+                  {[...Array(5)].map((_, i) => (
+                    <svg
+                      key={i}
+                      className={`w-4 h-4 ${i < Math.round(product.rating) ? 'fill-accent' : 'fill-line text-line'}`}
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z" stroke="none" />
+                    </svg>
+                  ))}
+                </div>
+                <span className="text-[13px] text-muted">
+                  {product.rating} {product.reviewsCount ? `(${product.reviewsCount} reviews)` : ''}
+                </span>
               </div>
-              <span className="text-[13px] text-muted">4.9 (184 reviews)</span>
-            </div>
+            )}
 
-            <div className="mt-4 flex items-baseline gap-3">
+            {/* Price section with selling price and optional original strikethrough price & discount */}
+            <div className="mt-4 flex flex-wrap items-baseline gap-3">
               <span className="font-sans text-[30px] font-bold text-ink">
                 ₹{product.price}
               </span>
+              {hasOriginalPrice && (
+                <s className="font-sans text-[18px] text-muted">
+                  ₹{product.originalPrice}
+                </s>
+              )}
+              {hasDiscount && (
+                <span className="font-sans text-[14px] font-semibold text-[#17683f] bg-[#e3f4ea] px-2.5 py-0.5 rounded-full">
+                  {product.discountPercent}% off
+                </span>
+              )}
               <span className="font-sans text-[13.5px] font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
                 Free shipping
               </span>

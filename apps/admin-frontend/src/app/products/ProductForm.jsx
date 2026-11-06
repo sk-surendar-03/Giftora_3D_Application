@@ -4,6 +4,7 @@ import Banner from '../../components/Banner.jsx'
 import { slugify } from '../../utils/slugify.js'
 import { fetchCategories } from '../../features/categories/categoriesApi.js'
 import { fetchAdminProducts, createProduct, updateProduct } from '../../features/products/productsApi.js'
+import ColorPaletteEditor from './ColorPaletteEditor.jsx'
 
 function extractError(err) {
   return err.response?.data?.error ?? err.message ?? 'Something went wrong.'
@@ -13,12 +14,13 @@ const EMPTY_FORM = {
   name: '',
   slug: '',
   description: '',
-  price: '', // rupees, as the admin types it — converted to priceCents on submit
+  price: '', // selling price in rupees
+  originalPrice: '', // original / strikethrough price in rupees (optional)
   categoryId: '',
   materials: '', // comma-separated
   sizes: '', // comma-separated
   images: '', // comma-separated URLs
-  colorsByMaterial: '', // JSON text, e.g. {"Standard PLA":[{"label":"White","hex":"#ffffff"}]}
+  colorsByMaterial: {}, // object: { [material]: [{ label, hex }] }
   isActive: true,
 }
 
@@ -42,9 +44,6 @@ export default function ProductForm() {
     if (!isEditing) return
     const timer = setTimeout(() => {
       setIsLoading(true)
-      // Admin products are addressed by slug for GET, by id for PATCH/DELETE
-      // — the route param here is the product's id (used for the eventual
-      // PATCH), so the list is searched for the matching id first.
       fetchAdminProducts()
         .then((result) => {
           const product = result.products.find((p) => p.id === id)
@@ -57,11 +56,12 @@ export default function ProductForm() {
             slug: product.slug,
             description: product.description,
             price: String(product.priceCents / 100),
+            originalPrice: product.originalPriceCents ? String(product.originalPriceCents / 100) : '',
             categoryId: product.categoryId ?? '',
             materials: (product.materials ?? []).join(', '),
             sizes: (product.sizes ?? []).join(', '),
             images: (product.images ?? []).join(', '),
-            colorsByMaterial: product.colorsByMaterial ? JSON.stringify(product.colorsByMaterial, null, 2) : '',
+            colorsByMaterial: product.colorsByMaterial && typeof product.colorsByMaterial === 'object' ? product.colorsByMaterial : {},
             isActive: product.isActive,
           })
         })
@@ -89,13 +89,37 @@ export default function ProductForm() {
     if (!form.description.trim()) throw new Error('Description is required.')
     if (!Number.isFinite(priceNumber) || priceNumber <= 0) throw new Error('Price must be a positive number.')
 
-    let colorsByMaterial
-    if (form.colorsByMaterial.trim()) {
-      try {
-        colorsByMaterial = JSON.parse(form.colorsByMaterial)
-      } catch {
-        throw new Error('Colors by material must be valid JSON, e.g. {"Standard PLA":[{"label":"White","hex":"#ffffff"}]}')
+    let originalPriceCents = null
+    if (form.originalPrice && form.originalPrice.trim() !== '') {
+      const origNumber = Number(form.originalPrice)
+      if (!Number.isFinite(origNumber) || origNumber <= 0) {
+        throw new Error('Original price must be a positive number if provided.')
       }
+      originalPriceCents = Math.round(origNumber * 100)
+    }
+
+    let colorsByMaterial = form.colorsByMaterial
+    if (typeof colorsByMaterial === 'string') {
+      if (colorsByMaterial.trim()) {
+        try {
+          colorsByMaterial = JSON.parse(colorsByMaterial)
+        } catch {
+          throw new Error('Colors by material must be valid JSON or configured via color editor.')
+        }
+      } else {
+        colorsByMaterial = null
+      }
+    } else if (colorsByMaterial && typeof colorsByMaterial === 'object') {
+      // Clean up empty material arrays if needed or preserve configured structure
+      const cleaned = {}
+      for (const [mat, cols] of Object.entries(colorsByMaterial)) {
+        if (Array.isArray(cols) && cols.length > 0) {
+          cleaned[mat] = cols
+        }
+      }
+      colorsByMaterial = Object.keys(cleaned).length > 0 ? cleaned : null
+    } else {
+      colorsByMaterial = null
     }
 
     return {
@@ -103,11 +127,12 @@ export default function ProductForm() {
       slug: form.slug.trim(),
       description: form.description.trim(),
       priceCents: Math.round(priceNumber * 100),
+      originalPriceCents,
       categoryId: form.categoryId || null,
       materials: parseListField(form.materials),
       sizes: parseListField(form.sizes),
       images: parseListField(form.images),
-      ...(colorsByMaterial !== undefined ? { colorsByMaterial } : {}),
+      ...(colorsByMaterial !== null ? { colorsByMaterial } : { colorsByMaterial: null }),
       isActive: form.isActive,
     }
   }
@@ -186,17 +211,33 @@ export default function ProductForm() {
           />
         </label>
 
-        <label className="block text-sm font-medium text-ink">
-          Price (₹)
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.price}
-            onChange={(e) => update('price', e.target.value)}
-            className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
-          />
-        </label>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className="block text-sm font-medium text-ink">
+            Selling Price (₹)
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.price}
+              onChange={(e) => update('price', e.target.value)}
+              className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
+              placeholder="e.g. 399"
+            />
+          </label>
+
+          <label className="block text-sm font-medium text-ink">
+            Original Price (₹) <span className="text-xs text-muted">(Optional strikethrough)</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.originalPrice}
+              onChange={(e) => update('originalPrice', e.target.value)}
+              className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
+              placeholder="e.g. 499"
+            />
+          </label>
+        </div>
 
         <label className="block text-sm font-medium text-ink">
           Category
@@ -244,17 +285,14 @@ export default function ProductForm() {
           />
         </label>
 
-        <label className="block text-sm font-medium text-ink">
-          Colors by material (JSON)
-          <textarea
-            value={form.colorsByMaterial}
-            onChange={(e) => update('colorsByMaterial', e.target.value)}
-            rows={5}
-            placeholder={'{\n  "Standard PLA": [{ "label": "White", "hex": "#ffffff" }]\n}'}
-            className="mt-1 block w-full rounded-md border border-line px-3 py-2 font-mono text-xs"
+        <div className="block text-sm font-medium text-ink">
+          <span className="block mb-1.5 font-medium">Colors by Material</span>
+          <ColorPaletteEditor
+            materials={parseListField(form.materials)}
+            value={form.colorsByMaterial || {}}
+            onChange={(nextPalette) => update('colorsByMaterial', nextPalette)}
           />
-          <span className="mt-1 block text-xs text-muted">Optional. Must be valid JSON mapping each material to a list of {'{label, hex}'} colors.</span>
-        </label>
+        </div>
 
         <label className="flex items-center gap-2 text-sm font-medium text-ink">
           <input type="checkbox" checked={form.isActive} onChange={(e) => update('isActive', e.target.checked)} />

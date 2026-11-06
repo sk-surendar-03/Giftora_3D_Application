@@ -223,8 +223,13 @@ export async function getOrderForAdmin(orderId) {
 // "next" status for the order's current status is rejected — this is the
 // backend validation the requirements ask for, not just accepting any enum
 // value.
+//
+// In stores without online payment gateway webhooks (e.g. cash on delivery,
+// manual invoice, or admin-managed fulfillment), an order placed by a customer
+// starts in PENDING and can transition directly to PAID (payment confirmed) or
+// PROCESSING (manufacturing / production started), or CANCELLED.
 const ALLOWED_TRANSITIONS = {
-  PENDING: ['PAID', 'CANCELLED'],
+  PENDING: ['PAID', 'PROCESSING', 'CANCELLED'],
   PAID: ['PROCESSING', 'CANCELLED', 'REFUNDED'],
   PROCESSING: ['SHIPPED', 'CANCELLED'],
   SHIPPED: ['DELIVERED'],

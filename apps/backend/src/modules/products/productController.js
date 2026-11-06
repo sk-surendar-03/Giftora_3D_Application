@@ -17,7 +17,7 @@ export async function getBySlug(req, res) {
 }
 
 function validateProductInput(body, { partial }) {
-  const { slug, name, description, priceCents, images, materials, sizes, colorsByMaterial, categoryId, isActive } = body ?? {}
+  const { slug, name, description, priceCents, originalPriceCents, images, materials, sizes, colorsByMaterial, categoryId, isActive } = body ?? {}
 
   if (!partial || slug !== undefined) {
     if (!isValidSlug(slug)) throw new HttpError(400, 'A valid slug (lowercase letters, numbers, hyphens) is required.')
@@ -30,6 +30,9 @@ function validateProductInput(body, { partial }) {
   }
   if (!partial || priceCents !== undefined) {
     if (!isPositiveInt(priceCents)) throw new HttpError(400, 'priceCents must be a positive integer (price in the smallest currency unit).')
+  }
+  if (originalPriceCents !== undefined && originalPriceCents !== null) {
+    if (!isPositiveInt(originalPriceCents)) throw new HttpError(400, 'originalPriceCents must be a positive integer if provided.')
   }
   if (images !== undefined && !isStringArray(images, 20, 2000)) throw new HttpError(400, 'images must be an array of strings.')
   if (materials !== undefined && !isStringArray(materials, 20)) throw new HttpError(400, 'materials must be an array of strings.')
@@ -49,6 +52,7 @@ function validateProductInput(body, { partial }) {
     ...(name !== undefined ? { name: name.trim() } : {}),
     ...(description !== undefined ? { description: description.trim() } : {}),
     ...(priceCents !== undefined ? { priceCents } : {}),
+    ...(originalPriceCents !== undefined ? { originalPriceCents } : {}),
     ...(images !== undefined ? { images } : {}),
     ...(materials !== undefined ? { materials } : {}),
     ...(sizes !== undefined ? { sizes } : {}),

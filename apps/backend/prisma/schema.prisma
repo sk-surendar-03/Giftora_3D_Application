@@ -65,6 +65,7 @@ model User {
   cart          Cart?
   orders        Order[]
   customDesigns CustomDesign[]
+  wishlistItems WishlistItem[]
 
   @@map("users")
 }
@@ -139,7 +140,8 @@ model Product {
   slug        String   @unique
   name        String
   description String   @db.Text
-  priceCents  Int
+  priceCents        Int
+  originalPriceCents Int?
   // JSON columns holding array data. MySQL has no native array type (and
   // Prisma doesn't support scalar lists on MySQL at all — these were
   // `String[]` under the earlier PostgreSQL schema), so `images`/
@@ -157,8 +159,9 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  cartItems  CartItem[]
-  orderItems OrderItem[]
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  wishlistItems WishlistItem[]
 
   @@index([categoryId])
   @@map("products")
@@ -297,4 +300,18 @@ model Payment {
   updatedAt       DateTime      @updatedAt
 
   @@map("payments")
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+  @@map("wishlist_items")
 }

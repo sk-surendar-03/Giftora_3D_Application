@@ -6,6 +6,16 @@ import { fetchOrder, updateOrderStatus, fetchOrderItemStlBlob } from '../../feat
 
 const STATUS_OPTIONS = ['PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED']
 
+const ALLOWED_TRANSITIONS = {
+  PENDING: ['PAID', 'PROCESSING', 'CANCELLED'],
+  PAID: ['PROCESSING', 'CANCELLED', 'REFUNDED'],
+  PROCESSING: ['SHIPPED', 'CANCELLED'],
+  SHIPPED: ['DELIVERED'],
+  DELIVERED: ['REFUNDED'],
+  CANCELLED: [],
+  REFUNDED: [],
+}
+
 const TEMPLATE_LABELS = {
   'name-keychain': 'Name Keychain',
   'articulated-name': 'Articulated Name',
@@ -109,6 +119,7 @@ export default function OrderDetail() {
     try {
       const updated = await updateOrderStatus(id, statusChoice)
       setOrder(updated)
+      setStatusChoice(updated.status)
       setSuccessMessage(`Status updated to ${updated.status}.`)
     } catch (err) {
       setError(extractError(err))
@@ -226,6 +237,32 @@ export default function OrderDetail() {
                             {formatPrice(item.unitPriceCents * item.quantity)}
                           </p>
                         </div>
+                        {isCustom && (
+                          <div className="mt-3 flex items-center justify-end">
+                            {design?.hasStl ? (
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadStl(item.id, `${item.productName.replace(/[^a-z0-9_-]/gi, '_')}.stl`)}
+                                disabled={downloadingItemId === item.id}
+                                className="inline-flex items-center gap-1.5 rounded-control bg-accent px-3 py-1.5 text-xs font-bold text-on-accent hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer shadow-sm"
+                                title="Download customer-designed STL file"
+                              >
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                                </svg>
+                                {downloadingItemId === item.id ? 'Downloading…' : 'Download Design'}
+                              </button>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 text-xs text-muted/80 bg-soft px-2.5 py-1 rounded border border-line/60">
+                                <svg className="w-3.5 h-3.5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="12" cy="12" r="10" />
+                                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                                </svg>
+                                File unavailable
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -236,18 +273,20 @@ export default function OrderDetail() {
                           <span className="text-xs font-bold uppercase tracking-wider text-accent">
                             3D Manufacturing Specifications
                           </span>
-                          {design.hasStl && (
+                          {design.hasStl ? (
                             <button
                               type="button"
                               onClick={() => handleDownloadStl(item.id, `${item.productName.replace(/[^a-z0-9_-]/gi, '_')}.stl`)}
                               disabled={downloadingItemId === item.id}
-                              className="inline-flex items-center gap-1.5 rounded-control bg-brand px-3 py-1.5 text-xs font-semibold text-on-accent hover:bg-brand-d transition-colors disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 rounded-control bg-accent px-3 py-1.5 text-xs font-bold text-on-accent hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer shadow-sm"
                             >
                               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
                               </svg>
                               {downloadingItemId === item.id ? 'Downloading…' : 'Download STL'}
                             </button>
+                          ) : (
+                            <span className="text-xs text-muted/80 italic">File unavailable</span>
                           )}
                         </div>
 
@@ -372,17 +411,21 @@ export default function OrderDetail() {
               onChange={(e) => setStatusChoice(e.target.value)}
               className="w-full rounded-control border border-line bg-surface px-3.5 py-2 text-sm text-ink outline-none focus:border-brand"
             >
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
+              {STATUS_OPTIONS.map((s) => {
+                const isCurrent = s === order.status
+                const isAllowed = isCurrent || (ALLOWED_TRANSITIONS[order.status]?.includes(s) ?? false)
+                return (
+                  <option key={s} value={s} disabled={!isAllowed}>
+                    {s} {isCurrent ? '(Current)' : !isAllowed ? '(Invalid Transition)' : ''}
+                  </option>
+                )
+              })}
             </select>
             <button
               type="button"
               disabled={updating || statusChoice === order.status}
               onClick={handleUpdateStatus}
-              className="mt-3.5 w-full rounded-control bg-brand px-4 py-2.5 text-sm font-semibold text-on-accent hover:bg-brand-d transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-3.5 w-full rounded-control bg-accent px-4 py-2.5 text-sm font-bold text-on-accent hover:bg-accent-dark transition-colors disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-accent cursor-pointer shadow-sm"
             >
               {updating ? 'Updating…' : 'Update status'}
             </button>

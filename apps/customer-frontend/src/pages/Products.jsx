@@ -106,8 +106,8 @@ export default function Products() {
         </div>
 
         {/* Main Catalog Layout */}
-        <div className="grid grid-cols-1 gap-8 min-[761px]:grid-cols-[240px_1fr]">
-          <aside className="hidden min-[761px]:block">
+        <div className="grid grid-cols-1 items-start gap-8 min-[761px]:grid-cols-[240px_1fr]">
+          <aside className="hidden min-[761px]:block min-[761px]:sticky min-[761px]:top-[96px] self-start max-h-[calc(100vh-116px)] overflow-y-auto">
             <CatalogFilters {...filterProps} />
           </aside>
 
