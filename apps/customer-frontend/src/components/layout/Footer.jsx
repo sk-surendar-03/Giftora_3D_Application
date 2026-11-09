@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 const columns = [
@@ -14,29 +13,19 @@ const columns = [
     heading: 'Customer Service',
     links: [
       { to: '/contact', label: 'Contact Us' },
-      { to: '/contact', label: 'Shipping & Delivery' },
-      { to: '/contact', label: 'Returns & Refunds' },
-      { to: '/contact', label: 'Privacy Policy' },
+      { to: '/shipping-delivery', label: 'Shipping & Delivery' },
+      { to: '/returns-refunds', label: 'Returns & Refunds' },
+      { to: '/privacy-policy', label: 'Privacy Policy' },
+      { to: '/terms-of-service', label: 'Terms of Service' },
     ],
   },
 ]
 
 export default function Footer() {
-  const [email, setEmail] = useState('')
-  const [subscribed, setSubscribed] = useState(false)
-
-  function handleSubscribe(e) {
-    e.preventDefault()
-    if (email.trim()) {
-      setSubscribed(true)
-      setEmail('')
-    }
-  }
-
   return (
     <footer className="border-t border-line bg-band text-muted pt-16 pb-7">
       <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
-        <div className="grid grid-cols-1 min-[761px]:grid-cols-2 min-[1041px]:grid-cols-[1.5fr_1fr_1fr_1.3fr] gap-10">
+        <div className="grid grid-cols-1 min-[761px]:grid-cols-2 min-[1041px]:grid-cols-[1.5fr_1fr_1fr] gap-10">
           
           {/* Brand info */}
           <div>
@@ -74,46 +63,36 @@ export default function Footer() {
             </div>
           ))}
 
-          {/* Newsletter / Updates */}
-          <div>
-            <h4 className="font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ink mb-4">
-              Stay Informed
-            </h4>
-            <p className="text-[13px] text-muted mb-3.5">
-              Receive updates on industrial engineering materials, new geometries, and offers.
-            </p>
-            {subscribed ? (
-              <p className="text-[13.5px] font-semibold text-[#17683f] bg-[#e3f4ea] px-3 py-2 rounded-control inline-block">
-                ✓ Thank you for subscribing!
-              </p>
-            ) : (
-              <form onSubmit={handleSubscribe} className="flex gap-2">
-                <input
-                  type="email"
-                  required
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 flex-1 rounded-control border border-line bg-surface px-3.5 text-[14px] text-ink placeholder:text-muted outline-none focus:border-brand"
-                />
-                <button
-                  type="submit"
-                  className="h-11 px-4 rounded-control bg-brand text-on-accent text-[13.5px] font-semibold hover:bg-brand-d transition-colors"
-                >
-                  Join
-                </button>
-              </form>
-            )}
-          </div>
         </div>
 
         {/* Bottom row */}
         <div className="mt-11 pt-5.5 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-muted">
-          <p>&copy; {new Date().getFullYear()} JAS 3D PRINTING. All rights reserved.</p>
-          <div className="flex gap-6">
-            <Link to="/contact" className="hover:text-ink transition-colors">Privacy</Link>
-            <Link to="/contact" className="hover:text-ink transition-colors">Terms of Service</Link>
-            <Link to="/contact" className="hover:text-ink transition-colors">Refunds</Link>
+          <div className="text-center sm:text-left space-y-1">
+            <p>&copy; 2026 JAS 3D PRINTING. All rights reserved.</p>
+            <p className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
+              <span>Website developed by</span>
+              <a
+                href="https://tricubedigitalsolutions.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 font-semibold text-ink hover:text-accent transition-colors group"
+              >
+                <img
+                  src="/tri-cube-logo.png"
+                  alt="Tri Cube Digital Solutions"
+                  className="h-6 w-6 object-contain rounded-[4px] bg-white p-[2px] shadow-xs transition-transform duration-200 group-hover:scale-105"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                  }}
+                />
+                <span className="font-bold tracking-tight">TRI CUBE DIGITAL SOLUTIONS</span>
+              </a>
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+            <Link to="/privacy-policy" className="hover:text-ink transition-colors">Privacy</Link>
+            <Link to="/terms-of-service" className="hover:text-ink transition-colors">Terms of Service</Link>
+            <Link to="/returns-refunds" className="hover:text-ink transition-colors">Refunds</Link>
           </div>
         </div>
       </div>

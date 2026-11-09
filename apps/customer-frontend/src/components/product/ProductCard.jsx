@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Button from '../ui/Button'
 import { useWishlist } from '../../features/wishlist/WishlistContext.jsx'
+import { resolveImageUrl } from '../../utils/imageUrl.js'
 
 export default function ProductCard({ product, index = 0 }) {
   const { isWishlisted, toggleWishlist } = useWishlist()
@@ -57,7 +58,7 @@ export default function ProductCard({ product, index = 0 }) {
           <Link to={`/products/${product.slug}`} className="block h-full w-full">
             {product.image ? (
               <img
-                src={product.image}
+                src={resolveImageUrl(product.image)}
                 alt={product.name}
                 className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
               />

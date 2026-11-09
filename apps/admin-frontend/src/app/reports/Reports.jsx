@@ -25,10 +25,27 @@ export default function Reports() {
   const [summaryError, setSummaryError] = useState(null)
 
   useEffect(() => {
-    fetchDashboard()
-      .then(setSummary)
-      .catch((err) => setSummaryError(err.response?.data?.error ?? err.message ?? 'Failed to load report summary.'))
-      .finally(() => setIsLoadingSummary(false))
+    let mounted = true
+    function loadSummary() {
+      fetchDashboard()
+        .then((data) => {
+          if (mounted) setSummary(data)
+        })
+        .catch((err) => {
+          if (mounted) setSummaryError(err.response?.data?.error ?? err.message ?? 'Failed to load report summary.')
+        })
+        .finally(() => {
+          if (mounted) setIsLoadingSummary(false)
+        })
+    }
+
+    loadSummary()
+    window.addEventListener('giftora:orders-updated', loadSummary)
+
+    return () => {
+      mounted = false
+      window.removeEventListener('giftora:orders-updated', loadSummary)
+    }
   }, [])
 
   const Active = TABS.find((t) => t.id === activeTab)?.Component ?? SalesReportTab

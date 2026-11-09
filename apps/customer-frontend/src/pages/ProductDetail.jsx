@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import useProduct from '../features/products/useProduct'
 import useProducts from '../features/products/useProducts'
@@ -14,6 +14,8 @@ import ProductSpecs from '../components/product/ProductSpecs'
 import ProductSection from '../components/product/ProductSection'
 import ProductUnavailable from '../components/product/ProductUnavailable'
 import ProductDetailSkeleton from '../components/product/ProductDetailSkeleton'
+
+const ProductModelViewer = lazy(() => import('../components/product/ProductModelViewer'))
 
 export default function ProductDetail() {
   const { slug } = useParams()
@@ -32,6 +34,7 @@ function ProductDetailView({ slug }) {
   const [color, setColor] = useState(product ? colorsForMaterial(product, product.materials?.[0])?.[0] : undefined)
   const [size, setSize] = useState(product?.sizes?.[0])
   const [quantity, setQuantity] = useState(1)
+  const [showModel, setShowModel] = useState(false)
 
   const availableColors = product ? colorsForMaterial(product, material) : undefined
 
@@ -40,6 +43,15 @@ function ProductDetailView({ slug }) {
     if (availableColors.some((option) => option.label === color?.label)) return
     setColor(availableColors[0])
   }, [material, product])
+
+  // Ensure the viewport is at the top whenever this product is opened or changes
+  useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    } catch {
+      window.scrollTo(0, 0);
+    }
+  }, [slug])
 
   const relatedProducts = useMemo(() => {
     if (!product || !allProducts) return []
@@ -97,7 +109,34 @@ function ProductDetailView({ slug }) {
 
         {/* 2-column Product View */}
         <div className="grid gap-12 min-[1041px]:grid-cols-[1.05fr_1fr]">
-          <ProductGallery product={product} activeColor={color?.hex} />
+          <div>
+            <ProductGallery product={product} activeColor={color?.hex} />
+
+            {/* Optional interactive 3D preview (uploaded STL / 3MF). Product images stay the primary visuals. */}
+            {product.model && (
+              <div className="mt-5">
+                <button
+                  type="button"
+                  onClick={() => setShowModel((value) => !value)}
+                  aria-expanded={showModel}
+                  className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-control border border-line bg-surface px-4 text-[14px] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                    <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" />
+                    <path d="M12 12 4 7.5M12 12l8-4.5M12 12v9" />
+                  </svg>
+                  {showModel ? 'Hide 3D Preview' : '3D Preview'}
+                </button>
+                {showModel && (
+                  <div className="mt-4">
+                    <Suspense fallback={<div className="aspect-square w-full rounded-card border border-line bg-soft" />}>
+                      <ProductModelViewer model={product.model} />
+                    </Suspense>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-col justify-start">
             {product.category && (

@@ -21,7 +21,31 @@ function parseLimit(value, fallback, max) {
 }
 
 export async function dashboard(req, res) {
-  res.json(await getDashboardSummary())
+  let range = null
+  const { range: rangePreset, from, to } = req.query ?? {}
+
+  if (rangePreset || from || to) {
+    if (rangePreset === 'today') {
+      const now = new Date()
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      range = { from: startOfToday, to: endOfToday }
+    } else if (rangePreset === '7d' || rangePreset === '7days') {
+      const now = new Date()
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      const startOf7Days = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6)
+      range = { from: startOf7Days, to: endOfToday }
+    } else if (rangePreset === '30d' || rangePreset === '30days') {
+      const now = new Date()
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      const startOf30Days = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29)
+      range = { from: startOf30Days, to: endOfToday }
+    } else {
+      range = parseDateRange({ from, to })
+    }
+  }
+
+  res.json(await getDashboardSummary(range))
 }
 
 export async function sales(req, res) {

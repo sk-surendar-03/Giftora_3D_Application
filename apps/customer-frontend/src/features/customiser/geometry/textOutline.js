@@ -4,6 +4,8 @@
 // (curve flattening + glyph layout), only type annotations were stripped.
 // See THIRD-PARTY-NOTICES.md for the full upstream license text.
 
+import { isSymbolFallbackCharacter, resolveGlyphWithFallback } from './icons/glyphFallback.js'
+
 const MAX_CURVE_DEPTH = 12
 
 function distanceToLine(point, start, end) {
@@ -124,13 +126,14 @@ function commandPoints(paths) {
  * counter of an "O") are not distinguished here; manifold-3d's CrossSection
  * resolves that from the polygons' winding direction via its fill rule.
  */
-export function flattenText(font, text, targetHeightMm, letterSpacingMm = 0) {
-  const fontGlyphs = [...text].map((character) => font.charToGlyph(character))
+export function flattenText(font, text, targetHeightMm, letterSpacingMm = 0, symbolFont = undefined) {
+  // `symbolFont` is optional: without it (or without any icon in the text) this is the original font.charToGlyph path.
+  const fontGlyphs = [...text].map((character) => resolveGlyphWithFallback(font, symbolFont, character))
   const paths = []
   let advanceCursor = 0
   let previous
   for (const glyph of fontGlyphs) {
-    const kerning = previous ? font.getKerningValue(previous, glyph) : 0
+    const kerning = previous && !previous.isFallbackIcon && !glyph.isFallbackIcon ? font.getKerningValue(previous, glyph) : 0
     advanceCursor += (kerning / font.unitsPerEm) * 100
     paths.push(glyph.getPath(advanceCursor, 0, 100))
     advanceCursor += (glyph.advanceWidth / font.unitsPerEm) * 100
@@ -198,10 +201,13 @@ export function flattenText(font, text, targetHeightMm, letterSpacingMm = 0) {
 }
 
 /** Returns the first character the font has no glyph for, or undefined if all are supported. */
-export function hasRequiredGlyphs(font, text) {
+export function hasRequiredGlyphs(font, text, symbolFont = undefined) {
   for (const character of text) {
     if (character === ' ') continue
-    if (font.charToGlyphIndex(character) === 0) return character
+    if (font.charToGlyphIndex(character) === 0) {
+      if (isSymbolFallbackCharacter(font, symbolFont, character)) continue
+      return character
+    }
   }
   return undefined
 }

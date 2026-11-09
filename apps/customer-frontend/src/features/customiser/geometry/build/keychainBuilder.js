@@ -23,6 +23,7 @@ import { archWarp } from '../styles/styleBuilder.js'
 import { buildNameplate } from '../templates/nameplateBuilder.js'
 import { buildTemplate, isArticulatedBuild, releaseArticulatedBuild } from '../templates/templateBuilder.js'
 import { flattenText, hasRequiredGlyphs, layoutText } from '../textOutline.js'
+import { SYMBOL_FONT_DEFINITION, textNeedsSymbolFont } from '../icons/glyphFallback.js'
 import { validateArticulatedBuild } from './articulatedValidation.js'
 import { extrudeTextFinished, extrudeFinished, baseFinishLimits, assertBaseFinishAmount, textFinishLimits, intersectTextFinishLimits, assertTextFinishAmount, regularizeFinishedSolid } from './edgeFinish.js'
 import { applyFeatureGraph } from './featureGraph.js'
@@ -164,16 +165,27 @@ async function buildKeychainGeometry(wasm, input, includeExport = false, fontOve
       return invalidResult(issues, 'subtitle-font-load', `Could not load the ${subtitleDefinition.name} font.`)
     }
   }
-  const missing = hasRequiredGlyphs(font, leftText)
+  // Printable icons (heart, paw, …) come from a bundled symbol font, loaded only when the text
+  // actually contains one the selected font lacks. Plain text never loads it, and the articulated
+  // template keeps its original glyph path untouched.
+  let symbolFont
+  if (params.templateId !== 'articulated-name' && (textNeedsSymbolFont(font, leftText) || (subtitleFont && textNeedsSymbolFont(subtitleFont, params.subtitle)))) {
+    try {
+      symbolFont = await loadFont(SYMBOL_FONT_DEFINITION)
+    } catch {
+      return invalidResult(issues, 'symbol-font-load', 'Could not load the icon font.')
+    }
+  }
+  const missing = hasRequiredGlyphs(font, leftText, symbolFont)
   if (missing) return invalidResult(issues, 'missing-glyph', `The ${definition.name} font does not contain "${missing}".`)
   if (params.templateId === 'magnet' && [...params.subtitle].length > MAGNET_SUBTITLE_MAX_LENGTH)
     return invalidResult(issues, 'subtitle-too-long', 'Shorten the subtitle to 24 characters or fewer.')
-  if (subtitleFont && hasRequiredGlyphs(subtitleFont, params.subtitle))
+  if (subtitleFont && hasRequiredGlyphs(subtitleFont, params.subtitle, symbolFont))
     return invalidResult(issues, 'subtitle-missing-glyph', `The ${subtitleDefinition.name} font does not contain all subtitle characters.`)
   const textLayout =
     params.templateId === 'articulated-name'
       ? layoutText(font, leftText, params.textSizeMm, 0, true)
-      : { outline: flattenText(font, leftText, params.textSizeMm, params.letterSpacingMm), glyphs: [], advances: [], kerning: [] }
+      : { outline: flattenText(font, leftText, params.textSizeMm, params.letterSpacingMm, symbolFont), glyphs: [], advances: [], kerning: [] }
   const outline = textLayout.outline
   if ((!outline.polygons.length || outline.width <= 0 || outline.height <= 0) && !(params.styleId === 'heart-split' && params.subtitle))
     return invalidResult(issues, 'empty-outline', 'This name does not produce a usable outline.')
@@ -198,6 +210,7 @@ async function buildKeychainGeometry(wasm, input, includeExport = false, fontOve
         params.subtitle,
         params.styleId === 'heart-split' ? params.textSizeMm : (params.subtitleTextSizeMm ?? Math.max(4, params.textSizeMm * 0.32)),
         params.styleId === 'heart-split' ? params.letterSpacingMm : (params.subtitleLetterSpacingMm ?? 0),
+        symbolFont,
       )
       if (subtitleOutline.polygons.length) {
         subtitle = wasm.CrossSection.ofPolygons(scalePolygons(subtitleOutline.polygons, scale), 'EvenOdd')

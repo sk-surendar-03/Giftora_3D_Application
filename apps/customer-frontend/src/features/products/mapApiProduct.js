@@ -1,3 +1,5 @@
+import { resolveImageUrl } from '../../utils/imageUrl.js'
+
 // Translates a backend product (Prisma shape: priceCents, originalPriceCents,
 // a `category` relation object, etc.) into the exact plain-object shape used
 // across the customer frontend.
@@ -21,6 +23,12 @@ export function mapApiProduct(apiProduct) {
   const shippingPrice = shippingCents / 100
   const isFreeShipping = shippingCents === 0
 
+  const resolvedImages = Array.isArray(apiProduct.images) && apiProduct.images.length > 0
+    ? apiProduct.images.map(resolveImageUrl)
+    : apiProduct.image
+    ? [resolveImageUrl(apiProduct.image)]
+    : []
+
   return {
     shippingCents,
     shippingPrice,
@@ -34,12 +42,14 @@ export function mapApiProduct(apiProduct) {
     category: apiProduct.category?.name ?? '',
     material: defaultMaterial,
     description: apiProduct.description,
-    image: apiProduct.images?.[0] ?? null,
-    images: apiProduct.images ?? [],
+    image: resolvedImages[0] ?? null,
+    images: resolvedImages,
     createdAt: apiProduct.createdAt,
     materials,
     colorsByMaterial: apiProduct.colorsByMaterial ?? undefined,
     colors: apiProduct.colorsByMaterial?.[defaultMaterial] ?? Object.values(apiProduct.colorsByMaterial ?? {})[0] ?? [],
     sizes: apiProduct.sizes ?? [],
+    // STL/3MF preview model summary ({ format, sizeBytes, url }) or null.
+    model: apiProduct.model ?? null,
   }
 }

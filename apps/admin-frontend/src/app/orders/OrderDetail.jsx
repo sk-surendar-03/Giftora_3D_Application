@@ -156,7 +156,7 @@ export default function OrderDetail() {
       setTrackingNumber(updated.trackingNumber || '')
       setTrackingUrl(updated.trackingUrl || '')
       setCustomUrlEdited(Boolean(updated.trackingUrl))
-      setSuccessMessage('Fulfillment details saved successfully.')
+      setSuccessMessage('Fulfillment details saved successfully.'); window.dispatchEvent(new CustomEvent('giftora:orders-updated'))
     } catch (err) {
       setError(extractError(err))
     } finally {

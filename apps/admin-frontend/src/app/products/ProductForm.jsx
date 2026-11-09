@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, Link } from 'react-router-dom'
 import Banner from '../../components/Banner.jsx'
 import { slugify } from '../../utils/slugify.js'
 import { fetchCategories } from '../../features/categories/categoriesApi.js'
-import { fetchAdminProducts, createProduct, updateProduct } from '../../features/products/productsApi.js'
+import { fetchAdminProducts, createProduct, updateProduct, uploadProductModel } from '../../features/products/productsApi.js'
 import ColorPaletteEditor from './ColorPaletteEditor.jsx'
+import ModelUploadSection from './ModelUploadSection.jsx'
+import ProductImagesSection from './ProductImagesSection.jsx'
 
 function extractError(err) {
   return err.response?.data?.error ?? err.message ?? 'Something went wrong.'
@@ -21,7 +23,7 @@ const EMPTY_FORM = {
   categoryId: '',
   materials: '', // comma-separated
   sizes: '', // comma-separated
-  images: '', // comma-separated URLs
+  images: [], // array of image URLs
   colorsByMaterial: {}, // object: { [material]: [{ label, hex }] }
   isActive: true,
 }
@@ -30,12 +32,15 @@ export default function ProductForm() {
   const { id } = useParams()
   const isEditing = Boolean(id)
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [categories, setCategories] = useState([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [slugTouched, setSlugTouched] = useState(isEditing)
   const [isLoading, setIsLoading] = useState(isEditing)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState(location.state?.modelError ?? null)
+  const [model, setModel] = useState(null) // saved STL/3MF summary from the API
+  const [stagedModel, setStagedModel] = useState(null) // File chosen before the product exists
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -53,6 +58,7 @@ export default function ProductForm() {
             setError('Product not found.')
             return
           }
+          setModel(product.model ?? null)
           const shippingCents = product.shippingCents || 0
           setForm({
             name: product.name,
@@ -65,7 +71,7 @@ export default function ProductForm() {
             categoryId: product.categoryId ?? '',
             materials: (product.materials ?? []).join(', '),
             sizes: (product.sizes ?? []).join(', '),
-            images: (product.images ?? []).join(', '),
+            images: Array.isArray(product.images) ? product.images : (product.images ? [product.images] : []),
             colorsByMaterial: product.colorsByMaterial && typeof product.colorsByMaterial === 'object' ? product.colorsByMaterial : {},
             isActive: product.isActive,
           })
@@ -81,7 +87,8 @@ export default function ProductForm() {
   }
 
   function parseListField(value) {
-    return value
+    if (Array.isArray(value)) return value
+    return String(value || '')
       .split(',')
       .map((item) => item.trim())
       .filter(Boolean)
@@ -136,6 +143,10 @@ export default function ProductForm() {
       shippingCents = Math.round(shipNumber * 100)
     }
 
+    const resolvedImages = Array.isArray(form.images)
+      ? form.images.filter((img) => typeof img === 'string' && img.trim().length > 0)
+      : parseListField(form.images)
+
     return {
       name: form.name.trim(),
       slug: form.slug.trim(),
@@ -146,7 +157,7 @@ export default function ProductForm() {
       categoryId: form.categoryId || null,
       materials: parseListField(form.materials),
       sizes: parseListField(form.sizes),
-      images: parseListField(form.images),
+      images: resolvedImages,
       ...(colorsByMaterial !== null ? { colorsByMaterial } : { colorsByMaterial: null }),
       isActive: form.isActive,
     }
@@ -168,7 +179,16 @@ export default function ProductForm() {
       if (isEditing) {
         await updateProduct(id, payload)
       } else {
-        await createProduct(payload)
+        const created = await createProduct(payload)
+        if (stagedModel) {
+          try {
+            await uploadProductModel(created.id, stagedModel)
+          } catch (uploadErr) {
+            // The product exists now; continue on its edit page so the model can be retried.
+            navigate(`/products/${created.id}/edit`, { replace: true, state: { modelError: `Product created, but the 3D model upload failed: ${extractError(uploadErr)}` } })
+            return
+          }
+        }
       }
       navigate('/products', { replace: true, state: { successMessage: isEditing ? 'Product updated.' : 'Product created.' } })
     } catch (err) {
@@ -354,15 +374,20 @@ export default function ProductForm() {
           />
         </label>
 
-        <label className="block text-sm font-medium text-ink">
-          Images (comma-separated URLs)
-          <input
-            value={form.images}
-            onChange={(e) => update('images', e.target.value)}
-            placeholder="https://.../front.png, https://.../back.png"
-            className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
-          />
-        </label>
+        {/* Dedicated Product Images Upload Section (Replaces manual comma-separated URLs) */}
+        <ProductImagesSection
+          images={form.images}
+          onChange={(nextImages) => update('images', nextImages)}
+        />
+
+        {/* Existing STL/3MF 3D Model Upload Section */}
+        <ModelUploadSection
+          productId={isEditing ? id : null}
+          model={model}
+          onModelChange={setModel}
+          stagedFile={stagedModel}
+          onStage={setStagedModel}
+        />
 
         <div className="block text-sm font-medium text-ink">
           <span className="block mb-1.5 font-medium">Colors by Material</span>

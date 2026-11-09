@@ -3,6 +3,7 @@
 // "What could not be preserved directly" note at the bottom of this file,
 // and THIRD-PARTY-NOTICES.md for the upstream license.
 
+import { stripEmojiControls } from '../icons/iconCatalog.js'
 import { normalizeEdgeFinish } from './edgeFinish.js'
 import { KEYRING_POSITIONS } from './keyringPosition.js'
 import { KEYRING_PRESETS } from './keyringPresets.js'
@@ -530,7 +531,7 @@ export function normalizeParams(params) {
       sizeEnvelope.heightMm > 80)
   )
     throw new Error('Size must be 20–120 mm wide and 15–80 mm high.')
-  const text = params.text.normalize('NFC').trim().replace(/\s+/g, ' ')
+  const text = stripEmojiControls(params.text).normalize('NFC').trim().replace(/\s+/g, ' ')
   const baseThicknessMm = clamp(
     params.baseThicknessMm,
     params.templateId === 'articulated-name' ? 3.4 : params.templateId === 'magnet' ? 4.4 : 1.6,
@@ -579,7 +580,7 @@ export function normalizeParams(params) {
           : params.styleId === 'ribbon' && params.templateId !== 'name-keychain' && params.templateId !== 'magnet'
             ? 'contour'
             : params.styleId,
-    subtitle: params.templateId !== 'articulated-name' ? (params.subtitle ?? '').normalize('NFC').trim().replace(/\s+/g, ' ') : '',
+    subtitle: params.templateId !== 'articulated-name' ? stripEmojiControls(params.subtitle ?? '').normalize('NFC').trim().replace(/\s+/g, ' ') : '',
     subtitleFontId:
       params.templateId !== 'articulated-name' && params.subtitleFontId?.trim()
         ? params.subtitleFontId.trim()
