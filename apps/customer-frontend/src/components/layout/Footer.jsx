@@ -43,12 +43,12 @@ export default function Footer() {
             <div className="flex items-center gap-2.5">
               <img
                 src="/jas-logo.png"
-                alt="Giftora"
+                alt="JAS 3D PRINTING"
                 className="h-10 w-10 rounded-full object-contain border border-line"
                 onError={(e) => { e.target.style.display = 'none' }}
               />
-              <span className="font-display text-[24px] font-semibold tracking-[-0.02em] text-ink">
-                Giftora
+              <span className="font-display text-[22px] font-semibold tracking-[-0.02em] text-ink">
+                JAS 3D PRINTING
               </span>
             </div>
             <p className="mt-3.5 max-w-[34ch] text-[14px] leading-relaxed text-muted">
@@ -109,7 +109,7 @@ export default function Footer() {
 
         {/* Bottom row */}
         <div className="mt-11 pt-5.5 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-muted">
-          <p>&copy; {new Date().getFullYear()} Giftora. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} JAS 3D PRINTING. All rights reserved.</p>
           <div className="flex gap-6">
             <Link to="/contact" className="hover:text-ink transition-colors">Privacy</Link>
             <Link to="/contact" className="hover:text-ink transition-colors">Terms of Service</Link>

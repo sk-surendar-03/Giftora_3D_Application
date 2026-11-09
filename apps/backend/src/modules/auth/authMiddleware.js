@@ -36,7 +36,7 @@ export const authenticate = asyncHandler(async (req, res, next) => {
     throw new HttpError(403, 'This account has been deactivated.')
   }
 
-  req.user = { id: user.id, email: user.email, name: user.name, role: user.role }
+  req.user = { id: user.id, email: user.email, name: user.name, phone: user.phone ?? null, role: user.role }
   next()
 })
 
@@ -54,7 +54,7 @@ export const optionalAuthenticate = asyncHandler(async (req, res, next) => {
   try {
     const payload = verifyAccessToken(token)
     const user = await prisma.user.findUnique({ where: { id: payload.sub } })
-    if (user) req.user = { id: user.id, email: user.email, name: user.name, role: user.role }
+    if (user) req.user = { id: user.id, email: user.email, name: user.name, phone: user.phone ?? null, role: user.role }
   } catch {
     // Invalid/expired token on an optional-auth route: treat as anonymous
     // rather than rejecting, since the route itself doesn't require auth.

@@ -7,7 +7,6 @@ const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/products', label: 'Shop all' },
   { to: '/customise', label: '3D Customiser' },
-  { to: '/track-order', label: 'Track Order' },
   { to: '/contact', label: 'Contact' },
 ]
 
@@ -67,15 +66,15 @@ export default function Header() {
           >
             <img
               src="/jas-logo.png"
-              alt="Giftora Emblem"
+              alt="JAS 3D PRINTING Emblem"
               className="h-10 w-10 rounded-full object-contain border border-border"
               onError={(e) => {
                 // fallback if image fails
                 e.target.style.display = 'none'
               }}
             />
-            <span className="font-display text-[26px] max-[760px]:text-[23px] font-semibold tracking-[-0.02em] text-ink">
-              Giftora
+            <span className="font-display text-[22px] max-[760px]:text-[19px] font-semibold tracking-[-0.02em] text-ink whitespace-nowrap">
+              JAS 3D PRINTING
             </span>
           </Link>
         </div>
@@ -138,13 +137,13 @@ export default function Header() {
             <div className="hidden min-[761px]:flex items-center gap-2">
               <Link
                 to="/my-orders"
-                title="Account / My Orders"
-                className="flex h-[42px] w-[42px] items-center justify-center rounded-full text-ink hover:bg-soft"
+                title="Track Orders / My Orders"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-ink hover:bg-soft text-[13.5px] font-medium"
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
+                <svg className="h-4 w-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
+                <span>Track Orders</span>
               </Link>
               <button
                 type="button"
@@ -235,9 +234,9 @@ export default function Header() {
                   <Link
                     to="/my-orders"
                     onClick={() => setMenuOpen(false)}
-                    className="block py-2 text-sm text-muted hover:text-ink"
+                    className="block py-2 text-sm text-ink font-medium hover:text-accent"
                   >
-                    My Orders
+                    Track Orders / My Orders
                   </Link>
                 </li>
                 <li>

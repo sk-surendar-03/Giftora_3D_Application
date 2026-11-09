@@ -1,20 +1,39 @@
 import { OrderStatus, OrderItemType } from '@prisma/client'
 import { HttpError } from '../../utils/httpError.js'
 import { listOrdersForAdmin, getOrderForAdmin, updateOrderStatus } from './orderService.js'
-import { getPreviewForOrderItem, getStlForOrderItem } from '../customizer/designService.js'
+import { getPreviewForOrderItem, getStlForOrderItem, getThreeMfForOrderItem } from '../customizer/designService.js'
 
 const VALID_STATUSES = Object.values(OrderStatus)
 const VALID_TYPES = Object.values(OrderItemType)
 
 export async function list(req, res) {
-  const { status, type } = req.query
-  if (status !== undefined && !VALID_STATUSES.includes(status)) {
+  let normalizedType = req.query.type
+  if (!normalizedType || normalizedType === 'ALL') {
+    normalizedType = undefined
+  } else if (normalizedType === 'CUSTOM') {
+    normalizedType = OrderItemType.CUSTOM_DESIGN
+  } else if (normalizedType === 'CATALOG') {
+    normalizedType = OrderItemType.PRODUCT
+  }
+
+  let normalizedStatus = req.query.status
+  if (!normalizedStatus || normalizedStatus === 'ALL') {
+    normalizedStatus = undefined
+  }
+
+  if (normalizedStatus !== undefined && !VALID_STATUSES.includes(normalizedStatus)) {
     throw new HttpError(400, `status must be one of: ${VALID_STATUSES.join(', ')}`)
   }
-  if (type !== undefined && !VALID_TYPES.includes(type)) {
+  if (normalizedType !== undefined && !VALID_TYPES.includes(normalizedType)) {
     throw new HttpError(400, `type must be one of: ${VALID_TYPES.join(', ')}`)
   }
-  const result = await listOrdersForAdmin({ page: req.query.page, pageSize: req.query.pageSize, search: req.query.search, status, type })
+  const result = await listOrdersForAdmin({
+    page: req.query.page,
+    pageSize: req.query.pageSize,
+    search: req.query.search,
+    status: normalizedStatus,
+    type: normalizedType,
+  })
   res.json({ orders: result.orders, meta: result.meta })
 }
 
@@ -24,11 +43,16 @@ export async function getById(req, res) {
 }
 
 export async function updateStatus(req, res) {
-  const { status } = req.body ?? {}
-  if (!VALID_STATUSES.includes(status)) {
+  const { status, shippingCarrier, trackingNumber, trackingUrl } = req.body ?? {}
+  if (status !== undefined && !VALID_STATUSES.includes(status)) {
     throw new HttpError(400, `status must be one of: ${VALID_STATUSES.join(', ')}`)
   }
-  const order = await updateOrderStatus(req.params.id, status)
+  const order = await updateOrderStatus(req.params.id, {
+    status,
+    shippingCarrier,
+    trackingNumber,
+    trackingUrl,
+  })
   res.json({ order })
 }
 
@@ -39,6 +63,18 @@ export async function downloadItemStl(req, res) {
   res
     .set({
       'Content-Type': 'model/stl',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
+    })
+    .send(buffer)
+}
+
+export async function downloadItem3mf(req, res) {
+  const { buffer, filename } = await getThreeMfForOrderItem(req.params.orderId, req.params.itemId)
+  res
+    .set({
+      'Content-Type': 'model/3mf',
       'Content-Disposition': `attachment; filename="${filename}"`,
       'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff',

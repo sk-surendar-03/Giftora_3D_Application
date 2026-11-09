@@ -18,7 +18,7 @@ export default function Login() {
   const sessionExpired = params.get('session_expired') === '1'
   // Prefer the router state (set by navigate('/login', { state: { from } }))
   // then fall back to the query-param set by the axios interceptor.
-  const redirectTo = location.state?.from ?? params.get('from') ?? '/'
+  const redirectTo = location.state?.from ?? params.get('from') ?? params.get('redirect') ?? '/'
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -40,7 +40,7 @@ export default function Login() {
         <div className="text-center mb-6">
           <img
             src="/jas-logo.png"
-            alt="Giftora"
+            alt="JAS 3D PRINTING"
             className="h-12 w-12 rounded-full mx-auto object-contain border border-line mb-3"
             onError={(e) => { e.target.style.display = 'none' }}
           />

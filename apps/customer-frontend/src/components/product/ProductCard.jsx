@@ -53,7 +53,7 @@ export default function ProductCard({ product, index = 0 }) {
     <article className="prod flex flex-col justify-between">
       {/* Top Image Tile (.ph) with 8px radius, relative, 1:1 aspect ratio */}
       <div>
-        <div className={`relative aspect-square w-full rounded-card overflow-hidden ${tintClass || 'bg-soft'}`}>
+        <div className={`relative aspect-square w-full rounded-card border border-line overflow-hidden ${tintClass || 'bg-soft'}`}>
           <Link to={`/products/${product.slug}`} className="block h-full w-full">
             {product.image ? (
               <img

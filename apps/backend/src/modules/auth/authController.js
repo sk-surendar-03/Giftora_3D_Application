@@ -3,13 +3,16 @@ import { isValidEmail, isValidPassword, isNonEmptyString } from '../../utils/val
 import { registerUser, loginUser } from './authService.js'
 
 export async function register(req, res) {
-  const { name, email, password } = req.body ?? {}
+  const { name, email, password, phone } = req.body ?? {}
 
   if (!isNonEmptyString(name, 100)) throw new HttpError(400, 'Name is required.')
   if (!isValidEmail(email)) throw new HttpError(400, 'A valid email is required.')
   if (!isValidPassword(password)) throw new HttpError(400, 'Password must be 8-128 characters.')
+  if (!phone || typeof phone !== 'string' || !/^[0-9+\-() ]{6,20}$/.test(phone.trim())) {
+    throw new HttpError(400, 'A valid phone number is required.')
+  }
 
-  const { user, token } = await registerUser({ name: name.trim(), email: email.toLowerCase().trim(), password })
+  const { user, token } = await registerUser({ name: name.trim(), email: email.toLowerCase().trim(), password, phone: phone.trim() })
   res.status(201).json({ user, token })
 }
 

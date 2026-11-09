@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Banner from '../../components/Banner.jsx'
+import Pagination from '../../components/Pagination.jsx'
 import { fetchCustomers } from '../../features/customers/customersApi.js'
 
 function extractError(err) {
@@ -27,7 +28,7 @@ export default function Customers() {
     const timer = setTimeout(() => {
       setIsLoading(true)
       setError(null)
-      fetchCustomers({ search: search || undefined, page })
+      fetchCustomers({ search: search || undefined, page, pageSize: 20 })
         .then((result) => {
           setCustomers(result.customers)
           setMeta(result.meta)
@@ -97,29 +98,13 @@ export default function Customers() {
             </tbody>
           </table>
 
-          {meta && meta.totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between text-sm text-muted">
-              <button
-                type="button"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="rounded-md border border-line px-3 py-1.5 disabled:opacity-40"
-              >
-                Previous
-              </button>
-              <span>
-                Page {meta.page} of {meta.totalPages}
-              </span>
-              <button
-                type="button"
-                disabled={page >= meta.totalPages}
-                onClick={() => setPage((p) => p + 1)}
-                className="rounded-md border border-line px-3 py-1.5 disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
-          )}
+          <Pagination
+            page={meta?.page ?? page}
+            pageSize={20}
+            total={meta?.total ?? customers.length}
+            totalPages={meta?.totalPages ?? 1}
+            onPageChange={setPage}
+          />
         </>
       )}
     </div>

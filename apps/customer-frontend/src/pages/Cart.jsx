@@ -71,6 +71,15 @@ export default function Cart() {
     )
   }
 
+  const totalShippingCents = cart.items.reduce((sum, item) => {
+    if (item.itemType === 'PRODUCT' && item.product?.shippingCents > 0) {
+      return sum + item.product.shippingCents * item.quantity
+    }
+    return sum
+  }, 0)
+  const cartSubtotalCents = cart.items.reduce((sum, item) => sum + (item.lineTotalCents || item.unitPriceCents * item.quantity), 0)
+  const cartFinalTotalCents = cartSubtotalCents + totalShippingCents
+
   return (
     <div className="bg-bg text-ink min-h-[80vh] pb-20">
       <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-10">
@@ -118,6 +127,11 @@ export default function Cart() {
                         <div className="mt-1 text-[13px] text-muted">
                           <DesignDetails params={item.design.params} />
                         </div>
+                        <div className="mt-2 text-xs">
+                          <span className="font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
+                            Free Shipping
+                          </span>
+                        </div>
                       </>
                     ) : (
                       <>
@@ -127,6 +141,22 @@ export default function Cart() {
                         {!item.product.isActive && <p className="mt-0.5 text-xs text-danger">No longer available</p>}
                         <div className="mt-1 text-[13px] text-muted">
                           <CustomizationDetails customization={item.customization} />
+                        </div>
+                        <div className="mt-2 text-xs">
+                          {item.product.shippingCents > 0 ? (
+                            <span className="font-medium text-muted bg-soft px-2 py-0.5 rounded-full border border-line">
+                              Shipping: <span className="font-semibold text-ink">₹{(item.product.shippingCents / 100).toFixed(2).replace(/\.00$/, '')}</span>
+                              {item.quantity > 1 && (
+                                <span className="text-muted/70 ml-1">
+                                  (₹{((item.product.shippingCents * item.quantity) / 100).toFixed(2).replace(/\.00$/, '')} total)
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
+                              Free Shipping
+                            </span>
+                          )}
                         </div>
                       </>
                     )}
@@ -165,31 +195,22 @@ export default function Cart() {
               Order Summary
             </h3>
 
-            {/* Free shipping progress bar */}
-            <div className="my-5">
-              <div className="flex justify-between text-[12.5px] font-medium text-muted mb-2">
-                <span>Free shipping qualified</span>
-                <span className="text-accent font-semibold">100%</span>
-              </div>
-              <div className="h-1.5 w-full rounded-full bg-soft overflow-hidden">
-                <div className="h-full bg-accent rounded-full w-full" />
-              </div>
-            </div>
-
             <div className="space-y-2.5 py-4 border-b border-line text-[14px]">
               <div className="flex justify-between text-muted">
                 <span>Subtotal</span>
-                <span className="text-ink font-semibold">{formatPrice(cart.subtotalCents)}</span>
+                <span className="text-ink font-semibold">{formatPrice(cartSubtotalCents)}</span>
               </div>
               <div className="flex justify-between text-muted">
-                <span>Standard Delivery</span>
-                <span className="text-[#17683f] font-semibold">FREE</span>
+                <span>Shipping Charges</span>
+                <span className={`font-semibold ${totalShippingCents === 0 ? 'text-[#17683f]' : 'text-ink'}`}>
+                  {totalShippingCents === 0 ? 'FREE' : formatPrice(totalShippingCents)}
+                </span>
               </div>
             </div>
 
             <div className="mt-4 pt-2 flex justify-between items-baseline font-sans">
               <span className="text-[16px] font-semibold text-ink">Total</span>
-              <span className="text-[22px] font-bold text-ink">{formatPrice(cart.totalCents)}</span>
+              <span className="text-[22px] font-bold text-accent">{formatPrice(cartFinalTotalCents)}</span>
             </div>
 
             <div className="mt-6">

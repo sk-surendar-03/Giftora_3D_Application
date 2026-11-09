@@ -58,6 +58,8 @@ export default function Viewport3D({
   baseGeometry,
   reliefGeometry,
   geometryStatus,
+  geometryError,
+  onRetry,
   dimensions,
   onCaptureReady,
 }) {
@@ -66,6 +68,34 @@ export default function Viewport3D({
   const [surfacePreset, setSurfacePreset] = useState('matte')
   const [surfaceMenuOpen, setSurfaceMenuOpen] = useState(false)
   const webglAvailable = useMemo(() => isWebGLAvailable(), [])
+
+  // Progressive loading status steps
+  const [phaseIndex, setPhaseIndex] = useState(0)
+  const loadingPhases = [
+    { title: 'Initializing 3D engine…', subtitle: 'Loading CSG kernel & font definitions' },
+    { title: 'Generating 3D model…', subtitle: 'Computing solid manifold layers & extrusions' },
+    { title: 'Preparing solid preview…', subtitle: 'Finalizing mesh buffers & rendering solid' },
+  ]
+
+  const isInitialLoading = (!baseGeometry || !reliefGeometry) && geometryStatus === 'loading'
+  const isUpdating = baseGeometry && reliefGeometry && geometryStatus === 'loading'
+  const isError = geometryStatus === 'error' && (!baseGeometry || !reliefGeometry)
+
+  useEffect(() => {
+    if (!isInitialLoading) {
+      setPhaseIndex(0)
+      return undefined
+    }
+
+    setPhaseIndex(0)
+    const t1 = setTimeout(() => setPhaseIndex(1), 1100)
+    const t2 = setTimeout(() => setPhaseIndex(2), 2400)
+
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+    }
+  }, [isInitialLoading])
 
   function zoomBy(multiplier) {
     const controls = controlsRef.current
@@ -177,17 +207,82 @@ export default function Viewport3D({
             )}
           </div>
 
-          {/* Loading overlay */}
-          {!ready && (
+          {/* Updating indicator pill (when changing text/options while model is already loaded) */}
+          {isUpdating && (
+            <div className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-full border border-accent/40 bg-surface/90 px-3 py-1 text-[11.5px] font-medium text-accent shadow-md backdrop-blur-sm">
+              <span className="h-2 w-2 rounded-full bg-accent animate-ping" />
+              <span>Updating 3D model…</span>
+            </div>
+          )}
+
+          {/* Initial 3D engine initialization & model generation loading overlay */}
+          {isInitialLoading && (
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center bg-[#0a0b0e]/95 backdrop-blur-md">
+              <div className="relative mb-5 flex h-14 w-14 items-center justify-center">
+                {/* Outer spinning ring */}
+                <div className="absolute inset-0 rounded-full border-2 border-accent/20 border-t-accent animate-spin" />
+                {/* Inner pulsing core */}
+                <div className="h-6 w-6 rounded-full bg-accent/20 flex items-center justify-center">
+                  <div className="h-2.5 w-2.5 rounded-full bg-accent animate-pulse" />
+                </div>
+              </div>
+
+              <h3 className="font-display text-[17px] font-semibold text-ink m-0 tracking-tight">
+                {loadingPhases[phaseIndex].title}
+              </h3>
+              <p className="font-sans text-[13px] text-muted max-w-xs mt-1.5 mb-4">
+                {loadingPhases[phaseIndex].subtitle}
+              </p>
+
+              {/* Progress track */}
+              <div className="h-1 w-48 overflow-hidden rounded-full bg-line/60">
+                <div
+                  className="h-full bg-accent transition-all duration-700 ease-out"
+                  style={{ width: `${((phaseIndex + 1) / loadingPhases.length) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Error overlay with retry option */}
+          {isError && (
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center bg-[#0a0b0e]/95 backdrop-blur-md">
+              <div className="h-12 w-12 rounded-full bg-danger/15 text-danger flex items-center justify-center mb-3">
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <h3 className="font-display text-[17px] font-semibold text-ink m-0">3D Generation Error</h3>
+              <p className="font-sans text-[13px] text-muted max-w-sm mt-1.5 mb-5">
+                {geometryError?.message || "Couldn't generate that 3D solid geometry. Try adjusting your text or style options."}
+              </p>
+              {onRetry && (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="rounded-control bg-accent px-4 py-2 text-xs font-semibold text-on-accent hover:bg-accent-dark transition-colors cursor-pointer"
+                >
+                  Retry Generation
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Canvas loading fallback if WebGL context creation takes a moment */}
+          {!ready && !isInitialLoading && !isError && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-paper/80">
-              <span className="text-xs font-medium text-muted">Loading 3D preview…</span>
+              <span className="text-xs font-medium text-muted">Preparing 3D viewport…</span>
             </div>
           )}
 
           {/* Drag to rotate hint badge */}
-          <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-[#1d2230] shadow-sm">
-            Drag to rotate
-          </div>
+          {!isInitialLoading && !isError && (
+            <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-[#1d2230] shadow-sm">
+              Drag to rotate
+            </div>
+          )}
 
           {/* 3D Canvas */}
           <Canvas camera={{ position: INITIAL_CAMERA_POSITION, fov: 45 }} onCreated={() => setReady(true)}>
@@ -282,12 +377,9 @@ export default function Viewport3D({
         </div>
       </div>
 
-      {geometryStatus === 'loading' && (
-        <p className="mt-2 text-xs text-muted">Updating 3D geometry…</p>
-      )}
-      {geometryStatus === 'error' && (
+      {geometryStatus === 'error' && !isError && (
         <p className="mt-2 text-xs text-danger">
-          Couldn't generate that shape — showing preview model. Try adjusting your text or style options.
+          {geometryError?.message || 'Could not compute 3D geometry. Please adjust your text or parameters.'}
         </p>
       )}
     </ThreeErrorBoundary>

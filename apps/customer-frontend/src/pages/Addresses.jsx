@@ -3,101 +3,236 @@ import { Link } from 'react-router-dom'
 import { useAddresses } from '../features/addresses/useAddresses.js'
 import Button from '../components/ui/Button'
 
-const EMPTY_FORM = { fullName: '', phone: '', line1: '', line2: '', city: '', state: '', postalCode: '', country: '', isDefault: false }
+const PHONE_RE = /^[0-9+\-() ]{6,20}$/
+const POSTAL_RE = /^[A-Za-z0-9\- ]{3,12}$/
+
+const EMPTY_FORM = {
+  fullName: '',
+  phone: '',
+  line1: '',
+  line2: '',
+  city: '',
+  state: '',
+  postalCode: '',
+  country: '',
+  isDefault: false,
+}
+
+function normalizeForm(initial) {
+  if (!initial) return EMPTY_FORM
+  return {
+    fullName: initial.fullName || '',
+    phone: initial.phone || '',
+    line1: initial.line1 || '',
+    line2: initial.line2 || '',
+    city: initial.city || '',
+    state: initial.state || '',
+    postalCode: initial.postalCode || '',
+    country: initial.country || '',
+    isDefault: Boolean(initial.isDefault),
+  }
+}
 
 function AddressForm({ initial, onSubmit, onCancel, submitting }) {
-  const [form, setForm] = useState(initial ?? EMPTY_FORM)
+  const [form, setForm] = useState(() => normalizeForm(initial))
+  const [errors, setErrors] = useState({})
 
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }))
+    }
+  }
+
+  function validate() {
+    const errs = {}
+    if (!form.fullName.trim()) errs.fullName = 'Full name is required.'
+    if (!form.phone.trim()) {
+      errs.phone = 'Phone number is required.'
+    } else if (!PHONE_RE.test(form.phone.trim())) {
+      errs.phone = 'Valid phone number required (6-20 digits/symbols).'
+    }
+
+    if (!form.line1.trim()) errs.line1 = 'Address line 1 is required.'
+    if (!form.city.trim()) errs.city = 'City is required.'
+    if (!form.state.trim()) errs.state = 'State is required.'
+
+    if (!form.postalCode.trim()) {
+      errs.postalCode = 'Postal code is required.'
+    } else if (!POSTAL_RE.test(form.postalCode.trim())) {
+      errs.postalCode = 'Valid postal/ZIP code required.'
+    }
+
+    if (!form.country.trim()) errs.country = 'Country is required.'
+
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    if (!validate()) return
+    onSubmit(form)
   }
 
   return (
     <form
-      onSubmit={(e) => {
-        e.preventDefault()
-        onSubmit(form)
-      }}
-      className="grid grid-cols-1 gap-4 rounded-card border border-line bg-surface p-5 sm:grid-cols-2"
+      onSubmit={handleSubmit}
+      noValidate
+      className="grid grid-cols-1 gap-4 rounded-card border border-line bg-surface p-5 sm:grid-cols-2 shadow-sm"
     >
-      <label className="block text-sm font-medium text-ink sm:col-span-2">
-        Full name
+      <div className="sm:col-span-2">
+        <label className="block text-sm font-semibold text-ink" htmlFor="addr-name">
+          Full Name <span className="text-danger">*</span>
+        </label>
         <input
-          required
+          id="addr-name"
           value={form.fullName}
           onChange={(e) => update('fullName', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          placeholder="e.g. Rahul Sharma"
+          className={`mt-1.5 block w-full rounded-control border px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 ${
+            errors.fullName
+              ? 'border-danger focus:border-danger focus:ring-danger/20'
+              : 'border-line focus:border-accent focus:ring-accent/30'
+          }`}
         />
-      </label>
-      <label className="block text-sm font-medium text-ink">
-        Phone
+        {errors.fullName && <p className="mt-1 text-xs text-danger font-medium">{errors.fullName}</p>}
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-ink" htmlFor="addr-phone">
+          Phone Number <span className="text-danger">*</span>
+        </label>
         <input
-          required
+          id="addr-phone"
+          type="tel"
           value={form.phone}
           onChange={(e) => update('phone', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          placeholder="+91 98765 43210"
+          className={`mt-1.5 block w-full rounded-control border px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 ${
+            errors.phone
+              ? 'border-danger focus:border-danger focus:ring-danger/20'
+              : 'border-line focus:border-accent focus:ring-accent/30'
+          }`}
         />
-      </label>
-      <label className="block text-sm font-medium text-ink">
-        Postal code
+        {errors.phone && <p className="mt-1 text-xs text-danger font-medium">{errors.phone}</p>}
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-ink" htmlFor="addr-postal">
+          Postal / ZIP Code <span className="text-danger">*</span>
+        </label>
         <input
-          required
+          id="addr-postal"
           value={form.postalCode}
           onChange={(e) => update('postalCode', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          placeholder="e.g. 560001"
+          className={`mt-1.5 block w-full rounded-control border px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 ${
+            errors.postalCode
+              ? 'border-danger focus:border-danger focus:ring-danger/20'
+              : 'border-line focus:border-accent focus:ring-accent/30'
+          }`}
         />
-      </label>
-      <label className="block text-sm font-medium text-ink sm:col-span-2">
-        Address line 1
+        {errors.postalCode && <p className="mt-1 text-xs text-danger font-medium">{errors.postalCode}</p>}
+      </div>
+
+      <div className="sm:col-span-2">
+        <label className="block text-sm font-semibold text-ink" htmlFor="addr-line1">
+          Address Line 1 <span className="text-danger">*</span>
+        </label>
         <input
-          required
+          id="addr-line1"
           value={form.line1}
           onChange={(e) => update('line1', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          placeholder="House/Flat number, Street name, Area"
+          className={`mt-1.5 block w-full rounded-control border px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 ${
+            errors.line1
+              ? 'border-danger focus:border-danger focus:ring-danger/20'
+              : 'border-line focus:border-accent focus:ring-accent/30'
+          }`}
         />
-      </label>
-      <label className="block text-sm font-medium text-ink sm:col-span-2">
-        Address line 2 (optional)
+        {errors.line1 && <p className="mt-1 text-xs text-danger font-medium">{errors.line1}</p>}
+      </div>
+
+      <div className="sm:col-span-2">
+        <label className="block text-sm font-semibold text-ink" htmlFor="addr-line2">
+          Address Line 2 <span className="text-muted font-normal text-xs">(optional)</span>
+        </label>
         <input
+          id="addr-line2"
           value={form.line2}
           onChange={(e) => update('line2', e.target.value)}
+          placeholder="Apartment, suite, unit, building, landmark"
           className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
-      </label>
-      <label className="block text-sm font-medium text-ink">
-        City
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-ink" htmlFor="addr-city">
+          City <span className="text-danger">*</span>
+        </label>
         <input
-          required
+          id="addr-city"
           value={form.city}
           onChange={(e) => update('city', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          placeholder="e.g. Bengaluru"
+          className={`mt-1.5 block w-full rounded-control border px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 ${
+            errors.city
+              ? 'border-danger focus:border-danger focus:ring-danger/20'
+              : 'border-line focus:border-accent focus:ring-accent/30'
+          }`}
         />
-      </label>
-      <label className="block text-sm font-medium text-ink">
-        State
+        {errors.city && <p className="mt-1 text-xs text-danger font-medium">{errors.city}</p>}
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-ink" htmlFor="addr-state">
+          State <span className="text-danger">*</span>
+        </label>
         <input
-          required
+          id="addr-state"
           value={form.state}
           onChange={(e) => update('state', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          placeholder="e.g. Karnataka"
+          className={`mt-1.5 block w-full rounded-control border px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 ${
+            errors.state
+              ? 'border-danger focus:border-danger focus:ring-danger/20'
+              : 'border-line focus:border-accent focus:ring-accent/30'
+          }`}
         />
-      </label>
-      <label className="block text-sm font-medium text-ink sm:col-span-2">
-        Country
+        {errors.state && <p className="mt-1 text-xs text-danger font-medium">{errors.state}</p>}
+      </div>
+
+      <div className="sm:col-span-2">
+        <label className="block text-sm font-semibold text-ink" htmlFor="addr-country">
+          Country <span className="text-danger">*</span>
+        </label>
         <input
-          required
+          id="addr-country"
           value={form.country}
           onChange={(e) => update('country', e.target.value)}
-          className="mt-1.5 block w-full rounded-control border border-line px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          placeholder="e.g. India"
+          className={`mt-1.5 block w-full rounded-control border px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 ${
+            errors.country
+              ? 'border-danger focus:border-danger focus:ring-danger/20'
+              : 'border-line focus:border-accent focus:ring-accent/30'
+          }`}
         />
-      </label>
-      <label className="flex items-center gap-2 text-sm font-medium text-ink sm:col-span-2">
-        <input type="checkbox" checked={form.isDefault} onChange={(e) => update('isDefault', e.target.checked)} />
-        Set as default address
+        {errors.country && <p className="mt-1 text-xs text-danger font-medium">{errors.country}</p>}
+      </div>
+
+      <label className="flex items-center gap-2 text-sm font-medium text-ink sm:col-span-2 select-none cursor-pointer">
+        <input
+          type="checkbox"
+          checked={form.isDefault}
+          onChange={(e) => update('isDefault', e.target.checked)}
+          className="rounded border-line text-accent focus:ring-accent"
+        />
+        Set as default address for shipping
       </label>
 
-      <div className="flex gap-3 sm:col-span-2">
-        <Button type="submit" variant="accent" disabled={submitting}>
+      <div className="flex gap-3 sm:col-span-2 pt-2">
+        <Button type="submit" variant="primary" disabled={submitting}>
           {submitting ? 'Saving…' : 'Save address'}
         </Button>
         <Button type="button" variant="ghost" onClick={onCancel}>
@@ -109,7 +244,17 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
 }
 
 export default function Addresses() {
-  const { addresses, isAuthenticated, isLoading, loadError, mutating, mutationError, addAddress, editAddress, removeAddress } = useAddresses()
+  const {
+    addresses,
+    isAuthenticated,
+    isLoading,
+    loadError,
+    mutating,
+    mutationError,
+    addAddress,
+    editAddress,
+    removeAddress,
+  } = useAddresses()
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
 
@@ -126,7 +271,11 @@ export default function Addresses() {
   }
 
   if (isLoading) {
-    return <div className="mx-auto max-w-3xl px-4 py-24 text-center text-sm text-muted sm:px-6">Loading your addresses…</div>
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-24 text-center text-sm text-muted sm:px-6">
+        Loading your addresses…
+      </div>
+    )
   }
 
   if (loadError) {
@@ -155,9 +304,12 @@ export default function Addresses() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-ink">Your Addresses</h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-ink">Your Addresses</h1>
+          <p className="mt-1 text-xs text-muted">Manage your delivery destinations for 3D printed orders.</p>
+        </div>
         {!showAddForm && (
-          <Button variant="accent" onClick={() => setShowAddForm(true)}>
+          <Button variant="primary" onClick={() => setShowAddForm(true)}>
             Add address
           </Button>
         )}
@@ -191,10 +343,12 @@ export default function Addresses() {
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-semibold text-ink">{address.fullName}</p>
                       {address.isDefault && (
-                        <span className="rounded-full bg-soft border border-line px-2 py-0.5 text-xs font-medium text-accent">Default</span>
+                        <span className="rounded-full bg-soft border border-line px-2 py-0.5 text-xs font-medium text-accent">
+                          Default
+                        </span>
                       )}
                     </div>
-                    <p className="mt-1 text-sm text-muted">{address.phone}</p>
+                    <p className="mt-1 text-sm text-muted font-mono">{address.phone}</p>
                     <p className="mt-2 text-sm text-ink">
                       {address.line1}
                       {address.line2 ? `, ${address.line2}` : ''}
@@ -205,7 +359,11 @@ export default function Addresses() {
                     <p className="text-sm text-ink">{address.country}</p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-2 text-sm">
-                    <button type="button" onClick={() => setEditingId(address.id)} className="font-medium text-ink hover:text-accent">
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(address.id)}
+                      className="font-medium text-ink hover:text-accent"
+                    >
                       Edit
                     </button>
                     {!address.isDefault && (

@@ -15,17 +15,21 @@ function formatPrice(cents) {
 function defaultDate(daysAgo) {
   const d = new Date()
   d.setDate(d.getDate() - daysAgo)
-  return d.toISOString().slice(0, 10)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 export default function CustomersReportTab() {
-  const [from, setFrom] = useState(defaultDate(30))
-  const [to, setTo] = useState(defaultDate(0))
+  const [from, setFrom] = useState(() => defaultDate(30))
+  const [to, setTo] = useState(() => defaultDate(0))
   const [report, setReport] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    if (!from || !to) return
     const timer = setTimeout(() => {
       setIsLoading(true)
       setError(null)
@@ -33,40 +37,49 @@ export default function CustomersReportTab() {
         .then(setReport)
         .catch((err) => setError(extractError(err)))
         .finally(() => setIsLoading(false))
-    }, 300)
+    }, 250)
     return () => clearTimeout(timer)
   }, [from, to])
 
   return (
-    <div>
+    <div className="space-y-6">
       <DateRangeFilter from={from} to={to} onFromChange={setFrom} onToChange={setTo} />
 
       <Banner tone="error">{error}</Banner>
 
       {isLoading ? (
-        <p className="mt-6 text-sm text-muted">Loading customer report…</p>
+        <p className="py-12 text-center text-sm text-muted">Loading customer metrics…</p>
       ) : report ? (
         <>
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <StatCard label="Total registered customers" value={report.totalCustomers} />
-            <StatCard label="New customers in range" value={report.newCustomers} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <StatCard label="Total Registered Customers" value={report.totalCustomers} />
+            <StatCard label="New Customers (In Date Range)" value={report.newCustomers} />
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Top customers by order count */}
             <div className="rounded-lg border border-line bg-surface p-5">
-              <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">Most orders</h2>
+              <h2 className="text-xs font-semibold tracking-wide text-muted uppercase mb-3">
+                Frequent Buyers (By Order Count)
+              </h2>
               {report.topCustomersByOrderCount.length === 0 ? (
-                <p className="mt-3 text-sm text-muted">No orders yet.</p>
+                <p className="py-6 text-center text-sm text-muted">No orders yet.</p>
               ) : (
-                <table className="mt-3 w-full text-sm">
+                <table className="w-full text-sm">
+                  <thead className="bg-bg text-left text-xs font-medium tracking-wide text-muted uppercase">
+                    <tr>
+                      <th className="px-4 py-2">Customer</th>
+                      <th className="px-4 py-2 text-right">Orders</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {report.topCustomersByOrderCount.map((c) => (
-                      <tr key={c.userId} className="border-t border-line">
-                        <td className="py-2">
-                          <p className="text-ink">{c.name}</p>
-                          <p className="text-xs text-muted">{c.email}</p>
+                    {report.topCustomersByOrderCount.map((c, i) => (
+                      <tr key={c.userId || `cust-ord-${i}`} className="border-t border-line hover:bg-alt/30 transition-colors">
+                        <td className="px-4 py-2">
+                          <p className="text-ink font-medium m-0">{c.name}</p>
+                          <p className="text-xs text-muted font-mono m-0">{c.email}</p>
                         </td>
-                        <td className="py-2 text-right text-muted">{c.orderCount} orders</td>
+                        <td className="px-4 py-2 text-right font-mono text-muted">{c.orderCount} orders</td>
                       </tr>
                     ))}
                   </tbody>
@@ -74,20 +87,29 @@ export default function CustomersReportTab() {
               )}
             </div>
 
+            {/* Top customers by total spend */}
             <div className="rounded-lg border border-line bg-surface p-5">
-              <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">Highest order value</h2>
+              <h2 className="text-xs font-semibold tracking-wide text-muted uppercase mb-3">
+                High-Value Customers (By Spend)
+              </h2>
               {report.topCustomersByOrderValue.length === 0 ? (
-                <p className="mt-3 text-sm text-muted">No orders yet.</p>
+                <p className="py-6 text-center text-sm text-muted">No orders yet.</p>
               ) : (
-                <table className="mt-3 w-full text-sm">
+                <table className="w-full text-sm">
+                  <thead className="bg-bg text-left text-xs font-medium tracking-wide text-muted uppercase">
+                    <tr>
+                      <th className="px-4 py-2">Customer</th>
+                      <th className="px-4 py-2 text-right">Lifetime Spend</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {report.topCustomersByOrderValue.map((c) => (
-                      <tr key={c.userId} className="border-t border-line">
-                        <td className="py-2">
-                          <p className="text-ink">{c.name}</p>
-                          <p className="text-xs text-muted">{c.email}</p>
+                    {report.topCustomersByOrderValue.map((c, i) => (
+                      <tr key={c.userId || `cust-val-${i}`} className="border-t border-line hover:bg-alt/30 transition-colors">
+                        <td className="px-4 py-2">
+                          <p className="text-ink font-medium m-0">{c.name}</p>
+                          <p className="text-xs text-muted font-mono m-0">{c.email}</p>
                         </td>
-                        <td className="py-2 text-right text-muted">{formatPrice(c.totalOrderValueCents)}</td>
+                        <td className="px-4 py-2 text-right font-semibold text-ink">{formatPrice(c.totalOrderValueCents)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -95,7 +117,9 @@ export default function CustomersReportTab() {
               )}
             </div>
           </div>
-          <p className="mt-4 text-xs text-muted">Emails are partially masked here to limit personal data shown in aggregate reports.</p>
+          <p className="text-xs text-muted">
+            Customer email addresses are partially masked in aggregate reports to protect customer privacy.
+          </p>
         </>
       ) : null}
     </div>

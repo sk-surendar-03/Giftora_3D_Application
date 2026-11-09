@@ -6,6 +6,7 @@ import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalcul
 import { DESIGN_SCHEMA_VERSION } from './designOptions.js'
 import { validateDesignInput } from './designValidator.js'
 import { sha256Hex, validateBinaryStl, validatePng } from './stlValidator.js'
+import { exportThreeMfFromStl } from './threeMfExporter.js'
 
 /** The price of one unit of a design at the given per-character rate. */
 export function priceForDesign(params, perCharacterPriceCents) {
@@ -174,6 +175,17 @@ export async function getStlForOrderItem(orderId, itemId) {
     throw new HttpError(500, 'Internal server error')
   }
   return { buffer, filename: `${item.order.orderNumber}_${safeSlug(design.params?.text)}_${item.id.slice(-6)}.stl`, design }
+}
+
+export async function getThreeMfForOrderItem(orderId, itemId) {
+  const { buffer: stlBuffer, filename: stlFilename, design } = await getStlForOrderItem(orderId, itemId)
+  const threeMfBuffer = exportThreeMfFromStl(
+    stlBuffer,
+    design.title,
+    design.params?.color?.hex
+  )
+  const filename = stlFilename.replace(/\.stl$/i, '.3mf')
+  return { buffer: threeMfBuffer, filename, design }
 }
 
 export async function getPreviewForOrderItem(orderId, itemId) {

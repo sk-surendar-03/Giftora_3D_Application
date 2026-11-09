@@ -145,9 +145,37 @@ function ProductDetailView({ slug }) {
                   {product.discountPercent}% off
                 </span>
               )}
-              <span className="font-sans text-[13.5px] font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
-                Free shipping
-              </span>
+              {product.isFreeShipping ? (
+                <span className="font-sans text-[13.5px] font-semibold text-[#17683f] bg-[#e3f4ea] px-2.5 py-0.5 rounded-full">
+                  Free shipping
+                </span>
+              ) : (
+                <span className="font-sans text-[13.5px] font-medium text-muted bg-soft px-2.5 py-0.5 rounded-full border border-line">
+                  + ₹{product.shippingPrice} shipping
+                </span>
+              )}
+            </div>
+
+            {/* Price + Shipping Breakdown */}
+            <div className="mt-3 rounded-control border border-line bg-surface/70 px-4 py-2.5 text-[13px] text-muted flex flex-wrap items-center gap-x-5 gap-y-1">
+              <div>
+                <span>Product Price: </span>
+                <span className="font-semibold text-ink">₹{product.price}</span>
+              </div>
+              <span className="text-line hidden sm:inline">•</span>
+              <div>
+                <span>Shipping: </span>
+                <span className={`font-semibold ${product.isFreeShipping ? 'text-[#17683f]' : 'text-ink'}`}>
+                  {product.isFreeShipping ? 'Free' : `₹${product.shippingPrice}`}
+                </span>
+              </div>
+              <span className="text-line hidden sm:inline">•</span>
+              <div>
+                <span>Total: </span>
+                <span className="font-bold text-accent text-[14.5px]">
+                  ₹{(product.price + (product.shippingPrice || 0)).toFixed(2).replace(/\.00$/, '')}
+                </span>
+              </div>
             </div>
 
             <p className="mt-4 text-[15px] leading-relaxed text-muted max-w-[52ch]">

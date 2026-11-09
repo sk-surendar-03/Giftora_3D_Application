@@ -1,7 +1,7 @@
 import api from '../../services/api'
 
 export async function fetchCustomers(params = {}) {
-  const { data } = await api.get('/admin/customers', { params: { pageSize: 50, ...params } })
+  const { data } = await api.get('/admin/customers', { params: { pageSize: 20, ...params } })
   return data // { customers, meta }
 }
 
