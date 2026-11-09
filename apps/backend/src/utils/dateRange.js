@@ -10,7 +10,11 @@ const MAX_RANGE_DAYS = 366
  * default without the caller having to know that. `to` is treated as
  * inclusive of its whole day.
  */
-export function parseDateRange({ from, to }) {
+export function parseDateRange({ from, to, allTime, all }) {
+  if (allTime === 'true' || allTime === true || all === 'true' || all === true) {
+    return { from: new Date(0), to: new Date('2099-12-31T23:59:59.999Z'), isAllTime: true }
+  }
+
   const now = new Date()
   let toDate = to ? new Date(to) : now
   let fromDate = from ? new Date(from) : new Date(toDate.getTime() - DEFAULT_RANGE_DAYS * DAY_MS)

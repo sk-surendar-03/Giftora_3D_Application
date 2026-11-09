@@ -24,26 +24,54 @@ function defaultDate(daysAgo) {
 export default function CustomersReportTab() {
   const [from, setFrom] = useState(() => defaultDate(30))
   const [to, setTo] = useState(() => defaultDate(0))
+  const [allTime, setAllTime] = useState(false)
   const [report, setReport] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  function load() {
+    if (!allTime && from && to && from > to) {
+      setError('"From" date must not be later than "To" date.')
+      return
+    }
+    setIsLoading(true)
+    setError(null)
+    const params = allTime ? { allTime: true } : { from, to }
+    fetchCustomerReport(params)
+      .then(setReport)
+      .catch((err) => setError(extractError(err)))
+      .finally(() => setIsLoading(false))
+  }
 
   useEffect(() => {
-    if (!from || !to) return
-    const timer = setTimeout(() => {
-      setIsLoading(true)
-      setError(null)
-      fetchCustomerReport({ from, to })
-        .then(setReport)
-        .catch((err) => setError(extractError(err)))
-        .finally(() => setIsLoading(false))
-    }, 250)
+    const timer = setTimeout(load, 250)
     return () => clearTimeout(timer)
-  }, [from, to])
+  }, [from, to, allTime, refreshKey])
+
+  function handleReset() {
+    setFrom(defaultDate(30))
+    setTo(defaultDate(0))
+    setAllTime(false)
+    setRefreshKey((k) => k + 1)
+  }
+
+  function handleApply() {
+    load()
+  }
 
   return (
     <div className="space-y-6">
-      <DateRangeFilter from={from} to={to} onFromChange={setFrom} onToChange={setTo} />
+      <DateRangeFilter
+        from={from}
+        to={to}
+        onFromChange={setFrom}
+        onToChange={setTo}
+        allTime={allTime}
+        onAllTimeChange={setAllTime}
+        onApply={handleApply}
+        onReset={handleReset}
+      />
 
       <Banner tone="error">{error}</Banner>
 

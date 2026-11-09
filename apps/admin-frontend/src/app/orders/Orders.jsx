@@ -68,6 +68,7 @@ export default function Orders() {
           setOrders(sorted)
           if (result?.meta) {
             setMeta(result.meta)
+            window.dispatchEvent(new CustomEvent('giftora:orders-updated'))
           }
         })
         .catch((err) => setError(extractError(err)))
@@ -80,9 +81,18 @@ export default function Orders() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Orders</h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl font-semibold text-ink">Orders</h1>
+            {meta?.total != null && (
+              <span className="rounded-full bg-soft px-2.5 py-0.5 text-xs font-semibold text-accent border border-line">
+                {meta.total}
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-xs text-muted">
-            Manage industrial 3D manufacturing orders sorted newest first.
+            {meta?.total != null
+              ? `Showing ${orders.length} of ${meta.total} order${meta.total === 1 ? '' : 's'} · Sorted newest first.`
+              : 'Manage industrial 3D manufacturing orders sorted newest first.'}
           </p>
         </div>
       </div>

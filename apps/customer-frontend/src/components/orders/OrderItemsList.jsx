@@ -1,6 +1,7 @@
 import CustomizationDetails from '../product/CustomizationDetails.jsx'
 import DesignDetails from '../design/DesignDetails.jsx'
 import DesignPreviewImage from '../design/DesignPreviewImage.jsx'
+import { resolveImageUrl } from '../../utils/imageUrl.js'
 
 function formatPrice(cents) {
   return `₹${(cents / 100).toFixed(2)}`
@@ -18,7 +19,7 @@ export default function OrderItemsList({ items }) {
               {isCustom ? (
                 <DesignPreviewImage designId={item.design.id} hasPreview={item.design.hasPreview} alt={item.productName} />
               ) : item.productImage ? (
-                <img src={item.productImage} alt={item.productName} className="h-full w-full object-cover" />
+                <img src={resolveImageUrl(item.productImage)} alt={item.productName} className="h-full w-full object-cover" />
               ) : (
                 <span className="text-xs text-muted">3D</span>
               )}

@@ -14,6 +14,8 @@ import Viewport3D from '../components/customiser/Viewport3D'
 import CustomizationSummary from '../components/customiser/CustomizationSummary'
 import PreflightPanel from '../components/customiser/PreflightPanel'
 import FontPickerCards from '../components/customiser/FontPickerCards'
+import IconPicker from '../components/customiser/IconPicker'
+import { codePointLength, insertAtSelection, sanitizeNameInput } from '../features/customiser/geometry/icons/textInput'
 import ThicknessPicker from '../components/customiser/ThicknessPicker'
 import KeychainColorSwatches from '../components/customiser/KeychainColorSwatches'
 import PrintFactsCard from '../components/customiser/PrintFactsCard'
@@ -89,6 +91,8 @@ function CustomiserWorkspace({ options }) {
   const [thickness, setThickness] = useState(initial.thickness ?? 'standard')
   const [allowDisconnected, setAllowDisconnected] = useState(initial.allowDisconnected ?? false)
 
+  const nameInputRef = useRef(null)
+  const nameSelectionRef = useRef({ start: null, end: null })
   const captureRef = useRef(null)
   const handleCaptureReady = useCallback((capture) => {
     captureRef.current = capture
@@ -185,7 +189,28 @@ function CustomiserWorkspace({ options }) {
     [engine.result, engine.status, engine.error, allowDisconnected],
   )
 
-  const charsRemaining = options.maxTextLength - text.length
+  // Counted in code points (like the engine and the server), so an icon is one character.
+  const charsRemaining = options.maxTextLength - codePointLength(text)
+  const iconsUnavailable = templateOption.id === 'articulated-name'
+
+  function rememberNameSelection() {
+    const input = nameInputRef.current
+    if (input) nameSelectionRef.current = { start: input.selectionStart, end: input.selectionEnd }
+  }
+
+  // Inserts the chosen icon at the remembered caret/selection and puts the caret after it.
+  function insertIcon(character) {
+    const { start, end } = nameSelectionRef.current
+    const inserted = insertAtSelection(text, start ?? text.length, end ?? start ?? text.length, character, options.maxTextLength)
+    if (!inserted) return
+    setText(inserted.text)
+    requestAnimationFrame(() => {
+      const input = nameInputRef.current
+      if (!input) return
+      input.focus()
+      input.setSelectionRange(inserted.caret, inserted.caret)
+    })
+  }
   const isAtLimit = charsRemaining <= 0
   const allowedFontIds = new Set(options.fonts.map((font) => font.id))
   const selectableFonts = FONT_CATALOG.filter((font) => allowedFontIds.has(font.id) && (!templateOption.requiresArticulatedFont || font.supportsArticulated))
@@ -261,14 +286,25 @@ function CustomiserWorkspace({ options }) {
                   {charsRemaining} left
                 </span>
               </div>
-              <input
-                type="text"
-                value={text}
-                maxLength={options.maxTextLength}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Enter name or text"
-                className="mt-2 block w-full h-[46px] rounded-control border border-line bg-surface px-3.5 text-[15px] font-medium text-ink placeholder:text-muted focus:border-accent focus:outline-none"
-              />
+              <div className="mt-2 flex items-start gap-2">
+                <input
+                  ref={nameInputRef}
+                  type="text"
+                  value={text}
+                  onChange={(e) => setText(sanitizeNameInput(e.target.value, options.maxTextLength))}
+                  placeholder="Enter name or text"
+                  className="block min-w-0 flex-1 h-[46px] rounded-control border border-line bg-surface px-3.5 text-[15px] font-medium text-ink placeholder:text-muted focus:border-accent focus:outline-none"
+                />
+                <IconPicker
+                  onOpen={rememberNameSelection}
+                  onPick={insertIcon}
+                  disabled={iconsUnavailable}
+                  disabledReason="Icons are not available for articulated letters."
+                />
+              </div>
+              {iconsUnavailable && (
+                <p className="mt-1.5 text-[11px] text-muted">Icons are not available for articulated letters.</p>
+              )}
             </section>
 
             {/* Step 2: Print Colors */}

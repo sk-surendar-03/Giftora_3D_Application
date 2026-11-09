@@ -1,6 +1,7 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
 import { parsePagination, buildMeta } from '../../utils/pagination.js'
+import { deleteModelFile } from './productModelService.js'
 
 const SORT_FIELDS = {
   newest: { createdAt: 'desc' },
@@ -89,7 +90,9 @@ export async function updateProduct(id, data) {
 
 export async function deleteProduct(id) {
   try {
+    const existing = await prisma.product.findUnique({ where: { id }, select: { modelKey: true } })
     await prisma.product.delete({ where: { id } })
+    await deleteModelFile(existing?.modelKey)
   } catch (err) {
     if (err.code === 'P2025') throw new HttpError(404, 'Product not found.')
     if (err.code === 'P2003') throw new HttpError(409, 'Cannot delete a product that is already referenced by carts or orders.')

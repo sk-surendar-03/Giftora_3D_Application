@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Banner from '../../components/Banner.jsx'
 import Pagination from '../../components/Pagination.jsx'
 import { fetchAdminProducts, updateProduct, deleteProduct } from '../../features/products/productsApi.js'
+import { resolveImageUrl } from '../../utils/imageUrl.js'
 
 function extractError(err) {
   return err.response?.data?.error ?? err.message ?? 'Something went wrong.'
@@ -225,7 +226,7 @@ export default function Products() {
                 {viewingProduct.images && viewingProduct.images.length > 0 ? (
                   <div className="space-y-2">
                     <img
-                      src={viewingProduct.images[0]}
+                      src={resolveImageUrl(viewingProduct.images[0])}
                       alt={viewingProduct.name}
                       className="w-full h-52 object-cover rounded-control border border-line bg-soft"
                     />
@@ -234,7 +235,7 @@ export default function Products() {
                         {viewingProduct.images.slice(1).map((img, idx) => (
                           <img
                             key={idx}
-                            src={img}
+                            src={resolveImageUrl(img)}
                             alt=""
                             className="h-14 w-14 object-cover rounded-control border border-line shrink-0"
                           />

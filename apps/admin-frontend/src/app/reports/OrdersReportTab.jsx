@@ -30,23 +30,46 @@ function defaultDate(daysAgo) {
 export default function OrdersReportTab() {
   const [from, setFrom] = useState(() => defaultDate(30))
   const [to, setTo] = useState(() => defaultDate(0))
+  const [allTime, setAllTime] = useState(false)
   const [status, setStatus] = useState('')
   const [report, setReport] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  function load() {
+    if (!allTime && from && to && from > to) {
+      setError('"From" date must not be later than "To" date.')
+      return
+    }
+    setIsLoading(true)
+    setError(null)
+    const params = {
+      ...(allTime ? { allTime: true } : { from, to }),
+      status: status || undefined,
+    }
+    fetchOrderReport(params)
+      .then(setReport)
+      .catch((err) => setError(extractError(err)))
+      .finally(() => setIsLoading(false))
+  }
 
   useEffect(() => {
-    if (!from || !to) return
-    const timer = setTimeout(() => {
-      setIsLoading(true)
-      setError(null)
-      fetchOrderReport({ from, to, status: status || undefined })
-        .then(setReport)
-        .catch((err) => setError(extractError(err)))
-        .finally(() => setIsLoading(false))
-    }, 250)
+    const timer = setTimeout(load, 250)
     return () => clearTimeout(timer)
-  }, [from, to, status])
+  }, [from, to, allTime, status, refreshKey])
+
+  function handleReset() {
+    setFrom(defaultDate(30))
+    setTo(defaultDate(0))
+    setAllTime(false)
+    setStatus('')
+    setRefreshKey((k) => k + 1)
+  }
+
+  function handleApply() {
+    load()
+  }
 
   return (
     <div className="space-y-6">
@@ -56,6 +79,10 @@ export default function OrdersReportTab() {
           to={to}
           onFromChange={setFrom}
           onToChange={setTo}
+          allTime={allTime}
+          onAllTimeChange={setAllTime}
+          onApply={handleApply}
+          onReset={handleReset}
         />
         <label className="text-[13px] font-medium text-muted">
           Filter by Status

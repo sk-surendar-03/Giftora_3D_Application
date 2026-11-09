@@ -1,7 +1,7 @@
 import api from '../../services/api'
 
-export async function fetchDashboard() {
-  const { data } = await api.get('/admin/reports/dashboard')
+export async function fetchDashboard(params) {
+  const { data } = await api.get('/admin/reports/dashboard', { params })
   return data
 }
 

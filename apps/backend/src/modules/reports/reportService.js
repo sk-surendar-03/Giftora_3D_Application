@@ -23,12 +23,15 @@ const ALL_STATUSES = ['PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', '
 // `inventoryTrackingAvailable: false` alongside them.
 const INVENTORY_TRACKING_AVAILABLE = false
 
-export async function getDashboardSummary() {
+export async function getDashboardSummary(range = null) {
+  const where = range ? { createdAt: { gte: range.from, lt: range.to } } : {}
+  const customerWhere = range ? { role: 'CUSTOMER', createdAt: { gte: range.from, lt: range.to } } : { role: 'CUSTOMER' }
+
   const [totalCustomers, totalOrders, statusCounts, revenueAgg, totalProducts] = await Promise.all([
-    prisma.user.count({ where: { role: 'CUSTOMER' } }),
-    prisma.order.count(),
-    prisma.order.groupBy({ by: ['status'], _count: { _all: true } }),
-    prisma.order.aggregate({ where: { status: { in: REVENUE_STATUSES } }, _sum: { totalCents: true } }),
+    prisma.user.count({ where: customerWhere }),
+    prisma.order.count({ where }),
+    prisma.order.groupBy({ by: ['status'], where, _count: { _all: true } }),
+    prisma.order.aggregate({ where: { status: { in: REVENUE_STATUSES }, ...where }, _sum: { totalCents: true } }),
     prisma.product.count(),
   ])
 
@@ -36,6 +39,8 @@ export async function getDashboardSummary() {
   for (const row of statusCounts) countByStatus[row.status] = row._count._all
 
   return {
+    from: range?.from ?? null,
+    to: range?.to ?? null,
     totalCustomers,
     totalOrders,
     totalRevenueCents: revenueAgg._sum.totalCents ?? 0,

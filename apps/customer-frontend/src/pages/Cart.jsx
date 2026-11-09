@@ -5,6 +5,7 @@ import CustomizationDetails from '../components/product/CustomizationDetails.jsx
 import DesignDetails from '../components/design/DesignDetails.jsx'
 import DesignPreviewImage from '../components/design/DesignPreviewImage.jsx'
 import Button from '../components/ui/Button'
+import { resolveImageUrl } from '../utils/imageUrl.js'
 
 function formatPrice(cents) {
   return `₹${(cents / 100).toFixed(2)}`
@@ -110,7 +111,7 @@ export default function Cart() {
                   {isCustom ? (
                     <DesignPreviewImage designId={item.design.id} hasPreview={item.design.hasPreview} alt={item.design.title} />
                   ) : item.product.images?.[0] ? (
-                    <img src={item.product.images[0]} alt={item.product.name} className="h-full w-full object-cover" />
+                    <img src={resolveImageUrl(item.product.images[0])} alt={item.product.name} className="h-full w-full object-cover" />
                   ) : (
                     <svg className="w-8 h-8 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                       <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" />

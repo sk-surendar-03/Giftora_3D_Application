@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../features/auth/useAuth.js'
 import { fetchNewInquiryCount } from '../features/inquiries/inquiriesApi.js'
+import { fetchOrders } from '../features/orders/ordersApi.js'
 
 const NAV_GROUPS = [
   {
@@ -49,7 +50,6 @@ const NAV_GROUPS = [
       {
         to: '/orders',
         label: 'Orders',
-        count: '12',
         icon: (
           <path d="M5 8h14l-1 12H6L5 8Z M9 8V6a3 3 0 0 1 6 0v2" />
         ),
@@ -88,26 +88,37 @@ export default function AdminLayout() {
   const { user, logout } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [unreadInquiries, setUnreadInquiries] = useState(0)
+  const [totalOrders, setTotalOrders] = useState(null)
   const location = useLocation()
 
   useEffect(() => {
     let mounted = true
-    function refreshCount() {
+    function refreshCounts() {
       fetchNewInquiryCount()
         .then((count) => {
           if (mounted) setUnreadInquiries(Number(count) || 0)
         })
         .catch(() => {})
+
+      fetchOrders({ pageSize: 1 })
+        .then((result) => {
+          if (mounted && result?.meta?.total != null) {
+            setTotalOrders(result.meta.total)
+          }
+        })
+        .catch(() => {})
     }
 
-    refreshCount()
-    const interval = setInterval(refreshCount, 20000)
-    window.addEventListener('giftora:inquiries-updated', refreshCount)
+    refreshCounts()
+    const interval = setInterval(refreshCounts, 20000)
+    window.addEventListener('giftora:inquiries-updated', refreshCounts)
+    window.addEventListener('giftora:orders-updated', refreshCounts)
 
     return () => {
       mounted = false
       clearInterval(interval)
-      window.removeEventListener('giftora:inquiries-updated', refreshCount)
+      window.removeEventListener('giftora:inquiries-updated', refreshCounts)
+      window.removeEventListener('giftora:orders-updated', refreshCounts)
     }
   }, [location.pathname])
 
@@ -177,13 +188,28 @@ export default function AdminLayout() {
                         {item.icon}
                       </svg>
                       <span className="min-[761px]:hidden min-[1041px]:inline">{item.label}</span>
-                      {(item.to === '/inquiries' ? (unreadInquiries > 0 ? String(unreadInquiries) : null) : item.count) && (
-                        <span className={`ml-auto hidden min-[1041px]:inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-bold ${
-                          item.to === '/inquiries' ? 'bg-accent text-on-accent' : 'bg-secondary text-on-secondary'
-                        }`}>
-                          {item.to === '/inquiries' ? String(unreadInquiries) : item.count}
-                        </span>
-                      )}
+                      {(() => {
+                        const badgeCount =
+                          item.to === '/inquiries'
+                            ? unreadInquiries > 0
+                              ? String(unreadInquiries)
+                              : null
+                            : item.to === '/orders'
+                              ? totalOrders != null
+                                ? String(totalOrders)
+                                : null
+                              : item.count
+                        if (!badgeCount) return null
+                        return (
+                          <span
+                            className={`ml-auto hidden min-[1041px]:inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-bold ${
+                              item.to === '/inquiries' ? 'bg-accent text-on-accent' : 'bg-secondary text-on-secondary'
+                            }`}
+                          >
+                            {badgeCount}
+                          </span>
+                        )
+                      })()}
                     </NavLink>
                   ))}
                 </nav>

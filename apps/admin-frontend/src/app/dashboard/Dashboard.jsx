@@ -13,6 +13,7 @@ function formatPrice(cents) {
 }
 
 function Dashboard() {
+  const [filter, setFilter] = useState('today')
   const [summary, setSummary] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -21,17 +22,19 @@ function Dashboard() {
     const timer = setTimeout(() => {
       setIsLoading(true)
       setError(null)
-      fetchDashboard()
+      fetchDashboard({ range: filter })
         .then(setSummary)
         .catch((err) => setError(extractError(err)))
         .finally(() => setIsLoading(false))
     }, 0)
     return () => clearTimeout(timer)
-  }, [])
+  }, [filter])
+
+  const periodLabel = filter === 'today' ? 'Today' : filter === '7d' ? 'Last 7 days' : 'Last 30 days'
 
   return (
     <div className="space-y-8">
-      {/* Page Header with Date Filter Mock */}
+      {/* Page Header with Functional Date Filter */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-line">
         <div>
           <span className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent block">
@@ -44,9 +47,33 @@ function Dashboard() {
 
         <div className="flex items-center gap-3">
           <div className="inline-flex rounded-control border border-line bg-surface p-1 text-[13px] font-semibold text-muted">
-            <span className="px-3 py-1 rounded-[3px] bg-accent text-on-accent font-bold">Today</span>
-            <span className="px-3 py-1 hover:text-ink cursor-pointer">7D</span>
-            <span className="px-3 py-1 hover:text-ink cursor-pointer">30D</span>
+            <button
+              type="button"
+              onClick={() => setFilter('today')}
+              className={`px-3 py-1 rounded-[3px] transition-colors cursor-pointer ${
+                filter === 'today' ? 'bg-accent text-on-accent font-bold' : 'hover:text-ink'
+              }`}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('7d')}
+              className={`px-3 py-1 rounded-[3px] transition-colors cursor-pointer ${
+                filter === '7d' ? 'bg-accent text-on-accent font-bold' : 'hover:text-ink'
+              }`}
+            >
+              7 Days
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('30d')}
+              className={`px-3 py-1 rounded-[3px] transition-colors cursor-pointer ${
+                filter === '30d' ? 'bg-accent text-on-accent font-bold' : 'hover:text-ink'
+              }`}
+            >
+              30 Days
+            </button>
           </div>
           <Link to="/reports" className="text-[13.5px] font-semibold text-accent hover:underline">
             Reports →
@@ -65,7 +92,7 @@ function Dashboard() {
             <StatCard
               label="Total Revenue"
               value={formatPrice(summary.totalRevenueCents)}
-              hint="vs last period"
+              hint={periodLabel}
               delta="+12%"
               icon={
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -76,7 +103,7 @@ function Dashboard() {
             <StatCard
               label="Total Orders"
               value={summary.totalOrders}
-              hint="All time"
+              hint={periodLabel}
               delta="+8%"
               icon={
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">

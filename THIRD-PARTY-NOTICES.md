@@ -79,3 +79,15 @@ MIT licenses (see `node_modules/manifold-3d/LICENSE` and
 `node_modules/opentype.js/LICENSE` after `npm install`). `manifold-3d`'s
 `manifold.wasm` binary is copied into `apps/customer-frontend/public/` so it
 can be served as a static asset; it is not modified.
+
+## Noto Emoji (monochrome) — SIL Open Font License 1.1
+
+The customizer's printable-icon feature
+(`apps/customer-frontend/src/features/customiser/geometry/icons/`) draws its
+icon outlines from **Noto Emoji** (Copyright 2013 Google LLC), bundled as
+`apps/customer-frontend/public/fonts/noto-emoji.ttf`. The file is a subset of
+the upstream variable font (https://github.com/google/fonts/tree/main/ofl/notoemoji):
+instanced at weight 700 and reduced to the 39 curated icon glyphs. It is used
+under the SIL Open Font License 1.1, which permits bundling and commercial
+use; the full licence text is in
+`apps/customer-frontend/public/fonts/licenses/noto-emoji.txt`.
