@@ -83,6 +83,9 @@ export default function Checkout() {
     setConfirmState({ submitting: true, error: null })
     try {
       const order = await createOrder(selectedAddressId, idempotencyKey)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('giftora:cart-updated', { detail: { id: null, items: [], subtotalCents: 0, totalCents: 0 } }))
+      }
       navigate(`/order-success/${order.id}`, { replace: true })
     } catch (err) {
       setConfirmState({ submitting: false, error: err.response?.data?.error ?? 'Something went wrong placing your order. Please try again.' })

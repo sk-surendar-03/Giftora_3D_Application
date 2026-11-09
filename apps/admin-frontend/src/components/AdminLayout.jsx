@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { NavLink, Outlet, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../features/auth/useAuth.js'
+import { fetchNewInquiryCount } from '../features/inquiries/inquiriesApi.js'
 
 const NAV_GROUPS = [
   {
@@ -60,6 +61,13 @@ const NAV_GROUPS = [
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75" />
         ),
       },
+      {
+        to: '/inquiries',
+        label: 'Customer Inquiries',
+        icon: (
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        ),
+      },
     ],
   },
   {
@@ -79,6 +87,29 @@ const NAV_GROUPS = [
 export default function AdminLayout() {
   const { user, logout } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [unreadInquiries, setUnreadInquiries] = useState(0)
+  const location = useLocation()
+
+  useEffect(() => {
+    let mounted = true
+    function refreshCount() {
+      fetchNewInquiryCount()
+        .then((count) => {
+          if (mounted) setUnreadInquiries(Number(count) || 0)
+        })
+        .catch(() => {})
+    }
+
+    refreshCount()
+    const interval = setInterval(refreshCount, 20000)
+    window.addEventListener('giftora:inquiries-updated', refreshCount)
+
+    return () => {
+      mounted = false
+      clearInterval(interval)
+      window.removeEventListener('giftora:inquiries-updated', refreshCount)
+    }
+  }, [location.pathname])
 
   return (
     <div className="min-h-screen bg-bg text-ink flex">
@@ -102,12 +133,12 @@ export default function AdminLayout() {
           <Link to="/" className="flex items-center gap-3 px-2.5 pb-4 mb-2 border-b border-line">
             <img
               src="/jas-logo.png"
-              alt="Giftora"
+              alt="JAS 3D PRINTING"
               className="h-8 w-8 rounded-full object-contain border border-line shrink-0"
               onError={(e) => { e.target.style.display = 'none' }}
             />
-            <span className="font-display text-[22px] font-semibold text-ink tracking-tight whitespace-nowrap min-[761px]:hidden min-[1041px]:inline">
-              Giftora
+            <span className="font-display text-[17px] font-semibold text-ink tracking-tight whitespace-nowrap min-[761px]:hidden min-[1041px]:inline">
+              JAS 3D PRINTING
             </span>
           </Link>
 
@@ -146,9 +177,11 @@ export default function AdminLayout() {
                         {item.icon}
                       </svg>
                       <span className="min-[761px]:hidden min-[1041px]:inline">{item.label}</span>
-                      {item.count && (
-                        <span className="ml-auto hidden min-[1041px]:inline-flex rounded-full bg-secondary px-2 py-0.5 text-[10.5px] font-bold text-on-secondary">
-                          {item.count}
+                      {(item.to === '/inquiries' ? (unreadInquiries > 0 ? String(unreadInquiries) : null) : item.count) && (
+                        <span className={`ml-auto hidden min-[1041px]:inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-bold ${
+                          item.to === '/inquiries' ? 'bg-accent text-on-accent' : 'bg-secondary text-on-secondary'
+                        }`}>
+                          {item.to === '/inquiries' ? String(unreadInquiries) : item.count}
                         </span>
                       )}
                     </NavLink>
@@ -208,11 +241,21 @@ export default function AdminLayout() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-alt border border-line text-muted">
+            <Link
+              to="/inquiries"
+              title={unreadInquiries > 0 ? `${unreadInquiries} new customer inquiry` : 'Customer Inquiries'}
+              aria-label="Customer Inquiries"
+              className="relative flex h-9 w-9 items-center justify-center rounded-full bg-alt border border-line text-muted hover:text-ink hover:border-accent transition-colors"
+            >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4l2-2ZM10 21h4" />
               </svg>
-            </span>
+              {unreadInquiries > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-on-accent animate-pulse">
+                  {unreadInquiries > 99 ? '99+' : unreadInquiries}
+                </span>
+              )}
+            </Link>
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-[#17683f]" />
               <span className="font-sans text-[12.5px] text-muted">Engine Online</span>

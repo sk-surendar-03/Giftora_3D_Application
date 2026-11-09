@@ -15,6 +15,8 @@ import { reportRouter } from './modules/reports/reportRoutes.js'
 import { settingsRouter, adminSettingsRouter } from './modules/settings/settingsRoutes.js'
 import { customizerRouter, customDesignRouter } from './modules/customizer/customizerRoutes.js'
 import { wishlistRouter } from './modules/wishlist/wishlistRoutes.js'
+import { contactRouter } from './modules/contact/contactRoutes.js'
+import { adminInquiryRouter } from './modules/contact/adminInquiryRoutes.js'
 
 const app = express()
 
@@ -47,11 +49,13 @@ app.use('/api/v1/orders', orderRouter)
 app.use('/api/v1/admin/orders', adminOrderRouter)
 app.use('/api/v1/admin/customers', customerRouter)
 app.use('/api/v1/admin/reports', reportRouter)
+app.use('/api/v1/admin/inquiries', adminInquiryRouter)
 app.use('/api/v1/settings', settingsRouter)
 app.use('/api/v1/admin/settings', adminSettingsRouter)
 app.use('/api/v1/customizer', customizerRouter)
 app.use('/api/v1/custom-designs', customDesignRouter)
 app.use('/api/v1/wishlist', wishlistRouter)
+app.use('/api/v1/contact', contactRouter)
 
 app.use(notFoundHandler)
 app.use(errorHandler)

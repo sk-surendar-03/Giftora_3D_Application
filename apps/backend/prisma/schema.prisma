@@ -54,6 +54,7 @@ model User {
   email        String   @unique
   passwordHash String
   name         String
+  phone        String?
   role         Role     @default(CUSTOMER)
   // Account activation/deactivation (Phase 13 — Admin Customer Management).
   // Defaults true so every existing account stays active.
@@ -142,6 +143,7 @@ model Product {
   description String   @db.Text
   priceCents        Int
   originalPriceCents Int?
+  shippingCents     Int      @default(0)
   // JSON columns holding array data. MySQL has no native array type (and
   // Prisma doesn't support scalar lists on MySQL at all — these were
   // `String[]` under the earlier PostgreSQL schema), so `images`/
@@ -246,6 +248,9 @@ model Order {
   // later edits or deletes that address.
   shippingAddress Json
   status          OrderStatus @default(PENDING)
+  shippingCarrier String?
+  trackingNumber  String?
+  trackingUrl     String?     @db.Text
   subtotalCents   Int
   shippingCents   Int         @default(0)
   totalCents      Int
@@ -314,4 +319,17 @@ model WishlistItem {
   @@index([userId])
   @@index([productId])
   @@map("wishlist_items")
+}
+
+model ContactInquiry {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  subject   String
+  message   String   @db.Text
+  status    String   @default("NEW")
+  createdAt DateTime @default(now())
+
+  @@map("contact_inquiries")
 }

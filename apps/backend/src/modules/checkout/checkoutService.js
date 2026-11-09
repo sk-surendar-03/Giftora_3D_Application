@@ -51,7 +51,7 @@ export async function reviewCheckout(userId, addressId) {
       itemType: item.itemType,
       productId: item.productId,
       title: isCustom ? design.title : product.name,
-      product: isCustom ? null : { id: product.id, slug: product.slug, name: product.name, images: product.images },
+      product: isCustom ? null : { id: product.id, slug: product.slug, name: product.name, images: product.images, shippingCents: product.shippingCents ?? 0 },
       design: isCustom ? toPublicDesign(design) : null,
       quantity: item.quantity,
       customization: item.customization,
@@ -79,12 +79,20 @@ export async function reviewCheckout(userId, addressId) {
 
   const hasBlockingIssues = issues.some((issue) => issue.blocking)
 
+  let shippingCents = 0
+  for (const item of cart.items) {
+    if (item.itemType === 'PRODUCT' && item.product?.shippingCents > 0) {
+      shippingCents += item.product.shippingCents * item.quantity
+    }
+  }
+  const totalCents = subtotalCents + shippingCents
+
   return {
     items,
     address,
     subtotalCents,
-    shippingCents: 0,
-    totalCents: subtotalCents,
+    shippingCents,
+    totalCents,
     issues,
     canConfirm: !hasBlockingIssues,
   }

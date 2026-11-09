@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 import { authenticate, authorize } from '../auth/authMiddleware.js'
-import { list, getById, updateStatus, downloadItemStl, itemPreview } from './adminOrderController.js'
+import { list, getById, updateStatus, downloadItemStl, downloadItem3mf, itemPreview } from './adminOrderController.js'
 
 export const adminOrderRouter = Router()
 
@@ -14,4 +14,5 @@ adminOrderRouter.get('/', asyncHandler(list))
 adminOrderRouter.get('/:id', asyncHandler(getById))
 adminOrderRouter.patch('/:id/status', asyncHandler(updateStatus))
 adminOrderRouter.get('/:orderId/items/:itemId/stl', asyncHandler(downloadItemStl))
+adminOrderRouter.get('/:orderId/items/:itemId/3mf', asyncHandler(downloadItem3mf))
 adminOrderRouter.get('/:orderId/items/:itemId/preview', asyncHandler(itemPreview))

@@ -31,6 +31,9 @@ export async function uploadDesignPreview(designId, pngBlob) {
 
 export async function addCustomDesignToCart({ customDesignId, quantity }) {
   const { data } = await api.post('/cart/custom-items', { customDesignId, quantity })
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('giftora:cart-updated', { detail: data.cart }))
+  }
   return data.cart
 }
 

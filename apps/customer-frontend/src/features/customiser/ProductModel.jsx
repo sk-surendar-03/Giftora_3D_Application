@@ -56,7 +56,8 @@ export default function ProductModel({ text, color, textColor, materialName, sca
     )
   }
 
-  return <FallbackModel text={text} color={color} appearance={appearance} scale={scale} />
+  // Do not render a fake fallback model while the geometry engine is generating the real solid.
+  return null
 }
 
 function FallbackModel({ text, color, appearance, scale }) {

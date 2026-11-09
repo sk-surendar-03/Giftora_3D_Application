@@ -3,6 +3,7 @@ import { HttpError } from '../../utils/httpError.js'
 import { generateOrderNumber } from './orderNumber.js'
 import { parsePagination, buildMeta } from '../../utils/pagination.js'
 import { stlIsAvailable, toPublicDesign } from '../customizer/designService.js'
+import { resolveTrackingUrl } from './carrierTracking.js'
 
 const CART_INCLUDE = { items: { include: { product: true, customDesign: true }, orderBy: { createdAt: 'asc' } } }
 const ORDER_INCLUDE = { items: { include: { customDesign: true } } }
@@ -85,7 +86,12 @@ export async function createOrder(userId, { addressId, idempotencyKey }) {
         // the product's own base priceCents — customizer products have no
         // separate base price; see cartService.js's addItem.
         const subtotalCents = cart.items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0)
-        const shippingCents = 0
+        const shippingCents = cart.items.reduce((sum, item) => {
+          if (item.itemType === 'PRODUCT' && item.product?.shippingCents > 0) {
+            return sum + item.product.shippingCents * item.quantity
+          }
+          return sum
+        }, 0)
         const totalCents = subtotalCents + shippingCents
 
         const order = await tx.order.create({
@@ -238,17 +244,71 @@ const ALLOWED_TRANSITIONS = {
   REFUNDED: [],
 }
 
-export async function updateOrderStatus(orderId, nextStatus) {
+export async function updateOrderStatus(orderId, input) {
   const order = await prisma.order.findUnique({ where: { id: orderId } })
   if (!order) throw new HttpError(404, 'Order not found.')
 
-  if (order.status === nextStatus) {
-    throw new HttpError(400, `This order is already ${nextStatus}.`)
-  }
-  if (!ALLOWED_TRANSITIONS[order.status]?.includes(nextStatus)) {
-    throw new HttpError(400, `Cannot change an order from ${order.status} to ${nextStatus}.`)
+  const isLegacy = typeof input === 'string'
+  const nextStatus = isLegacy ? input : input?.status
+  const shippingCarrier = !isLegacy ? input?.shippingCarrier : undefined
+  const trackingNumber = !isLegacy ? input?.trackingNumber : undefined
+  const trackingUrl = !isLegacy ? input?.trackingUrl : undefined
+
+  const data = {}
+
+  if (nextStatus !== undefined && nextStatus !== order.status) {
+    if (!ALLOWED_TRANSITIONS[order.status]?.includes(nextStatus)) {
+      throw new HttpError(400, `Cannot change an order from ${order.status} to ${nextStatus}.`)
+    }
+    data.status = nextStatus
   }
 
-  const updated = await prisma.order.update({ where: { id: orderId }, data: { status: nextStatus }, include: ADMIN_ORDER_INCLUDE })
+  if (shippingCarrier !== undefined) {
+    data.shippingCarrier = typeof shippingCarrier === 'string' && shippingCarrier.trim() ? shippingCarrier.trim() : null
+  }
+
+  if (trackingNumber !== undefined) {
+    data.trackingNumber = typeof trackingNumber === 'string' && trackingNumber.trim() ? trackingNumber.trim() : null
+  }
+
+  if (trackingUrl !== undefined) {
+    if (typeof trackingUrl === 'string' && trackingUrl.trim()) {
+      const trimmedUrl = trackingUrl.trim()
+      if (!/^https?:\/\/.+/i.test(trimmedUrl)) {
+        throw new HttpError(400, 'Tracking URL must be a valid http or https URL.')
+      }
+      data.trackingUrl = trimmedUrl
+    } else {
+      data.trackingUrl = null
+    }
+  }
+
+  // Auto-generate canonical carrier URL if trackingUrl is not explicitly set
+  const effectiveCarrier = data.shippingCarrier !== undefined ? data.shippingCarrier : order.shippingCarrier
+  const effectiveTrackingNum = data.trackingNumber !== undefined ? data.trackingNumber : order.trackingNumber
+  const effectiveTrackingUrl = data.trackingUrl !== undefined ? data.trackingUrl : order.trackingUrl
+
+  if (!effectiveTrackingUrl && effectiveCarrier && effectiveTrackingNum) {
+    const autoUrl = resolveTrackingUrl(effectiveCarrier, effectiveTrackingNum)
+    if (autoUrl) {
+      data.trackingUrl = autoUrl
+    }
+  }
+
+  if (isLegacy && nextStatus === order.status) {
+    throw new HttpError(400, `This order is already ${nextStatus}.`)
+  }
+
+  if (Object.keys(data).length === 0) {
+    const existing = await prisma.order.findUnique({ where: { id: orderId }, include: ADMIN_ORDER_INCLUDE })
+    return serializeOrder(existing, { admin: true })
+  }
+
+  const updated = await prisma.order.update({
+    where: { id: orderId },
+    data,
+    include: ADMIN_ORDER_INCLUDE,
+  })
+
   return serializeOrder(updated, { admin: true })
 }

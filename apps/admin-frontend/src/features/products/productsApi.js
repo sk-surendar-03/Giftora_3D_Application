@@ -4,7 +4,7 @@ import api from '../../services/api'
 // the backend's GET /products already includes inactive products — see
 // productService.listProducts's `includeInactive` branch (Phase 3).
 export async function fetchAdminProducts(params = {}) {
-  const { data } = await api.get('/products', { params: { pageSize: 100, ...params } })
+  const { data } = await api.get('/products', { params: { pageSize: 20, ...params } })
   return data // { products, meta }
 }
 

@@ -17,7 +17,14 @@ export function mapApiProduct(apiProduct) {
     discountPercent = Math.round(((originalPrice - price) / originalPrice) * 100)
   }
 
+  const shippingCents = typeof apiProduct.shippingCents === 'number' ? apiProduct.shippingCents : 0
+  const shippingPrice = shippingCents / 100
+  const isFreeShipping = shippingCents === 0
+
   return {
+    shippingCents,
+    shippingPrice,
+    isFreeShipping,
     id: apiProduct.id,
     slug: apiProduct.slug,
     name: apiProduct.name,

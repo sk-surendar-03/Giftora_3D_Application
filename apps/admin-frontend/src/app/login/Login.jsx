@@ -33,14 +33,14 @@ function Login() {
         <div className="text-center mb-6">
           <img
             src="/jas-logo.png"
-            alt="Giftora"
+            alt="JAS 3D PRINTING"
             className="h-12 w-12 rounded-full mx-auto object-contain border border-line mb-3"
             onError={(e) => { e.target.style.display = 'none' }}
           />
           <span className="font-sans text-[11.5px] font-bold uppercase tracking-[0.16em] text-accent block">
             Industrial Console
           </span>
-          <h1 className="font-display text-[26px] font-semibold text-ink mt-1 m-0">Giftora Admin</h1>
+          <h1 className="font-display text-[24px] font-semibold text-ink mt-1 m-0">JAS 3D PRINTING Admin</h1>
           <p className="mt-1 font-sans text-[13.5px] text-muted">Sign in with administrative privileges.</p>
         </div>
 

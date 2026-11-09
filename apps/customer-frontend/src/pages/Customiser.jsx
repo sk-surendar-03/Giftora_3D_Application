@@ -13,7 +13,6 @@ import { resolveColorSelection } from '../features/customiser/colorSelection'
 import Viewport3D from '../components/customiser/Viewport3D'
 import CustomizationSummary from '../components/customiser/CustomizationSummary'
 import PreflightPanel from '../components/customiser/PreflightPanel'
-import ExportButtons from '../components/customiser/ExportButtons'
 import FontPickerCards from '../components/customiser/FontPickerCards'
 import ThicknessPicker from '../components/customiser/ThicknessPicker'
 import KeychainColorSwatches from '../components/customiser/KeychainColorSwatches'
@@ -81,7 +80,6 @@ function CustomiserWorkspace({ options }) {
   const [fontId, setFontId] = useState(initial.fontId ?? DEFAULT_PARAMS.fontId)
   const [templateId, setTemplateId] = useState(initial.templateId ?? DEFAULT_TEMPLATE_ID)
   const [styleChoice, setStyleChoice] = useState(initial.styleId ?? DEFAULT_PARAMS.styleId)
-  const [materialChoice, setMaterialChoice] = useState(initial.material)
   const [sizeChoice, setSizeChoice] = useState(initial.size)
   // What the customer explicitly picked; `undefined` means "use the default".
   const [baseChoice, setBaseChoice] = useState(initial.color)
@@ -101,9 +99,8 @@ function CustomiserWorkspace({ options }) {
   const templateDefinition = TEMPLATE_CATALOG.find((t) => t.id === templateOption.id) ?? TEMPLATE_CATALOG[0]
   const effectiveFontId = fontIdForTemplate(templateOption.id, fontId, text)
 
-  // Material and size depend on the template; a choice that no longer applies
-  // falls back to that template's default rather than leaving an invalid pick.
-  const material = templateOption.materials.includes(materialChoice) ? materialChoice : templateOption.materials[0]
+  // Material is determined automatically by the template's standard configuration.
+  const material = templateOption.materials[0] || 'Standard PLA'
   const size = templateOption.sizes.includes(sizeChoice)
     ? sizeChoice
     : templateOption.sizes.includes(DEFAULT_SIZE_LABEL)
@@ -203,7 +200,6 @@ function CustomiserWorkspace({ options }) {
     setSubtitle('')
     setFontId(DEFAULT_PARAMS.fontId)
     resetColors()
-    setMaterialChoice(undefined)
     setSizeChoice(undefined)
     setQuantity(1)
     setTemplateId(DEFAULT_TEMPLATE_ID)
@@ -279,9 +275,6 @@ function CustomiserWorkspace({ options }) {
             <section className="py-4">
               <div className="mb-2 flex items-center justify-between">
                 <span className="font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">2. Print colors</span>
-              </div>
-              <div className="mb-3">
-                <OptionPicker label="Material" options={templateOption.materials} value={material} onChange={setMaterialChoice} />
               </div>
               <KeychainColorSwatches
                 baseColor={color}
@@ -373,18 +366,6 @@ function CustomiserWorkspace({ options }) {
             allowDisconnected={allowDisconnected}
             onAllowDisconnectedChange={setAllowDisconnected}
           />
-
-          {/* Export Actions */}
-          <ExportButtons
-            client={engine.client}
-            params={params}
-            fontDefinition={fontDef}
-            subtitleFontDefinition={subtitleFontDef}
-            canExport={preflight.printable}
-            allowDisconnected={allowDisconnected}
-            colorHex={color?.hex}
-            textColorHex={textColor?.hex}
-          />
         </aside>
 
         {/* RIGHT COLUMN: 3D Preview + Live Print Facts (Sticky on Desktop) */}
@@ -430,6 +411,8 @@ function CustomiserWorkspace({ options }) {
             baseGeometry={baseGeometry}
             reliefGeometry={reliefGeometry}
             geometryStatus={engine.status}
+            geometryError={engine.error}
+            onRetry={engine.retry}
             dimensions={preflight.dimensions}
             onCaptureReady={handleCaptureReady}
           />

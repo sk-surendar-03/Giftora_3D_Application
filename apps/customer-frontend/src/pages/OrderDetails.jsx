@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, Navigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../features/auth/useAuth.js'
 import { fetchOrder } from '../features/orders/ordersApi.js'
 import OrderItemsList from '../components/orders/OrderItemsList.jsx'
 import OrderAddressSummary from '../components/orders/OrderAddressSummary.jsx'
 import OrderStatusBadge from '../components/orders/OrderStatusBadge.jsx'
 import OrderStatusTimeline from '../components/orders/OrderStatusTimeline.jsx'
+import { resolveTrackingUrl } from '../utils/carrierTracking.js'
 
 function formatPrice(cents) {
   return `₹${(cents / 100).toFixed(2)}`
@@ -16,9 +18,13 @@ function formatDate(isoString) {
 
 export default function OrderDetails() {
   const { orderId } = useParams()
+  const location = useLocation()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [state, setState] = useState({ data: null, isLoading: true, error: null })
 
   useEffect(() => {
+    if (!isAuthenticated) return
+
     const controller = new AbortController()
     const timer = setTimeout(() => {
       setState({ data: null, isLoading: true, error: null })
@@ -33,10 +39,26 @@ export default function OrderDetails() {
       clearTimeout(timer)
       controller.abort()
     }
-  }, [orderId])
+  }, [orderId, isAuthenticated])
+
+  if (authLoading) {
+    return (
+      <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center text-[15px] text-muted">
+        Checking authentication…
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />
+  }
 
   if (state.isLoading) {
-    return <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center text-[15px] text-muted">Loading order details…</div>
+    return (
+      <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center text-[15px] text-muted">
+        Loading order details…
+      </div>
+    )
   }
 
   if (state.error) {
@@ -56,6 +78,8 @@ export default function OrderDetails() {
   }
 
   const order = state.data
+  const trackingLink = resolveTrackingUrl(order.shippingCarrier, order.trackingNumber, order.trackingUrl)
+  const hasShippingInfo = Boolean(order.shippingCarrier || order.trackingNumber || trackingLink)
 
   return (
     <div className="bg-bg text-ink min-h-[80vh] pb-20">
@@ -78,7 +102,8 @@ export default function OrderDetails() {
           <OrderStatusBadge status={order.status} />
         </div>
 
-        <section className="mb-10 rounded-card border border-line bg-surface p-6">
+        {/* Manufacturing & Dispatch Progress */}
+        <section className="mb-8 rounded-card border border-line bg-surface p-6">
           <h2 className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent m-0 mb-6">
             Manufacturing & Dispatch Progress
           </h2>
@@ -86,6 +111,64 @@ export default function OrderDetails() {
             <OrderStatusTimeline status={order.status} />
           </div>
         </section>
+
+        {/* Shipment & Tracking Details (when available) */}
+        {hasShippingInfo && (
+          <section className="mb-8 rounded-card border border-accent/40 bg-surface p-6 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="space-y-1.5">
+                <span className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent block">
+                  Shipment Tracking Details
+                </span>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 text-[14px]">
+                  {order.shippingCarrier && (
+                    <div>
+                      <span className="text-muted text-[13px]">Carrier: </span>
+                      <span className="font-semibold text-ink">{order.shippingCarrier}</span>
+                    </div>
+                  )}
+                  {order.trackingNumber && (
+                    <div>
+                      <span className="text-muted text-[13px]">Tracking Number: </span>
+                      {trackingLink ? (
+                        <a
+                          href={trackingLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-mono font-bold text-accent hover:underline inline-flex items-center gap-1"
+                          title="Open official carrier tracking page"
+                        >
+                          <span>{order.trackingNumber}</span>
+                          <span className="text-xs">↗</span>
+                        </a>
+                      ) : (
+                        <span className="font-mono font-bold text-ink">{order.trackingNumber}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {trackingLink && (
+                <div>
+                  <a
+                    href={trackingLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-control bg-accent px-5 py-2.5 text-[14px] font-bold text-on-accent hover:bg-accent-dark transition-colors shadow-sm"
+                  >
+                    <span>Track Shipment</span>
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </a>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         <section className="mb-10">
           <h2 className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent m-0 mb-4">

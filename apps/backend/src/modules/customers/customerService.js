@@ -7,7 +7,7 @@ import { parsePagination, buildMeta } from '../../utils/pagination.js'
 // `findMany()`/`findUnique()`, specifically so a password hash (or any
 // other sensitive field added to User later) can never leak through an
 // admin response by accident.
-const SAFE_USER_SELECT = { id: true, name: true, email: true, role: true, isActive: true, createdAt: true }
+const SAFE_USER_SELECT = { id: true, name: true, email: true, phone: true, role: true, isActive: true, createdAt: true }
 
 export async function listCustomers({ page, pageSize, search }) {
   const pagination = parsePagination({ page, pageSize })
@@ -46,7 +46,7 @@ export async function listCustomers({ page, pageSize, search }) {
     const { addresses, ...rest } = user
     return {
       ...rest,
-      phone: addresses[0]?.phone ?? null,
+      phone: user.phone ?? addresses[0]?.phone ?? null,
       orderCount: stats?._count._all ?? 0,
       totalOrderValueCents: stats?._sum.totalCents ?? 0,
     }

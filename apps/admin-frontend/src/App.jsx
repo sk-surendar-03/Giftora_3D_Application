@@ -11,6 +11,7 @@ import Orders from './app/orders/Orders.jsx'
 import OrderDetail from './app/orders/OrderDetail.jsx'
 import Customers from './app/customers/Customers.jsx'
 import CustomerDetail from './app/customers/CustomerDetail.jsx'
+import Inquiries from './app/inquiries/Inquiries.jsx'
 import Reports from './app/reports/Reports.jsx'
 import Settings from './app/settings/Settings.jsx'
 
@@ -35,6 +36,7 @@ function App() {
           <Route path="/orders/:id" element={<OrderDetail />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/customers/:id" element={<CustomerDetail />} />
+          <Route path="/inquiries" element={<Inquiries />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
         </Route>

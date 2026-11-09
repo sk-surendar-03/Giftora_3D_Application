@@ -16,6 +16,8 @@ const EMPTY_FORM = {
   description: '',
   price: '', // selling price in rupees
   originalPrice: '', // original / strikethrough price in rupees (optional)
+  shippingType: 'FREE', // 'FREE' or 'PAID'
+  shippingPrice: '0', // in rupees
   categoryId: '',
   materials: '', // comma-separated
   sizes: '', // comma-separated
@@ -51,12 +53,15 @@ export default function ProductForm() {
             setError('Product not found.')
             return
           }
+          const shippingCents = product.shippingCents || 0
           setForm({
             name: product.name,
             slug: product.slug,
             description: product.description,
             price: String(product.priceCents / 100),
             originalPrice: product.originalPriceCents ? String(product.originalPriceCents / 100) : '',
+            shippingType: shippingCents > 0 ? 'PAID' : 'FREE',
+            shippingPrice: shippingCents > 0 ? String(shippingCents / 100) : '0',
             categoryId: product.categoryId ?? '',
             materials: (product.materials ?? []).join(', '),
             sizes: (product.sizes ?? []).join(', '),
@@ -122,12 +127,22 @@ export default function ProductForm() {
       colorsByMaterial = null
     }
 
+    let shippingCents = 0
+    if (form.shippingType === 'PAID') {
+      const shipNumber = Number(form.shippingPrice)
+      if (!Number.isFinite(shipNumber) || shipNumber < 0) {
+        throw new Error('Shipping charge must be a valid number of ₹0 or more.')
+      }
+      shippingCents = Math.round(shipNumber * 100)
+    }
+
     return {
       name: form.name.trim(),
       slug: form.slug.trim(),
       description: form.description.trim(),
       priceCents: Math.round(priceNumber * 100),
       originalPriceCents,
+      shippingCents,
       categoryId: form.categoryId || null,
       materials: parseListField(form.materials),
       sizes: parseListField(form.sizes),
@@ -237,6 +252,70 @@ export default function ProductForm() {
               placeholder="e.g. 499"
             />
           </label>
+        </div>
+
+        {/* Shipping Configuration Section */}
+        <div className="rounded-lg border border-line bg-surface/40 p-4 space-y-3">
+          <div className="border-b border-line pb-2">
+            <h3 className="text-sm font-semibold text-ink">Shipping Configuration</h3>
+            <p className="text-xs text-muted">Configure shipping charges or offer free shipping for this product.</p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-5 pt-1">
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="radio"
+                name="shippingType"
+                value="FREE"
+                checked={form.shippingType === 'FREE'}
+                onChange={() => {
+                  update('shippingType', 'FREE')
+                  update('shippingPrice', '0')
+                }}
+                className="h-4 w-4 text-accent border-line focus:ring-accent"
+              />
+              <span className="text-sm font-medium text-ink">Option B — Free Shipping (₹0)</span>
+            </label>
+
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="radio"
+                name="shippingType"
+                value="PAID"
+                checked={form.shippingType === 'PAID'}
+                onChange={() => update('shippingType', 'PAID')}
+                className="h-4 w-4 text-accent border-line focus:ring-accent"
+              />
+              <span className="text-sm font-medium text-ink">Option A — Paid Shipping</span>
+            </label>
+          </div>
+
+          {form.shippingType === 'PAID' && (
+            <div className="pt-2">
+              <label className="block text-sm font-medium text-ink">
+                Shipping Charge (₹)
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.shippingPrice}
+                  onChange={(e) => update('shippingPrice', e.target.value)}
+                  className="mt-1 block w-full max-w-xs rounded-md border border-line px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+                  placeholder="e.g. 50"
+                  required
+                />
+                <span className="mt-1 block text-xs text-muted">
+                  Amount charged to customer for shipping this product (e.g. ₹50).
+                </span>
+              </label>
+            </div>
+          )}
+
+          {form.shippingType === 'FREE' && (
+            <p className="text-xs text-[#17683f] font-medium pt-1">
+              ✓ Free Shipping enabled (Shipping charge: ₹0).
+            </p>
+          )}
         </div>
 
         <label className="block text-sm font-medium text-ink">
