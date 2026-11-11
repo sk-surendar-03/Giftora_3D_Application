@@ -161,7 +161,15 @@ self.onmessage = async (event) => {
       stage = 'serialization'
       const baseData = serializeBinaryStl(result.baseMesh)
       const reliefData = serializeBinaryStl(result.reliefMesh)
-      const mergedData = serializeBinaryStl(built.exportMesh ?? result.baseMesh)
+      // Merge base + relief STL buffers into one for the single-body STL download.
+      // Each binary STL: 80-byte header, 4-byte triangle count, then 50-byte triangles.
+      const baseTriCount = new DataView(baseData).getUint32(80, true)
+      const reliefTriCount = new DataView(reliefData).getUint32(80, true)
+      const mergedData = new ArrayBuffer(84 + (baseTriCount + reliefTriCount) * 50)
+      const mergedView = new DataView(mergedData)
+      mergedView.setUint32(80, baseTriCount + reliefTriCount, true)
+      new Uint8Array(mergedData).set(new Uint8Array(baseData, 84), 84)
+      new Uint8Array(mergedData).set(new Uint8Array(reliefData, 84), 84 + baseTriCount * 50)
       stage = 'transport'
       self.postMessage({ type: 'export-dual', requestId: request.requestId, baseData, reliefData, mergedData }, { transfer: [baseData, reliefData, mergedData] })
       return
