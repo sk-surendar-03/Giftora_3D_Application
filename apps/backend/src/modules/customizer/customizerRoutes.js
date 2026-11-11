@@ -2,7 +2,7 @@ import express, { Router } from 'express'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 import { authenticate } from '../auth/authMiddleware.js'
 import { MAX_PREVIEW_BYTES, MAX_STL_BYTES } from './designOptions.js'
-import { create, getById, getOptions, getPreview, uploadPreview, uploadStl } from './customizerController.js'
+import { create, getById, getOptions, getPreview, uploadPreview, uploadReliefStl, uploadStl } from './customizerController.js'
 import { createUploadRateLimiter } from './uploadRateLimiter.js'
 
 // Public: everything the standalone customiser needs to build its options.
@@ -32,6 +32,12 @@ customDesignRouter.put(
   uploadLimiter,
   express.raw({ type: 'application/octet-stream', limit: MAX_STL_BYTES }),
   asyncHandler(uploadStl)
+)
+customDesignRouter.put(
+  '/:id/relief-stl',
+  uploadLimiter,
+  express.raw({ type: 'application/octet-stream', limit: MAX_STL_BYTES }),
+  asyncHandler(uploadReliefStl)
 )
 customDesignRouter.put(
   '/:id/preview',

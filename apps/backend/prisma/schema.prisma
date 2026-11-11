@@ -98,6 +98,9 @@ model CustomDesign {
   stlSizeBytes     Int?
   triangleCount    Int?
   bboxMm           Json?
+  reliefStlKey     String?      @unique
+  reliefStlSha256  String?
+  reliefStlBytes   Int?
   previewKey       String?
   previewSizeBytes Int?
   createdAt        DateTime     @default(now())

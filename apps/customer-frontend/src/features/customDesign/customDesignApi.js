@@ -14,7 +14,15 @@ export async function createDesign(design) {
 export async function uploadDesignStl(designId, stlBytes, sha256) {
   const { data } = await api.put(`/custom-designs/${designId}/stl`, stlBytes, {
     headers: { 'Content-Type': 'application/octet-stream', ...(sha256 ? { 'X-Content-SHA256': sha256 } : {}) },
-    // Binary body: skip axios' JSON handling.
+    transformRequest: [(body) => body],
+    maxBodyLength: Infinity,
+  })
+  return data.design
+}
+
+export async function uploadDesignReliefStl(designId, stlBytes, sha256) {
+  const { data } = await api.put(`/custom-designs/${designId}/relief-stl`, stlBytes, {
+    headers: { 'Content-Type': 'application/octet-stream', ...(sha256 ? { 'X-Content-SHA256': sha256 } : {}) },
     transformRequest: [(body) => body],
     maxBodyLength: Infinity,
   })

@@ -1,6 +1,6 @@
 import { HttpError } from '../../utils/httpError.js'
 import { buildPublicOptions } from './designOptions.js'
-import { createDesign, getOwnedDesign, readPreview, storePreview, storeStl, toPublicDesign } from './designService.js'
+import { createDesign, getOwnedDesign, readPreview, storePreview, storeReliefStl, storeStl, toPublicDesign } from './designService.js'
 
 const SHA256_HEX = /^[a-fA-F0-9]{64}$/
 
@@ -22,6 +22,14 @@ export async function uploadStl(req, res) {
   const claimed = req.get('x-content-sha256')
   if (claimed !== undefined && !SHA256_HEX.test(claimed)) throw new HttpError(400, 'X-Content-SHA256 must be a 64-character hex SHA-256.')
   const design = await storeStl(req.user.id, req.params.id, req.body, claimed)
+  res.json({ design: toPublicDesign(design) })
+}
+
+export async function uploadReliefStl(req, res) {
+  if (!Buffer.isBuffer(req.body)) throw new HttpError(415, 'Send the relief STL with Content-Type: application/octet-stream.')
+  const claimed = req.get('x-content-sha256')
+  if (claimed !== undefined && !SHA256_HEX.test(claimed)) throw new HttpError(400, 'X-Content-SHA256 must be a 64-character hex SHA-256.')
+  const design = await storeReliefStl(req.user.id, req.params.id, req.body, claimed)
   res.json({ design: toPublicDesign(design) })
 }
 

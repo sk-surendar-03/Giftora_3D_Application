@@ -124,6 +124,27 @@ export async function storeStl(userId, designId, buffer, claimedSha256) {
   return fresh
 }
 
+/**
+ * Stores the relief (text layer) STL for a design. Optional — uploaded after
+ * the base STL. Idempotent: the same file uploaded again is a no-op.
+ */
+export async function storeReliefStl(userId, designId, buffer, claimedSha256) {
+  const design = await findOwnedDesign(userId, designId)
+  validateBinaryStl(buffer)
+  const sha256 = sha256Hex(buffer)
+  if (claimedSha256 && claimedSha256.toLowerCase() !== sha256) {
+    throw new HttpError(400, 'The uploaded file does not match its checksum; please retry.')
+  }
+  if (design.reliefStlSha256 === sha256) return design
+  const key = `designs/${userId}/${designId}/relief_${sha256}.stl`
+  await getStorage().put(key, buffer, { immutable: true })
+  await prisma.customDesign.update({
+    where: { id: designId },
+    data: { reliefStlKey: key, reliefStlSha256: sha256, reliefStlBytes: buffer.length },
+  })
+  return prisma.customDesign.findUnique({ where: { id: designId } })
+}
+
 /** Stores the preview image. Not allowed once the design has been ordered. */
 export async function storePreview(userId, designId, buffer) {
   const design = await findOwnedDesign(userId, designId)
@@ -179,10 +200,23 @@ export async function getStlForOrderItem(orderId, itemId) {
 
 export async function getThreeMfForOrderItem(orderId, itemId) {
   const { buffer: stlBuffer, filename: stlFilename, design } = await getStlForOrderItem(orderId, itemId)
+
+  let reliefBuffer = null
+  if (design.reliefStlKey) {
+    try {
+      reliefBuffer = await getStorage().get(design.reliefStlKey)
+    } catch {
+      reliefBuffer = null
+    }
+  }
+
   const threeMfBuffer = exportThreeMfFromStl(
     stlBuffer,
     design.title,
-    design.params?.color?.hex
+    design.params?.color?.hex,
+    reliefBuffer,
+    design.params?.textColor?.hex,
+    design.params?.textColor?.label ?? 'Text'
   )
   const filename = stlFilename.replace(/\.stl$/i, '.3mf')
   return { buffer: threeMfBuffer, filename, design }

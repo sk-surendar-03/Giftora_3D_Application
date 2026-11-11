@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { addCustomDesignToCart, createDesign, uploadDesignPreview, uploadDesignStl } from './customDesignApi.js'
+import { addCustomDesignToCart, createDesign, uploadDesignPreview, uploadDesignReliefStl, uploadDesignStl } from './customDesignApi.js'
 import { clearDraft } from './designDraft.js'
 
 async function sha256Hex(buffer) {
@@ -38,8 +38,9 @@ export function useAddCustomDesignToCart() {
     setAdded(false)
     try {
       setPhase('exporting')
-      const file = await client.export(params, 'stl', 'separate-colors', fontDefinition, undefined, subtitleFontDefinition, allowDisconnected)
-      const sha256 = await sha256Hex(file.data)
+      // Export base + relief (text) meshes separately for two-color 3MF support in admin
+      const dual = await client.exportDual(params, fontDefinition, subtitleFontDefinition, allowDisconnected)
+      const [baseSha256, reliefSha256] = await Promise.all([sha256Hex(dual.baseData), sha256Hex(dual.reliefData)])
 
       setPhase('saving')
       const { design: record, needsStl } = await createDesign(design)
@@ -47,12 +48,16 @@ export function useAddCustomDesignToCart() {
       setPhase('uploading')
       if (needsStl) {
         try {
-          await uploadDesignStl(record.id, file.data, sha256)
+          await uploadDesignStl(record.id, dual.baseData, baseSha256)
         } catch (err) {
-          // 409: this design already has its (immutable) STL from an earlier
-          // attempt — that stored file is the one that will be made.
           if (err?.response?.status !== 409) throw err
         }
+      }
+      // Always try to upload the relief (text) STL — idempotent, never blocks the order
+      try {
+        await uploadDesignReliefStl(record.id, dual.reliefData, reliefSha256)
+      } catch (err) {
+        console.warn('Relief STL upload failed (non-blocking):', err?.message)
       }
       if (capturePreview) {
         try {

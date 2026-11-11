@@ -154,6 +154,34 @@ export class GeometryClient {
    * @param {boolean} [allowDisconnected] - explicit, export-only acknowledgement for disconnected solids
    * @returns {Promise<{filename: string, mimeType: string, data: ArrayBuffer}>}
    */
+  /**
+   * Export base mesh and relief (text) mesh as two separate STL ArrayBuffers.
+   * Used during add-to-cart to upload both to the server for two-color 3MF support.
+   * @returns {Promise<{baseData: ArrayBuffer, reliefData: ArrayBuffer}>}
+   */
+  exportDual(params, fontDefinition, subtitleFontDefinition, allowDisconnected = false) {
+    if (this.disposed || this.workerFailed) return Promise.reject(this.currentError())
+    const requestId = this.nextRequestId++
+    const promise = new Promise((resolve, reject) => {
+      this.pendingExports.set(requestId, { resolve, reject })
+    })
+    try {
+      this.worker.postMessage({
+        type: 'export-dual',
+        requestId,
+        params,
+        allowDisconnected,
+        fontDefinition: this.fontForWorker(fontDefinition),
+        subtitleFontDefinition: this.fontForWorker(subtitleFontDefinition),
+      })
+    } catch (error) {
+      this.pendingExports.delete(requestId)
+      return Promise.reject(error instanceof Error ? error : failedError())
+    }
+    this.startRequestTimer(requestId, this.worker)
+    return promise
+  }
+
   export(params, format = 'stl', mode = 'separate-colors', fontDefinition, appearanceOverrides, subtitleFontDefinition, allowDisconnected = false) {
     if (this.disposed || this.workerFailed) return Promise.reject(this.currentError())
     const requestId = this.nextRequestId++
@@ -260,6 +288,12 @@ export class GeometryClient {
     if (response.type === 'export') {
       const pending = this.pendingExports.get(response.requestId)
       pending?.resolve({ filename: response.filename, mimeType: response.mimeType, data: response.data })
+      this.pendingExports.delete(response.requestId)
+      return
+    }
+    if (response.type === 'export-dual') {
+      const pending = this.pendingExports.get(response.requestId)
+      pending?.resolve({ baseData: response.baseData, reliefData: response.reliefData })
       this.pendingExports.delete(response.requestId)
       return
     }

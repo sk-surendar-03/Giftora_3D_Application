@@ -144,6 +144,27 @@ self.onmessage = async (event) => {
       self.postMessage({ type: 'export', requestId: request.requestId, filename, mimeType: format === '3mf' ? 'model/3mf' : 'model/stl', data }, { transfer: [data] })
       return
     }
+    if (request.type === 'export-dual') {
+      const key = await cacheKey('exportable', { ...request, type: 'export' })
+      const cached = finalCache.get(key)
+      const cacheHit = cached !== undefined
+      const built = cached ?? (await buildKeychain(wasm, request.params, true, fontForBuild(request.fontDefinition), request.subtitleFontDefinition ? fontForBuild(request.subtitleFontDefinition) : undefined))
+      const { result } = built
+      const blockingIssues = result.issues.filter((i) => i.severity === 'error')
+      const disconnectedOnly = blockingIssues.length > 0 && blockingIssues.every((i) => i.code === 'disconnected')
+      if (!result.printable && !(request.allowDisconnected && disconnectedOnly)) {
+        const message = result.issues.find((i) => i.severity === 'error')?.message ?? 'This model is not ready to export.'
+        self.postMessage({ type: 'error', requestId: request.requestId, message })
+        return
+      }
+      if (!cacheHit) finalCache.set(key, built)
+      stage = 'serialization'
+      const baseData = serializeBinaryStl(result.baseMesh)
+      const reliefData = serializeBinaryStl(result.reliefMesh)
+      stage = 'transport'
+      self.postMessage({ type: 'export-dual', requestId: request.requestId, baseData, reliefData }, { transfer: [baseData, reliefData] })
+      return
+    }
     throw new Error(`Unsupported worker request type in this step: ${request.type}`)
   } catch (error) {
     const failure = failureFrom(error, 'geometry-build-failed')
