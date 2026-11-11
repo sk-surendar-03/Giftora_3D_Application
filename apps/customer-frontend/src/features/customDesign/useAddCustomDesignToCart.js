@@ -40,7 +40,7 @@ export function useAddCustomDesignToCart() {
       setPhase('exporting')
       // Export base + relief (text) meshes separately for two-color 3MF support in admin
       const dual = await client.exportDual(params, fontDefinition, subtitleFontDefinition, allowDisconnected)
-      const [baseSha256, reliefSha256] = await Promise.all([sha256Hex(dual.baseData), sha256Hex(dual.reliefData)])
+      const [mergedSha256, reliefSha256] = await Promise.all([sha256Hex(dual.mergedData), sha256Hex(dual.reliefData)])
 
       setPhase('saving')
       const { design: record, needsStl } = await createDesign(design)
@@ -48,7 +48,7 @@ export function useAddCustomDesignToCart() {
       setPhase('uploading')
       if (needsStl) {
         try {
-          await uploadDesignStl(record.id, dual.baseData, baseSha256)
+          await uploadDesignStl(record.id, dual.mergedData, mergedSha256)
         } catch (err) {
           if (err?.response?.status !== 409) throw err
         }

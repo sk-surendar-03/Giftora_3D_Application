@@ -161,8 +161,9 @@ self.onmessage = async (event) => {
       stage = 'serialization'
       const baseData = serializeBinaryStl(result.baseMesh)
       const reliefData = serializeBinaryStl(result.reliefMesh)
+      const mergedData = serializeBinaryStl(built.exportMesh ?? result.baseMesh)
       stage = 'transport'
-      self.postMessage({ type: 'export-dual', requestId: request.requestId, baseData, reliefData }, { transfer: [baseData, reliefData] })
+      self.postMessage({ type: 'export-dual', requestId: request.requestId, baseData, reliefData, mergedData }, { transfer: [baseData, reliefData, mergedData] })
       return
     }
     throw new Error(`Unsupported worker request type in this step: ${request.type}`)

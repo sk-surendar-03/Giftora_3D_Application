@@ -157,7 +157,7 @@ export class GeometryClient {
   /**
    * Export base mesh and relief (text) mesh as two separate STL ArrayBuffers.
    * Used during add-to-cart to upload both to the server for two-color 3MF support.
-   * @returns {Promise<{baseData: ArrayBuffer, reliefData: ArrayBuffer}>}
+   * @returns {Promise<{baseData: ArrayBuffer, reliefData: ArrayBuffer, mergedData: ArrayBuffer}>}
    */
   exportDual(params, fontDefinition, subtitleFontDefinition, allowDisconnected = false) {
     if (this.disposed || this.workerFailed) return Promise.reject(this.currentError())
@@ -293,7 +293,7 @@ export class GeometryClient {
     }
     if (response.type === 'export-dual') {
       const pending = this.pendingExports.get(response.requestId)
-      pending?.resolve({ baseData: response.baseData, reliefData: response.reliefData })
+      pending?.resolve({ baseData: response.baseData, reliefData: response.reliefData, mergedData: response.mergedData })
       this.pendingExports.delete(response.requestId)
       return
     }
