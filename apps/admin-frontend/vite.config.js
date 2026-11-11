@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
-      "/api": "https://api.jasvel3dmarker.in",
+      "/api": "https://api.jasvel3dmakers.co.in",
     },
   },
 });

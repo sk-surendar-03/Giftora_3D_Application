@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      "/api": '"https://api.jasvel3dmarker.in',
+      "/api": "https://api.jasvel3dmakers.co.in",
     },
   },
   worker: {
