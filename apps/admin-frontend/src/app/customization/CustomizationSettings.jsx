@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import Banner from '../../components/Banner.jsx'
 import {
+  fetchPricing,
+  updatePricing,
   fetchCustomizerColors,
   updateCustomizerColors,
   fetchCustomizerShipping,
@@ -324,6 +326,14 @@ export default function CustomizationSettings() {
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
 
+  // Pricing
+  const [pricePerCharacter, setPricePerCharacter] = useState('')
+  const [baseCharacters, setBaseCharacters] = useState('')
+  const [basePrice, setBasePrice] = useState('')
+  const [savingPricing, setSavingPricing] = useState(false)
+  const [pricingError, setPricingError] = useState(null)
+  const [pricingSuccess, setPricingSuccess] = useState(null)
+
   // Colors
   const [colors, setColors] = useState([])
   const [savingColors, setSavingColors] = useState(false)
@@ -347,8 +357,11 @@ export default function CustomizationSettings() {
   function load() {
     setIsLoading(true)
     setLoadError(null)
-    Promise.all([fetchCustomizerColors(), fetchCustomizerShipping(), fetchCustomizerSizes(), fetchCustomizerThicknesses()])
-      .then(([cols, methods, szs, thks]) => {
+    Promise.all([fetchPricing(), fetchCustomizerColors(), fetchCustomizerShipping(), fetchCustomizerSizes(), fetchCustomizerThicknesses()])
+      .then(([pricing, cols, methods, szs, thks]) => {
+        setPricePerCharacter((pricing.perCharacterPriceCents / 100).toString())
+        setBaseCharacters((pricing.baseCharacters ?? 0).toString())
+        setBasePrice(((pricing.basePriceCents ?? 0) / 100).toString())
         setColors(Array.isArray(cols) ? cols : [])
         setShippingMethods(Array.isArray(methods) ? methods : [])
         setSizes(Array.isArray(szs) ? szs : [])
@@ -359,6 +372,33 @@ export default function CustomizationSettings() {
   }
 
   useEffect(() => { const t = setTimeout(load, 0); return () => clearTimeout(t) }, [])
+
+  async function handleSavePricing(e) {
+    e.preventDefault()
+    setPricingError(null); setPricingSuccess(null)
+    const rupees = Number(pricePerCharacter)
+    const baseChs = Number(baseCharacters)
+    const baseRupees = Number(basePrice)
+    if (!Number.isFinite(rupees) || rupees < 0) return setPricingError('Enter a valid price per character.')
+    if (!Number.isFinite(baseChs) || baseChs < 0 || !Number.isInteger(baseChs)) return setPricingError('Base characters must be a whole number ≥ 0.')
+    if (!Number.isFinite(baseRupees) || baseRupees < 0) return setPricingError('Enter a valid base price.')
+    setSavingPricing(true)
+    try {
+      const pricing = await updatePricing({
+        perCharacterPriceCents: Math.round(rupees * 100),
+        baseCharacters: baseChs,
+        basePriceCents: Math.round(baseRupees * 100),
+      })
+      setPricePerCharacter((pricing.perCharacterPriceCents / 100).toString())
+      setBaseCharacters((pricing.baseCharacters ?? 0).toString())
+      setBasePrice(((pricing.basePriceCents ?? 0) / 100).toString())
+      setPricingSuccess('Pricing updated.')
+      setTimeout(() => setPricingSuccess(null), 2500)
+    } catch (err) {
+      setPricingError(extractError(err))
+    }
+    setSavingPricing(false)
+  }
 
   async function saveColors() {
     setSavingColors(true); setColorsStatus(null)
@@ -402,6 +442,38 @@ export default function CustomizationSettings() {
 
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-6">
+
+            {/* Pricing */}
+            <div className="rounded-card border border-line bg-surface p-5 shadow-sm flex flex-col gap-4">
+              <div className="border-b border-line pb-3">
+                <h2 className="text-sm font-semibold text-ink">3D Customizer Pricing</h2>
+                <p className="mt-0.5 text-xs text-muted">Set base price for first N chars, then per-char rate above that.</p>
+              </div>
+              {pricingError && <Banner tone="error">{pricingError}</Banner>}
+              {pricingSuccess && <Banner tone="success">{pricingSuccess}</Banner>}
+              <form onSubmit={handleSavePricing} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-ink mb-1">Minimum Characters</label>
+                  <input type="number" min="0" step="1" value={baseCharacters} onChange={(e) => setBaseCharacters(e.target.value)}
+                    className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-brand" placeholder="10" />
+                  <p className="mt-0.5 text-[10px] text-muted">≤ this many chars → flat base price</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-ink mb-1">Base Price (₹)</label>
+                  <input type="number" min="0" step="0.01" value={basePrice} onChange={(e) => setBasePrice(e.target.value)}
+                    className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-brand" placeholder="500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-ink mb-1">Price per Extra Character (₹)</label>
+                  <input type="number" min="0" step="0.01" value={pricePerCharacter} onChange={(e) => setPricePerCharacter(e.target.value)}
+                    className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-brand" placeholder="50" />
+                </div>
+                <button type="submit" disabled={savingPricing}
+                  className="rounded-control bg-accent px-4 py-2 text-xs font-bold text-on-accent hover:bg-accent-dark transition-colors disabled:opacity-50 cursor-pointer shadow-sm">
+                  {savingPricing ? 'Saving…' : 'Save Pricing'}
+                </button>
+              </form>
+            </div>
 
             {/* Colors */}
             <Card title="Color Options" description="Colors customers can choose in the 3D customizer. These replace the default hardcoded palette."
