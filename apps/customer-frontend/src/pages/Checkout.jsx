@@ -184,17 +184,18 @@ export default function Checkout() {
               </h3>
               {review.data?.items?.length > 0 ? (
                 <div className="space-y-2">
-                  {review.data.items.filter((it) => it.itemType === 'PRODUCT').map((it) => {
+                  {review.data.items.map((it) => {
                     const sm = it.customization?.shippingMethod
-                    const shipCents = sm?.priceCents ?? it.product?.shippingCents ?? 0
-                    const shipName = sm?.name ?? 'Standard Shipping'
+                    const shipCents = sm?.priceCents ?? (it.itemType === 'PRODUCT' ? (it.product?.shippingCents ?? 0) : 0)
+                    const shipName = sm?.name ?? (it.itemType === 'PRODUCT' ? 'Standard Shipping' : null)
                     const shipDays = sm?.estimatedDays ?? null
+                    if (!shipName && shipCents === 0) return null
                     return (
                       <div key={it.id} className="rounded-control border border-accent bg-soft p-4 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">
                           <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent text-[11px] font-bold">✓</span>
                           <div className="min-w-0">
-                            <div className="font-sans text-[14px] font-semibold text-ink capitalize">{shipName}</div>
+                            <div className="font-sans text-[14px] font-semibold text-ink capitalize">{shipName ?? 'Free Shipping'}</div>
                             <div className="text-[12px] text-muted truncate">
                               {it.title}
                               {shipDays && ` · ${shipDays}`}

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useGeometryEngine } from '../features/customiser/geometry/useGeometryEngine.js'
 import { useResultGeometries } from '../features/customiser/geometry/useResultGeometries.js'
@@ -116,6 +116,13 @@ function CustomiserWorkspace({ options }) {
 
   const pricing = usePricing()
   const customizerSettings = useCustomizerSettings()
+
+  // Auto-select the first shipping method once settings load
+  useEffect(() => {
+    if (customizerSettings.shippingMethods.length > 0 && selectedShipping === null) {
+      setSelectedShipping(customizerSettings.shippingMethods[0])
+    }
+  }, [customizerSettings.shippingMethods, selectedShipping])
 
   // Use admin-configured colors if available, else fall back to hardcoded material colors
   const hardcodedColors = useMemo(() => options.materials.find((m) => m.name === material)?.colors ?? [], [options.materials, material])
