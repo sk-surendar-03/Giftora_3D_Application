@@ -23,6 +23,7 @@ function toCartResponse(cart) {
           name: item.product.name,
           images: item.product.images,
           isActive: item.product.isActive,
+          shippingCents: item.product.shippingCents ?? 0,
         }
       : null,
     design: item.customDesign ? toPublicDesign(item.customDesign) : null,
