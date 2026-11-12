@@ -12,6 +12,11 @@ function extractError(err) {
 function AdminDetailsCard({ currentUser, onUserUpdated }) {
   const [name, setName] = useState(currentUser?.name ?? '')
   const [phone, setPhone] = useState(currentUser?.phone ?? '')
+
+  useEffect(() => {
+    setName(currentUser?.name ?? '')
+    setPhone(currentUser?.phone ?? '')
+  }, [currentUser])
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
