@@ -2,24 +2,67 @@ import { prisma } from '../../config/db.js'
 
 const PRICING_KEY = 'customizer_pricing'
 const ANNOUNCEMENT_KEY = 'announcement_bar'
+const COLORS_KEY = 'customizer_colors'
+const SHIPPING_KEY = 'customizer_shipping'
 
-// Used only until an admin sets a real rate via the admin UI.
 export const DEFAULT_PER_CHARACTER_PRICE_CENTS = 500
+export const DEFAULT_BASE_CHARACTERS = 10
+export const DEFAULT_BASE_PRICE_CENTS = 0
 
 export async function getPricingConfig() {
   const row = await prisma.setting.findUnique({ where: { key: PRICING_KEY } })
-  const stored = row?.value?.perCharacterPriceCents
-  const perCharacterPriceCents = Number.isInteger(stored) && stored >= 0 ? stored : DEFAULT_PER_CHARACTER_PRICE_CENTS
-  return { perCharacterPriceCents }
+  const v = row?.value ?? {}
+  const perCharacterPriceCents = Number.isInteger(v.perCharacterPriceCents) && v.perCharacterPriceCents >= 0 ? v.perCharacterPriceCents : DEFAULT_PER_CHARACTER_PRICE_CENTS
+  const baseCharacters = Number.isInteger(v.baseCharacters) && v.baseCharacters >= 0 ? v.baseCharacters : DEFAULT_BASE_CHARACTERS
+  const basePriceCents = Number.isInteger(v.basePriceCents) && v.basePriceCents >= 0 ? v.basePriceCents : DEFAULT_BASE_PRICE_CENTS
+  return { perCharacterPriceCents, baseCharacters, basePriceCents }
 }
 
-export async function updatePricingConfig({ perCharacterPriceCents }) {
+export async function updatePricingConfig({ perCharacterPriceCents, baseCharacters, basePriceCents }) {
+  const current = await getPricingConfig()
+  const next = {
+    perCharacterPriceCents: Number.isInteger(perCharacterPriceCents) && perCharacterPriceCents >= 0 ? perCharacterPriceCents : current.perCharacterPriceCents,
+    baseCharacters: Number.isInteger(baseCharacters) && baseCharacters >= 0 ? baseCharacters : current.baseCharacters,
+    basePriceCents: Number.isInteger(basePriceCents) && basePriceCents >= 0 ? basePriceCents : current.basePriceCents,
+  }
   await prisma.setting.upsert({
     where: { key: PRICING_KEY },
-    create: { key: PRICING_KEY, value: { perCharacterPriceCents } },
-    update: { value: { perCharacterPriceCents } },
+    create: { key: PRICING_KEY, value: next },
+    update: { value: next },
   })
-  return { perCharacterPriceCents }
+  return next
+}
+
+export async function getCustomizerColors() {
+  const row = await prisma.setting.findUnique({ where: { key: COLORS_KEY } })
+  const colors = Array.isArray(row?.value?.colors) ? row.value.colors : []
+  return { colors }
+}
+
+export async function updateCustomizerColors({ colors }) {
+  const safe = Array.isArray(colors) ? colors.filter((c) => c && typeof c.name === 'string' && typeof c.hex === 'string') : []
+  await prisma.setting.upsert({
+    where: { key: COLORS_KEY },
+    create: { key: COLORS_KEY, value: { colors: safe } },
+    update: { value: { colors: safe } },
+  })
+  return { colors: safe }
+}
+
+export async function getCustomizerShipping() {
+  const row = await prisma.setting.findUnique({ where: { key: SHIPPING_KEY } })
+  const methods = Array.isArray(row?.value?.methods) ? row.value.methods : []
+  return { methods }
+}
+
+export async function updateCustomizerShipping({ methods }) {
+  const safe = Array.isArray(methods) ? methods.filter((m) => m && typeof m.name === 'string' && Number.isInteger(m.priceCents) && m.priceCents >= 0) : []
+  await prisma.setting.upsert({
+    where: { key: SHIPPING_KEY },
+    create: { key: SHIPPING_KEY, value: { methods: safe } },
+    update: { value: { methods: safe } },
+  })
+  return { methods: safe }
 }
 
 export async function getAnnouncementConfig() {

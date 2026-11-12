@@ -26,6 +26,7 @@ import QuantitySelector from '../components/product/QuantitySelector'
 import Button from '../components/ui/Button'
 import { TEMPLATE_PREVIEWS, getStylePreview } from '../features/customiser/templateAssets'
 import { usePricing } from '../features/pricing/usePricing.js'
+import { useCustomizerSettings } from '../features/pricing/useCustomizerSettings.js'
 import { countBillableCharacters, calculateTotalCustomizationPriceCents } from '../features/pricing/pricingCalculator.js'
 import { useDesignOptions } from '../features/customDesign/useDesignOptions.js'
 import { clearDraft, loadDraft, restoreChoices } from '../features/customDesign/designDraft.js'
@@ -90,6 +91,7 @@ function CustomiserWorkspace({ options }) {
   const [keyringPosition, setKeyringPosition] = useState(initial.keyringPosition ?? options.defaultKeyringPosition)
   const [thickness, setThickness] = useState(initial.thickness ?? 'standard')
   const [allowDisconnected, setAllowDisconnected] = useState(initial.allowDisconnected ?? false)
+  const [selectedShipping, setSelectedShipping] = useState(null)
 
   const nameInputRef = useRef(null)
   const nameSelectionRef = useRef({ start: null, end: null })
@@ -135,12 +137,13 @@ function CustomiserWorkspace({ options }) {
   // hardcoded here. Only the price the server calculates when the design is
   // added to the cart is authoritative; this is the live, as-you-type estimate.
   const pricing = usePricing()
+  const customizerSettings = useCustomizerSettings()
   const nameCharacterCount = useMemo(() => countBillableCharacters(text), [text])
   const subtitleCharacterCount = useMemo(() => countBillableCharacters(cleanSubtitle), [cleanSubtitle])
   const billableCharacterCount = nameCharacterCount + subtitleCharacterCount
   const customizationPriceCents =
     pricing.perCharacterPriceCents != null
-      ? calculateTotalCustomizationPriceCents(text, cleanSubtitle, pricing.perCharacterPriceCents)
+      ? calculateTotalCustomizationPriceCents(text, cleanSubtitle, pricing.perCharacterPriceCents, pricing.baseCharacters, pricing.basePriceCents)
       : null
   const totalPriceRupees = customizationPriceCents != null ? customizationPriceCents / 100 : null
 
@@ -394,6 +397,36 @@ function CustomiserWorkspace({ options }) {
                 <QuantitySelector value={quantity} onChange={setQuantity} />
               </div>
             </section>
+
+            {/* Step 7: Shipping Method */}
+            {customizerSettings.shippingMethods.length > 0 && (
+              <section className="py-4">
+                <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">7. Shipping Method</span>
+                <div className="space-y-2">
+                  {customizerSettings.shippingMethods.map((method) => {
+                    const isSelected = selectedShipping?.name === method.name
+                    return (
+                      <button
+                        key={method.name}
+                        type="button"
+                        onClick={() => setSelectedShipping(method)}
+                        className={`w-full flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors ${
+                          isSelected ? 'border-accent bg-accent/10 text-ink' : 'border-line bg-surface hover:border-accent/50'
+                        }`}
+                      >
+                        <div>
+                          <span className="text-sm font-semibold text-ink">{method.name}</span>
+                          {method.estimatedDays && <span className="ml-2 text-xs text-muted">{method.estimatedDays}</span>}
+                        </div>
+                        <span className={`text-sm font-bold ${isSelected ? 'text-accent' : 'text-muted'}`}>
+                          {method.priceCents === 0 ? 'FREE' : `₹${(method.priceCents / 100).toFixed(2).replace(/\.00$/, '')}`}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
           </div>
 
           {/* Preflight Panel for Print Validation */}
@@ -417,8 +450,10 @@ function CustomiserWorkspace({ options }) {
                   <>
                     <span className="font-semibold text-accent">₹{totalPriceRupees.toFixed(2)}</span>{' '}
                     <span>
-                      ({billableCharacterCount} character{billableCharacterCount === 1 ? '' : 's'} × ₹
-                      {(pricing.perCharacterPriceCents / 100).toFixed(2)})
+                      {pricing.baseCharacters > 0 && pricing.basePriceCents > 0
+                      ? `(${billableCharacterCount} char${billableCharacterCount === 1 ? '' : 's'} · base ₹${(pricing.basePriceCents / 100).toFixed(0)} for ${pricing.baseCharacters}${billableCharacterCount > pricing.baseCharacters ? ` + ${billableCharacterCount - pricing.baseCharacters} × ₹${(pricing.perCharacterPriceCents / 100).toFixed(0)}` : ''})`
+                      : `(${billableCharacterCount} character${billableCharacterCount === 1 ? '' : 's'} × ₹${(pricing.perCharacterPriceCents / 100).toFixed(2)})`
+                    }
                     </span>
                   </>
                 ) : (
@@ -461,6 +496,7 @@ function CustomiserWorkspace({ options }) {
             design={design}
             quantity={quantity}
             totalPriceRupees={totalPriceRupees}
+            selectedShipping={selectedShipping}
             canAdd={preflight.printable && engine.status === 'ready' && cleanText.length > 0 && Boolean(engine.client)}
             engineClient={engine.client}
             engineParams={params}

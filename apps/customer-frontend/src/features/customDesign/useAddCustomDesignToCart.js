@@ -31,7 +31,7 @@ export function useAddCustomDesignToCart() {
   const [added, setAdded] = useState(false)
   const running = useRef(false)
 
-  async function addToCart({ client, params, fontDefinition, subtitleFontDefinition, allowDisconnected, design, quantity, capturePreview }) {
+  async function addToCart({ client, params, fontDefinition, subtitleFontDefinition, allowDisconnected, design, quantity, shippingMethod, capturePreview }) {
     if (running.current) return
     running.current = true
     setError(null)
@@ -70,7 +70,7 @@ export function useAddCustomDesignToCart() {
       }
 
       setPhase('adding')
-      await addCustomDesignToCart({ customDesignId: record.id, quantity })
+      await addCustomDesignToCart({ customDesignId: record.id, quantity, shippingMethod })
       clearDraft()
       setAdded(true)
     } catch (err) {

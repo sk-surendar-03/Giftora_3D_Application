@@ -4,6 +4,10 @@ import {
   updatePricingConfig,
   getAnnouncementConfig,
   updateAnnouncementConfig,
+  getCustomizerColors,
+  updateCustomizerColors,
+  getCustomizerShipping,
+  updateCustomizerShipping,
 } from './settingsService.js'
 
 export async function getPricing(req, res) {
@@ -11,11 +15,17 @@ export async function getPricing(req, res) {
 }
 
 export async function updatePricing(req, res) {
-  const { perCharacterPriceCents } = req.body ?? {}
-  if (!Number.isInteger(perCharacterPriceCents) || perCharacterPriceCents < 0) {
-    throw new HttpError(400, 'perCharacterPriceCents must be a non-negative whole number of cents/paisa.')
+  const { perCharacterPriceCents, baseCharacters, basePriceCents } = req.body ?? {}
+  if (perCharacterPriceCents !== undefined && (!Number.isInteger(perCharacterPriceCents) || perCharacterPriceCents < 0)) {
+    throw new HttpError(400, 'perCharacterPriceCents must be a non-negative whole number.')
   }
-  res.json({ pricing: await updatePricingConfig({ perCharacterPriceCents }) })
+  if (baseCharacters !== undefined && (!Number.isInteger(baseCharacters) || baseCharacters < 0)) {
+    throw new HttpError(400, 'baseCharacters must be a non-negative whole number.')
+  }
+  if (basePriceCents !== undefined && (!Number.isInteger(basePriceCents) || basePriceCents < 0)) {
+    throw new HttpError(400, 'basePriceCents must be a non-negative whole number.')
+  }
+  res.json({ pricing: await updatePricingConfig({ perCharacterPriceCents, baseCharacters, basePriceCents }) })
 }
 
 export async function getAnnouncement(req, res) {
@@ -32,4 +42,24 @@ export async function updateAnnouncement(req, res) {
   }
   const announcement = await updateAnnouncementConfig({ text, enabled })
   res.json({ announcement })
+}
+
+export async function getColors(req, res) {
+  res.json(await getCustomizerColors())
+}
+
+export async function updateColors(req, res) {
+  const { colors } = req.body ?? {}
+  if (!Array.isArray(colors)) throw new HttpError(400, 'colors must be an array.')
+  res.json(await updateCustomizerColors({ colors }))
+}
+
+export async function getShipping(req, res) {
+  res.json(await getCustomizerShipping())
+}
+
+export async function updateShipping(req, res) {
+  const { methods } = req.body ?? {}
+  if (!Array.isArray(methods)) throw new HttpError(400, 'methods must be an array.')
+  res.json(await updateCustomizerShipping({ methods }))
 }

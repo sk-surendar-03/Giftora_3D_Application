@@ -9,8 +9,8 @@ import { sha256Hex, validateBinaryStl, validatePng } from './stlValidator.js'
 import { exportThreeMfFromStl } from './threeMfExporter.js'
 
 /** The price of one unit of a design at the given per-character rate. */
-export function priceForDesign(params, perCharacterPriceCents) {
-  return calculateTotalCustomizationPriceCents(params.text, params.subtitle, perCharacterPriceCents)
+export function priceForDesign(params, perCharacterPriceCents, baseCharacters = 0, basePriceCents = 0) {
+  return calculateTotalCustomizationPriceCents(params.text, params.subtitle, perCharacterPriceCents, baseCharacters, basePriceCents)
 }
 
 /**

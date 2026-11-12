@@ -58,8 +58,8 @@ export async function addItem(userId, { productId, quantity, customization }) {
     const selSize = sizeOpts.find((s) => s.name === customization?.size)
     if (selSize) unitPriceCents += (selSize.additionalCents || 0)
   } else if (customization?.text) {
-    const { perCharacterPriceCents } = await getPricingConfig()
-    unitPriceCents = calculateTotalCustomizationPriceCents(customization.text, customization?.subtitle, perCharacterPriceCents)
+    const { perCharacterPriceCents, baseCharacters, basePriceCents } = await getPricingConfig()
+    unitPriceCents = calculateTotalCustomizationPriceCents(customization.text, customization?.subtitle, perCharacterPriceCents, baseCharacters, basePriceCents)
   } else {
     unitPriceCents = product.priceCents
   }
@@ -83,7 +83,7 @@ export async function addItem(userId, { productId, quantity, customization }) {
  * recomputed here from the design's validated parameters, never taken from
  * the client, and snapshotted on the line like catalog items.
  */
-export async function addCustomItem(userId, { customDesignId, quantity }) {
+export async function addCustomItem(userId, { customDesignId, quantity, shippingMethod }) {
   const design = await prisma.customDesign.findUnique({ where: { id: customDesignId } })
   // Same 404 whether it doesn't exist or belongs to someone else.
   if (!design || design.userId !== userId) throw new HttpError(404, 'Design not found.')
@@ -103,14 +103,16 @@ export async function addCustomItem(userId, { customDesignId, quantity }) {
     })
   }
 
-  const { perCharacterPriceCents } = await getPricingConfig()
+  const { perCharacterPriceCents, baseCharacters, basePriceCents } = await getPricingConfig()
+  const customization = shippingMethod && typeof shippingMethod.name === 'string' ? { shippingMethod } : undefined
   return prisma.cartItem.create({
     data: {
       cartId: cart.id,
       itemType: 'CUSTOM_DESIGN',
       customDesignId: design.id,
       quantity,
-      unitPriceCents: priceForDesign(design.params, perCharacterPriceCents),
+      unitPriceCents: priceForDesign(design.params, perCharacterPriceCents, baseCharacters, basePriceCents),
+      ...(customization ? { customization } : {}),
     },
     include: { product: true, customDesign: true },
   })

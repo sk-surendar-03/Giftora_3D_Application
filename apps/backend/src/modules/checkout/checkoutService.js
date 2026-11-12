@@ -24,7 +24,7 @@ export async function reviewCheckout(userId, addressId) {
     throw new HttpError(404, 'Address not found.')
   }
 
-  const { perCharacterPriceCents } = await getPricingConfig()
+  const { perCharacterPriceCents, baseCharacters, basePriceCents } = await getPricingConfig()
 
   let subtotalCents = 0
   const items = []
@@ -51,7 +51,7 @@ export async function reviewCheckout(userId, addressId) {
         const selSize = sizeOpts.find((s) => s.name === item.customization?.size)
         if (selSize) currentUnitPriceCents += (selSize.additionalCents || 0)
       } else if (item.customization?.text) {
-        currentUnitPriceCents = calculateTotalCustomizationPriceCents(item.customization.text, item.customization?.subtitle, perCharacterPriceCents)
+        currentUnitPriceCents = calculateTotalCustomizationPriceCents(item.customization.text, item.customization?.subtitle, perCharacterPriceCents, baseCharacters, basePriceCents)
       } else {
         currentUnitPriceCents = product?.priceCents ?? 0
       }

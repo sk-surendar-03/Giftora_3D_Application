@@ -1,19 +1,15 @@
-// Mirrors apps/backend/src/modules/settings/pricingCalculator.js exactly —
-// printable, non-whitespace characters only (spaces don't count). This copy
-// only drives the *live, as-you-type* price shown in the customizer; the
-// price actually charged is always recomputed server-side (cartService.js)
-// against the admin-configured rate, never trusted from the client. Keep
-// both in sync if this counting rule ever changes.
+// Mirrors apps/backend/src/modules/settings/pricingCalculator.js exactly.
+// This copy drives the live as-you-type estimate; the backend recomputes on add-to-cart.
 export function countBillableCharacters(text) {
   return [...(text ?? '')].filter((character) => character.trim().length > 0).length
 }
 
-export function calculateCustomizationPriceCents(text, perCharacterPriceCents) {
-  return countBillableCharacters(text) * perCharacterPriceCents
-}
-
-// The subtitle is priced the same way and on top of the name — it's
-// optional, so an empty/missing subtitle simply contributes 0.
-export function calculateTotalCustomizationPriceCents(text, subtitle, perCharacterPriceCents) {
-  return calculateCustomizationPriceCents(text, perCharacterPriceCents) + calculateCustomizationPriceCents(subtitle, perCharacterPriceCents)
+export function calculateTotalCustomizationPriceCents(text, subtitle, perCharacterPriceCents, baseCharacters = 0, basePriceCents = 0) {
+  const total = countBillableCharacters(text) + countBillableCharacters(subtitle)
+  if (total === 0) return 0
+  if (baseCharacters > 0 && basePriceCents > 0) {
+    if (total <= baseCharacters) return basePriceCents
+    return basePriceCents + (total - baseCharacters) * perCharacterPriceCents
+  }
+  return total * perCharacterPriceCents
 }

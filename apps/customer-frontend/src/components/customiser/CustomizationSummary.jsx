@@ -10,6 +10,7 @@ export default function CustomizationSummary({
   design,
   quantity,
   totalPriceRupees,
+  selectedShipping,
   canAdd,
   engineClient,
   engineParams,
@@ -23,8 +24,12 @@ export default function CustomizationSummary({
   const { addToCart, phase, error, added, busy, clearAdded } = useAddCustomDesignToCart()
 
   const rows = [...describeDesign(design), { label: 'Quantity', value: quantity }]
+  if (selectedShipping) {
+    rows.push({ label: 'Shipping', value: selectedShipping.priceCents === 0 ? 'FREE' : `₹${(selectedShipping.priceCents / 100).toFixed(2).replace(/\.00$/, '')} · ${selectedShipping.name}` })
+  }
 
-  const calculatedTotal = totalPriceRupees != null ? `₹${(totalPriceRupees * quantity).toFixed(2)}` : null
+  const shippingCents = selectedShipping?.priceCents ?? 0
+  const calculatedTotal = totalPriceRupees != null ? `₹${(totalPriceRupees * quantity + shippingCents / 100).toFixed(2)}` : null
 
   // A change after adding makes the "Added to cart" notice stale.
   useEffect(() => {
@@ -47,6 +52,7 @@ export default function CustomizationSummary({
       allowDisconnected,
       design,
       quantity,
+      shippingMethod: selectedShipping ?? undefined,
       capturePreview,
     })
   }

@@ -5,8 +5,8 @@ export async function fetchPricing() {
   return data.pricing
 }
 
-export async function updatePricing(perCharacterPriceCents) {
-  const { data } = await api.patch('/admin/settings/pricing', { perCharacterPriceCents })
+export async function updatePricing({ perCharacterPriceCents, baseCharacters, basePriceCents }) {
+  const { data } = await api.patch('/admin/settings/pricing', { perCharacterPriceCents, baseCharacters, basePriceCents })
   return data.pricing
 }
 
@@ -18,4 +18,24 @@ export async function fetchAnnouncement() {
 export async function updateAnnouncement({ text, enabled }) {
   const { data } = await api.patch('/admin/settings/announcement', { text, enabled })
   return data.announcement
+}
+
+export async function fetchCustomizerColors() {
+  const { data } = await api.get('/settings/customizer/colors')
+  return data.colors
+}
+
+export async function updateCustomizerColors(colors) {
+  const { data } = await api.patch('/admin/settings/customizer/colors', { colors })
+  return data.colors
+}
+
+export async function fetchCustomizerShipping() {
+  const { data } = await api.get('/settings/customizer/shipping')
+  return data.methods
+}
+
+export async function updateCustomizerShipping(methods) {
+  const { data } = await api.patch('/admin/settings/customizer/shipping', { methods })
+  return data.methods
 }
