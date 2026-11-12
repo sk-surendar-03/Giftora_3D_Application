@@ -73,11 +73,10 @@ export default function Cart() {
   }
 
   const totalShippingCents = cart.items.reduce((sum, item) => {
-    if (item.itemType === 'PRODUCT') {
-      const shipCents = item.customization?.shippingMethod?.priceCents ?? item.product?.shippingCents ?? 0
-      return sum + shipCents
+    if (item.itemType === 'CUSTOM_DESIGN') {
+      return sum + (item.customization?.shippingMethod?.priceCents ?? 0)
     }
-    return sum
+    return sum + (item.customization?.shippingMethod?.priceCents ?? item.product?.shippingCents ?? 0)
   }, 0)
   const cartSubtotalCents = cart.items.reduce((sum, item) => sum + (item.lineTotalCents || item.unitPriceCents * item.quantity), 0)
   const cartFinalTotalCents = cartSubtotalCents + totalShippingCents
@@ -130,9 +129,23 @@ export default function Cart() {
                           <DesignDetails params={item.design.params} />
                         </div>
                         <div className="mt-2 text-xs">
-                          <span className="font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
-                            Free Shipping
-                          </span>
+                          {(() => {
+                            const sm = item.customization?.shippingMethod
+                            const shipCents = sm?.priceCents ?? 0
+                            if (shipCents > 0) {
+                              return (
+                                <span className="font-medium text-muted bg-soft px-2 py-0.5 rounded-full border border-line">
+                                  {sm.name}: <span className="font-semibold text-ink">₹{(shipCents / 100).toFixed(2).replace(/\.00$/, '')}</span>
+                                  {sm.estimatedDays && <span className="ml-1 text-muted">{sm.estimatedDays}</span>}
+                                </span>
+                              )
+                            }
+                            return (
+                              <span className="font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
+                                Free Shipping
+                              </span>
+                            )
+                          })()}
                         </div>
                       </>
                     ) : (
