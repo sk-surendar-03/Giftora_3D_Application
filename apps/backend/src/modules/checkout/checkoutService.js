@@ -41,7 +41,9 @@ export async function reviewCheckout(userId, addressId) {
     const available = isCustom ? await stlIsAvailable(design) : product.isActive
     const currentUnitPriceCents = isCustom
       ? priceForDesign(design.params, perCharacterPriceCents)
-      : calculateTotalCustomizationPriceCents(item.customization?.text, item.customization?.subtitle, perCharacterPriceCents)
+      : item.customization?.text
+        ? calculateTotalCustomizationPriceCents(item.customization.text, item.customization?.subtitle, perCharacterPriceCents)
+        : (product?.priceCents ?? 0)
     const priceChanged = currentUnitPriceCents !== item.unitPriceCents
     const lineTotalCents = available ? currentUnitPriceCents * item.quantity : 0
     if (available) subtotalCents += lineTotalCents
