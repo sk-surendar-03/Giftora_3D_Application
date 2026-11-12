@@ -9,6 +9,10 @@ import {
   updateCustomizerColors,
   fetchCustomizerShipping,
   updateCustomizerShipping,
+  fetchCustomizerSizes,
+  updateCustomizerSizes,
+  fetchCustomizerThicknesses,
+  updateCustomizerThicknesses,
 } from '../../features/settings/settingsApi.js'
 
 function extractError(err) {
@@ -219,6 +223,89 @@ function ShippingManager({ methods, onChange }) {
   )
 }
 
+// ─── Size & Thickness Manager (shared pattern) ───────────────────────────────
+function PriceListEditor({ items, onChange, namePlaceholder = 'Name', pricePlaceholder = '0' }) {
+  const [draft, setDraft] = useState({ name: '', price: '' })
+  const [editIndex, setEditIndex] = useState(null)
+  const [editDraft, setEditDraft] = useState(null)
+
+  function add() {
+    const name = draft.name.trim()
+    const price = parseFloat(draft.price)
+    if (!name || !Number.isFinite(price) || price < 0) return
+    onChange([...items, { name, priceCents: Math.round(price * 100) }])
+    setDraft({ name: '', price: '' })
+  }
+
+  function remove(i) {
+    onChange(items.filter((_, idx) => idx !== i))
+  }
+
+  function startEdit(i) {
+    setEditIndex(i)
+    setEditDraft({ name: items[i].name, price: String(items[i].priceCents / 100) })
+  }
+
+  function saveEdit() {
+    const name = editDraft.name.trim()
+    const price = parseFloat(editDraft.price)
+    if (!name || !Number.isFinite(price) || price < 0) return
+    onChange(items.map((item, i) => i === editIndex ? { name, priceCents: Math.round(price * 100) } : item))
+    setEditIndex(null)
+    setEditDraft(null)
+  }
+
+  return (
+    <div className="space-y-3">
+      {items.length > 0 && (
+        <div className="space-y-2">
+          {items.map((item, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-md border border-line bg-surface px-3 py-2">
+              {editIndex === i ? (
+                <>
+                  <input value={editDraft.name} onChange={(e) => setEditDraft((p) => ({ ...p, name: e.target.value }))}
+                    className="flex-1 rounded border border-line px-2 py-1 text-xs" placeholder={namePlaceholder} autoFocus />
+                  <span className="text-xs text-muted">₹</span>
+                  <input type="number" min="0" step="0.01" value={editDraft.price}
+                    onChange={(e) => setEditDraft((p) => ({ ...p, price: e.target.value }))}
+                    className="w-24 rounded border border-line px-2 py-1 text-xs" placeholder="Price" />
+                  <button type="button" onClick={saveEdit} className="rounded bg-accent px-2 py-1 text-xs font-semibold text-white cursor-pointer">Save</button>
+                  <button type="button" onClick={() => setEditIndex(null)} className="text-xs text-muted hover:text-ink cursor-pointer">✕</button>
+                </>
+              ) : (
+                <>
+                  <span className="flex-1 text-sm font-medium text-ink">{item.name}</span>
+                  <span className="text-sm font-semibold text-accent">
+                    {item.priceCents === 0 ? 'Free' : `₹${(item.priceCents / 100).toFixed(2).replace(/\.00$/, '')}`}
+                  </span>
+                  <button type="button" onClick={() => startEdit(i)} className="text-xs text-muted hover:text-ink cursor-pointer">✎</button>
+                  <button type="button" onClick={() => remove(i)} className="text-xs text-muted hover:text-danger cursor-pointer">✕</button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="flex items-center gap-2 pt-1">
+        <input value={draft.name} onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
+          placeholder={namePlaceholder}
+          className="flex-1 rounded-md border border-line px-3 py-1.5 text-xs"
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
+        <span className="text-xs text-muted shrink-0">₹</span>
+        <input type="number" min="0" step="0.01" value={draft.price}
+          onChange={(e) => setDraft((p) => ({ ...p, price: e.target.value }))}
+          placeholder={pricePlaceholder}
+          className="w-24 rounded-md border border-line px-3 py-1.5 text-xs"
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
+        <button type="button" onClick={add} disabled={!draft.name.trim() || draft.price === ''}
+          className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+          + Add
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Settings Page ───────────────────────────────────────────────────────
 export default function Settings() {
   const [isLoading, setIsLoading] = useState(true)
@@ -249,11 +336,21 @@ export default function Settings() {
   const [savingShipping, setSavingShipping] = useState(false)
   const [shippingStatus, setShippingStatus] = useState(null)
 
+  // Sizes
+  const [customizerSizes, setCustomizerSizes] = useState([])
+  const [savingSizes, setSavingSizes] = useState(false)
+  const [sizesStatus, setSizesStatus] = useState(null)
+
+  // Thicknesses
+  const [customizerThicknesses, setCustomizerThicknesses] = useState([])
+  const [savingThicknesses, setSavingThicknesses] = useState(false)
+  const [thicknessesStatus, setThicknessesStatus] = useState(null)
+
   function load() {
     setIsLoading(true)
     setLoadError(null)
-    Promise.all([fetchPricing(), fetchAnnouncement(), fetchCustomizerColors(), fetchCustomizerShipping()])
-      .then(([pricing, announcement, cols, methods]) => {
+    Promise.all([fetchPricing(), fetchAnnouncement(), fetchCustomizerColors(), fetchCustomizerShipping(), fetchCustomizerSizes(), fetchCustomizerThicknesses()])
+      .then(([pricing, announcement, cols, methods, sizes, thicknesses]) => {
         setPricePerCharacter((pricing.perCharacterPriceCents / 100).toString())
         setBaseCharacters((pricing.baseCharacters ?? 0).toString())
         setBasePrice(((pricing.basePriceCents ?? 0) / 100).toString())
@@ -261,6 +358,8 @@ export default function Settings() {
         setAnnouncementEnabled(Boolean(announcement.enabled))
         setColors(Array.isArray(cols) ? cols : [])
         setShippingMethods(Array.isArray(methods) ? methods : [])
+        setCustomizerSizes(Array.isArray(sizes) ? sizes : [])
+        setCustomizerThicknesses(Array.isArray(thicknesses) ? thicknesses : [])
       })
       .catch((err) => setLoadError(extractError(err)))
       .finally(() => setIsLoading(false))
@@ -344,6 +443,36 @@ export default function Settings() {
       setTimeout(() => setShippingStatus(null), 3000)
     }
     setSavingShipping(false)
+  }
+
+  async function handleSaveSizes() {
+    setSavingSizes(true)
+    setSizesStatus(null)
+    try {
+      const saved = await updateCustomizerSizes(customizerSizes)
+      setCustomizerSizes(saved)
+      setSizesStatus('ok')
+      setTimeout(() => setSizesStatus(null), 2500)
+    } catch {
+      setSizesStatus('err')
+      setTimeout(() => setSizesStatus(null), 3000)
+    }
+    setSavingSizes(false)
+  }
+
+  async function handleSaveThicknesses() {
+    setSavingThicknesses(true)
+    setThicknessesStatus(null)
+    try {
+      const saved = await updateCustomizerThicknesses(customizerThicknesses)
+      setCustomizerThicknesses(saved)
+      setThicknessesStatus('ok')
+      setTimeout(() => setThicknessesStatus(null), 2500)
+    } catch {
+      setThicknessesStatus('err')
+      setTimeout(() => setThicknessesStatus(null), 3000)
+    }
+    setSavingThicknesses(false)
   }
 
   // Live pricing preview
@@ -493,16 +622,49 @@ export default function Settings() {
                 <h2 className="text-base font-semibold text-ink">Customizer Shipping Methods</h2>
                 <p className="mt-1 text-xs text-muted">Shipping options shown to customers when they order a customized item. Add standard, express, etc.</p>
               </div>
-              <button
-                type="button"
-                onClick={handleSaveShipping}
-                disabled={savingShipping}
-                className="shrink-0 rounded-control bg-accent px-4 py-2 text-sm font-bold text-on-accent hover:bg-accent-dark transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
-              >
+              <button type="button" onClick={handleSaveShipping} disabled={savingShipping}
+                className="shrink-0 rounded-control bg-accent px-4 py-2 text-sm font-bold text-on-accent hover:bg-accent-dark transition-colors disabled:opacity-50 cursor-pointer shadow-sm">
                 {savingShipping ? 'Saving…' : shippingStatus === 'ok' ? '✓ Saved!' : shippingStatus === 'err' ? 'Error!' : 'Save Shipping'}
               </button>
             </div>
             <ShippingManager methods={shippingMethods} onChange={setShippingMethods} />
+          </section>
+
+          {/* Customizer Sizes */}
+          <section className="rounded-card border border-line bg-surface p-6 shadow-sm">
+            <div className="border-b border-line pb-3 mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-base font-semibold text-ink">Customizer Size Options</h2>
+                <p className="mt-1 text-xs text-muted">
+                  Size choices shown to customers in the 3D customizer. Each size has an added price on top of the character pricing.
+                  Example: Small (4cm) ₹0, Medium (5.5cm) ₹50, Large (7cm) ₹100.
+                </p>
+              </div>
+              <button type="button" onClick={handleSaveSizes} disabled={savingSizes}
+                className="shrink-0 rounded-control bg-accent px-4 py-2 text-sm font-bold text-on-accent hover:bg-accent-dark transition-colors disabled:opacity-50 cursor-pointer shadow-sm">
+                {savingSizes ? 'Saving…' : sizesStatus === 'ok' ? '✓ Saved!' : sizesStatus === 'err' ? 'Error!' : 'Save Sizes'}
+              </button>
+            </div>
+            <PriceListEditor items={customizerSizes} onChange={setCustomizerSizes}
+              namePlaceholder="Size name (e.g. Small 4cm, Medium 5.5cm)" pricePlaceholder="0" />
+          </section>
+
+          {/* Customizer Thicknesses */}
+          <section className="rounded-card border border-line bg-surface p-6 shadow-sm">
+            <div className="border-b border-line pb-3 mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-base font-semibold text-ink">Customizer Base Thickness Options</h2>
+                <p className="mt-1 text-xs text-muted">
+                  Thickness choices in the 3D customizer. Each option has an added price. Example: Standard ₹0, Premium ₹80.
+                </p>
+              </div>
+              <button type="button" onClick={handleSaveThicknesses} disabled={savingThicknesses}
+                className="shrink-0 rounded-control bg-accent px-4 py-2 text-sm font-bold text-on-accent hover:bg-accent-dark transition-colors disabled:opacity-50 cursor-pointer shadow-sm">
+                {savingThicknesses ? 'Saving…' : thicknessesStatus === 'ok' ? '✓ Saved!' : thicknessesStatus === 'err' ? 'Error!' : 'Save Thicknesses'}
+              </button>
+            </div>
+            <PriceListEditor items={customizerThicknesses} onChange={setCustomizerThicknesses}
+              namePlaceholder="Thickness name (e.g. Standard, Premium)" pricePlaceholder="0" />
           </section>
 
         </div>

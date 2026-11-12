@@ -8,6 +8,10 @@ import {
   updateCustomizerColors,
   getCustomizerShipping,
   updateCustomizerShipping,
+  getCustomizerSizes,
+  updateCustomizerSizes,
+  getCustomizerThicknesses,
+  updateCustomizerThicknesses,
 } from './settingsService.js'
 
 export async function getPricing(req, res) {
@@ -62,4 +66,24 @@ export async function updateShipping(req, res) {
   const { methods } = req.body ?? {}
   if (!Array.isArray(methods)) throw new HttpError(400, 'methods must be an array.')
   res.json(await updateCustomizerShipping({ methods }))
+}
+
+export async function getSizes(req, res) {
+  res.json(await getCustomizerSizes())
+}
+
+export async function updateSizes(req, res) {
+  const { sizes } = req.body ?? {}
+  if (!Array.isArray(sizes)) throw new HttpError(400, 'sizes must be an array.')
+  res.json(await updateCustomizerSizes({ sizes }))
+}
+
+export async function getThicknesses(req, res) {
+  res.json(await getCustomizerThicknesses())
+}
+
+export async function updateThicknesses(req, res) {
+  const { thicknesses } = req.body ?? {}
+  if (!Array.isArray(thicknesses)) throw new HttpError(400, 'thicknesses must be an array.')
+  res.json(await updateCustomizerThicknesses({ thicknesses }))
 }

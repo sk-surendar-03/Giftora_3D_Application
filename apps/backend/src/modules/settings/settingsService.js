@@ -4,6 +4,8 @@ const PRICING_KEY = 'customizer_pricing'
 const ANNOUNCEMENT_KEY = 'announcement_bar'
 const COLORS_KEY = 'customizer_colors'
 const SHIPPING_KEY = 'customizer_shipping'
+const SIZES_KEY = 'customizer_sizes'
+const THICKNESSES_KEY = 'customizer_thicknesses'
 
 export const DEFAULT_PER_CHARACTER_PRICE_CENTS = 500
 export const DEFAULT_BASE_CHARACTERS = 10
@@ -63,6 +65,38 @@ export async function updateCustomizerShipping({ methods }) {
     update: { value: { methods: safe } },
   })
   return { methods: safe }
+}
+
+export async function getCustomizerSizes() {
+  const row = await prisma.setting.findUnique({ where: { key: SIZES_KEY } })
+  const sizes = Array.isArray(row?.value?.sizes) ? row.value.sizes : []
+  return { sizes }
+}
+
+export async function updateCustomizerSizes({ sizes }) {
+  const safe = Array.isArray(sizes) ? sizes.filter((s) => s && typeof s.name === 'string' && Number.isInteger(s.priceCents) && s.priceCents >= 0) : []
+  await prisma.setting.upsert({
+    where: { key: SIZES_KEY },
+    create: { key: SIZES_KEY, value: { sizes: safe } },
+    update: { value: { sizes: safe } },
+  })
+  return { sizes: safe }
+}
+
+export async function getCustomizerThicknesses() {
+  const row = await prisma.setting.findUnique({ where: { key: THICKNESSES_KEY } })
+  const thicknesses = Array.isArray(row?.value?.thicknesses) ? row.value.thicknesses : []
+  return { thicknesses }
+}
+
+export async function updateCustomizerThicknesses({ thicknesses }) {
+  const safe = Array.isArray(thicknesses) ? thicknesses.filter((t) => t && typeof t.name === 'string' && Number.isInteger(t.priceCents) && t.priceCents >= 0) : []
+  await prisma.setting.upsert({
+    where: { key: THICKNESSES_KEY },
+    create: { key: THICKNESSES_KEY, value: { thicknesses: safe } },
+    update: { value: { thicknesses: safe } },
+  })
+  return { thicknesses: safe }
 }
 
 export async function getAnnouncementConfig() {

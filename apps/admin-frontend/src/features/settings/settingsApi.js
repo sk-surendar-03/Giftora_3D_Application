@@ -39,3 +39,23 @@ export async function updateCustomizerShipping(methods) {
   const { data } = await api.patch('/admin/settings/customizer/shipping', { methods })
   return data.methods
 }
+
+export async function fetchCustomizerSizes() {
+  const { data } = await api.get('/settings/customizer/sizes')
+  return data.sizes
+}
+
+export async function updateCustomizerSizes(sizes) {
+  const { data } = await api.patch('/admin/settings/customizer/sizes', { sizes })
+  return data.sizes
+}
+
+export async function fetchCustomizerThicknesses() {
+  const { data } = await api.get('/settings/customizer/thicknesses')
+  return data.thicknesses
+}
+
+export async function updateCustomizerThicknesses(thicknesses) {
+  const { data } = await api.patch('/admin/settings/customizer/thicknesses', { thicknesses })
+  return data.thicknesses
+}

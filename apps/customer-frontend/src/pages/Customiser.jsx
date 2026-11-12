@@ -114,15 +114,31 @@ function CustomiserWorkspace({ options }) {
       : templateOption.sizes[0]
   const styleId = templateOption.styles.length ? (templateOption.styles.includes(styleChoice) ? styleChoice : templateOption.styles[0]) : null
 
-  const availableColors = useMemo(() => options.materials.find((m) => m.name === material)?.colors ?? [], [options.materials, material])
-  // Always a valid base/text pair from the palette, so the swatches, the 3D
-  // preview, the summary and the exports can never disagree.
+  // Use admin-configured colors if available, else fall back to hardcoded material colors
+  const hardcodedColors = useMemo(() => options.materials.find((m) => m.name === material)?.colors ?? [], [options.materials, material])
+  const availableColors = useMemo(() => {
+    const adminColors = customizerSettings.colors.map((c) => ({ label: c.name, hex: c.hex }))
+    return adminColors.length > 0 ? adminColors : hardcodedColors
+  }, [customizerSettings.colors, hardcodedColors])
+
   const { base: color, text: textColor } = useMemo(
     () => resolveColorSelection(availableColors, baseChoice, textChoice),
     [availableColors, baseChoice, textChoice],
   )
 
-  const sizeDefaults = useMemo(() => shapeDefaultsForSize(size), [size])
+  // Admin-configured sizes (with prices); fall back to template sizes
+  const adminSizes = customizerSettings.sizes
+  const effectiveSizeOptions = adminSizes.length > 0 ? adminSizes.map((s) => s.name) : templateOption.sizes
+  const effectiveSize = effectiveSizeOptions.includes(sizeChoice) ? sizeChoice : effectiveSizeOptions[0] ?? size
+  const selectedSizeOption = adminSizes.find((s) => s.name === effectiveSize)
+  const sizePriceCents = selectedSizeOption?.priceCents ?? 0
+
+  // Admin-configured thicknesses (with prices); fall back to hardcoded
+  const adminThicknesses = customizerSettings.thicknesses
+  const selectedThicknessOption = adminThicknesses.find((t) => t.name === thickness)
+  const thicknessPriceCents = selectedThicknessOption?.priceCents ?? 0
+
+  const sizeDefaults = useMemo(() => shapeDefaultsForSize(effectiveSize), [effectiveSize])
 
   // The design the server records (and the STL is generated from) uses the
   // trimmed text, exactly as the server canonicalises it.
@@ -145,7 +161,8 @@ function CustomiserWorkspace({ options }) {
     pricing.perCharacterPriceCents != null
       ? calculateTotalCustomizationPriceCents(text, cleanSubtitle, pricing.perCharacterPriceCents, pricing.baseCharacters, pricing.basePriceCents)
       : null
-  const totalPriceRupees = customizationPriceCents != null ? customizationPriceCents / 100 : null
+  const totalPriceCents = customizationPriceCents != null ? customizationPriceCents + sizePriceCents + thicknessPriceCents : null
+  const totalPriceRupees = totalPriceCents != null ? totalPriceCents / 100 : null
 
   const params = useMemo(() => {
     return {
@@ -173,12 +190,12 @@ function CustomiserWorkspace({ options }) {
       material,
       color,
       textColor,
-      size,
+      size: effectiveSize,
       thickness,
       keyringPosition: templateDefinition.supportsKeyring ? keyringPosition : undefined,
       allowDisconnected,
     }),
-    [templateOption.id, styleId, cleanText, cleanSubtitle, effectiveFontId, material, color, textColor, size, thickness, templateDefinition, keyringPosition, allowDisconnected],
+    [templateOption.id, styleId, cleanText, cleanSubtitle, effectiveFontId, material, color, textColor, effectiveSize, thickness, templateDefinition, keyringPosition, allowDisconnected],
   )
 
   const fontDef = useMemo(() => fontDefinition(effectiveFontId), [effectiveFontId])
@@ -386,14 +403,51 @@ function CustomiserWorkspace({ options }) {
             {/* Step 5: Thickness & Dimensions */}
             <section className="py-4">
               <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">Base thickness</span>
-              <ThicknessPicker value={thickness} onChange={setThickness} />
+              {adminThicknesses.length > 0 ? (
+                <div className="space-y-2">
+                  {adminThicknesses.map((t) => {
+                    const isSelected = thickness === t.name
+                    return (
+                      <button key={t.name} type="button" onClick={() => setThickness(t.name)}
+                        className={`w-full flex items-center justify-between rounded-lg border px-4 py-2.5 text-left transition-colors ${isSelected ? 'border-accent bg-accent/10' : 'border-line bg-surface hover:border-accent/50'}`}>
+                        <span className="text-sm font-medium text-ink">{t.name}</span>
+                        <span className={`text-sm font-bold ${isSelected ? 'text-accent' : 'text-muted'}`}>
+                          {t.priceCents === 0 ? 'Included' : `+₹${(t.priceCents / 100).toFixed(2).replace(/\.00$/, '')}`}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <ThicknessPicker value={thickness} onChange={setThickness} />
+              )}
             </section>
 
             {/* Step 6: Size & Quantity */}
             <section className="py-4">
               <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">Size & Quantity</span>
               <div className="space-y-3">
-                <OptionPicker label="Overall Size" options={templateOption.sizes} value={size} onChange={setSizeChoice} />
+                {adminSizes.length > 0 ? (
+                  <div>
+                    <span className="block text-xs text-muted mb-1.5">Overall Size</span>
+                    <div className="space-y-2">
+                      {adminSizes.map((s) => {
+                        const isSelected = effectiveSize === s.name
+                        return (
+                          <button key={s.name} type="button" onClick={() => setSizeChoice(s.name)}
+                            className={`w-full flex items-center justify-between rounded-lg border px-4 py-2.5 text-left transition-colors ${isSelected ? 'border-accent bg-accent/10' : 'border-line bg-surface hover:border-accent/50'}`}>
+                            <span className="text-sm font-medium text-ink">{s.name}</span>
+                            <span className={`text-sm font-bold ${isSelected ? 'text-accent' : 'text-muted'}`}>
+                              {s.priceCents === 0 ? 'Included' : `+₹${(s.priceCents / 100).toFixed(2).replace(/\.00$/, '')}`}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <OptionPicker label="Overall Size" options={templateOption.sizes} value={effectiveSize} onChange={setSizeChoice} />
+                )}
                 <QuantitySelector value={quantity} onChange={setQuantity} />
               </div>
             </section>
