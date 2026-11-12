@@ -101,38 +101,53 @@ function MaterialFilterPopup({ materials, colorsByMaterial, assigned, onToggle, 
                 </div>
               )}
 
-              {/* Add color row */}
+              {/* Preset colors — click to toggle add/remove instantly */}
               <div className="pl-1 space-y-1.5">
-                <div className="flex items-center gap-1.5">
+                <p className="text-[10px] text-muted">Click presets to add/remove · multiple allowed</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {PRESET_COLORS.map((p) => {
+                    const already = colors.some((c) => c.label === p.label)
+                    return (
+                      <button
+                        key={p.label}
+                        type="button"
+                        title={p.label}
+                        onClick={() => {
+                          if (already) {
+                            const idx = colors.findIndex((c) => c.label === p.label)
+                            removeColor(mat, idx)
+                          } else {
+                            const updated = { ...colorsByMaterial, [mat]: [...colors, { label: p.label, hex: p.hex }] }
+                            onColorsByMaterialChange(updated)
+                          }
+                        }}
+                        className={`h-5 w-5 rounded-full border-2 cursor-pointer transition-all hover:scale-110 ${
+                          already ? 'border-accent ring-1 ring-accent scale-110' : 'border-white/20'
+                        }`}
+                        style={{ backgroundColor: p.hex }}
+                      />
+                    )
+                  })}
+                </div>
+
+                {/* Custom color row for non-preset colors */}
+                <div className="flex items-center gap-1.5 pt-0.5">
                   <input
                     type="color"
                     value={draft.hex}
                     onChange={(e) => setDraft(mat, { hex: e.target.value })}
-                    className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0"
-                    title="Pick color"
+                    className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 shrink-0"
+                    title="Custom color"
                   />
                   <input
                     type="text"
                     value={draft.label}
                     onChange={(e) => setDraft(mat, { label: e.target.value })}
                     onKeyDown={(e) => e.key === 'Enter' && addColor(mat)}
-                    placeholder="Color name"
+                    placeholder="Custom color name"
                     className="flex-1 rounded border border-line bg-surface px-2 py-0.5 text-[11px] text-ink outline-none focus:border-accent"
                   />
                   <button type="button" onClick={() => addColor(mat)} className="rounded bg-accent px-2 py-0.5 text-[11px] font-bold text-white cursor-pointer hover:bg-amber-600 whitespace-nowrap">+ Add</button>
-                </div>
-                {/* Presets */}
-                <div className="flex flex-wrap gap-1">
-                  {PRESET_COLORS.map((p) => (
-                    <button
-                      key={p.label}
-                      type="button"
-                      onClick={() => setDraft(mat, { label: p.label, hex: p.hex })}
-                      title={p.label}
-                      className="h-4 w-4 rounded-full border border-white/20 cursor-pointer hover:scale-110 transition-transform"
-                      style={{ backgroundColor: p.hex }}
-                    />
-                  ))}
                 </div>
               </div>
             </div>
