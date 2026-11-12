@@ -344,6 +344,7 @@ export default function ProductForm() {
                 images={form.images}
                 onChange={(v) => update('images', v)}
                 materials={form.materialOptions.length > 0 ? form.materialOptions.map((m) => m.name) : []}
+                colorsByMaterial={form.colorsByMaterial || {}}
                 imageMaterials={form.imageMaterials}
                 onImageMaterialsChange={(v) => update('imageMaterials', v)}
               />

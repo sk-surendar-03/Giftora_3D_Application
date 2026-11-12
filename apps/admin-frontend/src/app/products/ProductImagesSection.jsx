@@ -13,8 +13,8 @@ function extractError(err) {
   return err.response?.data?.error ?? err.message ?? 'Upload failed.'
 }
 
-// Popup for assigning materials to an image
-function MaterialFilterPopup({ materials, assigned, onToggle, onClose }) {
+// Popup for assigning materials/colors to an image
+function MaterialFilterPopup({ materials, colorsByMaterial, assigned, onToggle, onClose }) {
   const ref = useRef(null)
 
   useEffect(() => {
@@ -25,41 +25,80 @@ function MaterialFilterPopup({ materials, assigned, onToggle, onClose }) {
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [onClose])
 
-  if (!materials || materials.length === 0) {
+  // Collect unique colors across all materials
+  const allColors = []
+  const seen = new Set()
+  if (colorsByMaterial && typeof colorsByMaterial === 'object') {
+    Object.values(colorsByMaterial).forEach((cols) => {
+      if (Array.isArray(cols)) {
+        cols.forEach((c) => {
+          const key = c.label || c
+          if (!seen.has(key)) { seen.add(key); allColors.push(c) }
+        })
+      }
+    })
+  }
+
+  const hasAnything = (materials && materials.length > 0) || allColors.length > 0
+
+  if (!hasAnything) {
     return (
-      <div ref={ref} className="absolute top-8 right-0 z-30 w-48 rounded-lg border border-line bg-surface shadow-xl p-3 text-xs text-muted">
-        No materials configured. Add materials in the Materials & Pricing section first.
+      <div ref={ref} className="absolute top-10 right-0 z-50 w-52 rounded-lg border border-line bg-[#141414] shadow-2xl p-3 text-xs text-muted">
+        Add materials or colors first to tag this image.
       </div>
     )
   }
 
   return (
-    <div ref={ref} className="absolute top-8 right-0 z-30 w-52 rounded-lg border border-line bg-surface shadow-xl p-3 space-y-2">
-      <p className="text-[11px] font-bold text-muted uppercase tracking-wider pb-1 border-b border-line">
-        Show for materials
-      </p>
-      {materials.map((mat) => {
-        const checked = assigned.includes(mat)
-        return (
-          <label key={mat} className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={checked}
-              onChange={() => onToggle(mat)}
-              className="h-3.5 w-3.5 accent-amber-500"
-            />
-            <span className={`text-[12px] ${checked ? 'text-ink font-semibold' : 'text-muted'}`}>{mat}</span>
-          </label>
-        )
-      })}
-      <p className="text-[10px] text-muted pt-1 border-t border-line">
-        Unchecked = show for all materials
-      </p>
+    <div ref={ref} className="absolute top-10 right-0 z-50 w-56 rounded-lg border border-line bg-[#141414] shadow-2xl p-3 space-y-3 max-h-72 overflow-y-auto">
+      {materials && materials.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-bold text-muted uppercase tracking-wider pb-1 border-b border-line">Materials</p>
+          {materials.map((mat) => {
+            const checked = assigned.includes(mat)
+            return (
+              <label key={mat} className="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" checked={checked} onChange={() => onToggle(mat)} className="h-3.5 w-3.5 accent-amber-500" />
+                <span className={`text-[12px] ${checked ? 'text-ink font-semibold' : 'text-muted'}`}>{mat}</span>
+              </label>
+            )
+          })}
+        </div>
+      )}
+
+      {allColors.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-bold text-muted uppercase tracking-wider pb-1 border-b border-line">Colors</p>
+          <div className="flex flex-wrap gap-1.5">
+            {allColors.map((c) => {
+              const label = c.label || c
+              const hex = c.hex || c
+              const checked = assigned.includes(label)
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => onToggle(label)}
+                  title={label}
+                  className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] cursor-pointer transition-colors ${
+                    checked ? 'border-accent bg-accent/20 text-accent font-semibold' : 'border-line text-muted hover:border-muted'
+                  }`}
+                >
+                  <span className="h-3 w-3 rounded-full border border-white/20 shrink-0" style={{ backgroundColor: hex }} />
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <p className="text-[10px] text-muted pt-1 border-t border-line">Untagged = shows for all</p>
     </div>
   )
 }
 
-export default function ProductImagesSection({ images = [], onChange, materials = [], imageMaterials = {}, onImageMaterialsChange }) {
+export default function ProductImagesSection({ images = [], onChange, materials = [], colorsByMaterial = {}, imageMaterials = {}, onImageMaterialsChange }) {
   const [items, setItems] = useState([])
   const [dragOverZone, setDragOverZone] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState(null)
@@ -400,7 +439,7 @@ export default function ProductImagesSection({ images = [], onChange, materials 
                     isPrimary ? 'border-accent ring-1 ring-accent' : isError ? 'border-red-400 bg-red-50/20' : 'border-line hover:border-muted'
                   }`}
                 >
-                  {/* Image Preview */}
+                  {/* Image Preview — overflow hidden; popup is rendered OUTSIDE this div */}
                   <div className="relative aspect-square w-full rounded-md overflow-hidden bg-soft border border-line/60 flex items-center justify-center">
                     <img
                       src={item.previewUrl}
@@ -415,33 +454,20 @@ export default function ProductImagesSection({ images = [], onChange, materials 
                       </span>
                     )}
 
-                    {/* Material Filter Button — top right of image */}
-                    {item.url && !isUploading && materials.length > 0 && (
-                      <div className="absolute top-2 right-2">
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setFilterPopupId(isFilterOpen ? null : item.id) }}
-                          title="Assign to materials"
-                          className={`inline-flex items-center justify-center h-7 w-7 rounded-full shadow-md border transition-colors cursor-pointer ${
-                            hasFilter
-                              ? 'bg-accent border-accent text-white'
-                              : 'bg-black/60 border-white/20 text-white hover:bg-black/80'
-                          }`}
-                        >
-                          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                          </svg>
-                        </button>
-
-                        {isFilterOpen && (
-                          <MaterialFilterPopup
-                            materials={materials}
-                            assigned={assignedMaterials}
-                            onToggle={(mat) => handleToggleMaterial(item.url, mat)}
-                            onClose={() => setFilterPopupId(null)}
-                          />
-                        )}
-                      </div>
+                    {/* Filter button sits inside image for visual placement */}
+                    {item.url && !isUploading && (materials.length > 0 || Object.keys(colorsByMaterial).length > 0) && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setFilterPopupId(isFilterOpen ? null : item.id) }}
+                        title="Assign to materials / colors"
+                        className={`absolute top-2 right-2 inline-flex items-center justify-center h-7 w-7 rounded-full shadow-md border transition-colors cursor-pointer ${
+                          hasFilter ? 'bg-accent border-accent text-white' : 'bg-black/60 border-white/20 text-white hover:bg-black/80'
+                        }`}
+                      >
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                        </svg>
+                      </button>
                     )}
 
                     {isUploading && (
@@ -466,6 +492,17 @@ export default function ProductImagesSection({ images = [], onChange, materials 
                       </div>
                     )}
                   </div>
+
+                  {/* Popup rendered outside overflow-hidden, relative to card */}
+                  {isFilterOpen && (
+                    <MaterialFilterPopup
+                      materials={materials}
+                      colorsByMaterial={colorsByMaterial}
+                      assigned={assignedMaterials}
+                      onToggle={(tag) => handleToggleMaterial(item.url, tag)}
+                      onClose={() => setFilterPopupId(null)}
+                    />
+                  )}
 
                   {/* Material tags below image */}
                   {hasFilter && (
