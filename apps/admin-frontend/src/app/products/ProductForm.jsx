@@ -309,9 +309,12 @@ export default function ProductForm() {
             <div className="space-y-5 rounded-lg border border-line bg-surface p-6">
               <h2 className="text-sm font-semibold text-muted uppercase tracking-wider border-b border-line pb-2">Options</h2>
 
-              <MaterialOptionsEditor value={form.materialOptions} onChange={(v) => update('materialOptions', v)} />
-              <SizeOptionsEditor value={form.sizeOptions} onChange={(v) => update('sizeOptions', v)} />
-              <ShippingMethodsEditor value={form.shippingMethods} onChange={(v) => update('shippingMethods', v)} />
+              <MaterialOptionsEditor value={form.materialOptions} onChange={(v) => update('materialOptions', v)}
+                onDirectSave={isEditing ? (v) => updateProduct(id, { materialOptions: v }).catch(() => {}) : undefined} />
+              <SizeOptionsEditor value={form.sizeOptions} onChange={(v) => update('sizeOptions', v)}
+                onDirectSave={isEditing ? (v) => updateProduct(id, { sizeOptions: v }).catch(() => {}) : undefined} />
+              <ShippingMethodsEditor value={form.shippingMethods} onChange={(v) => update('shippingMethods', v)}
+                onDirectSave={isEditing ? (v) => updateProduct(id, { shippingMethods: v }).catch(() => {}) : undefined} />
 
               {form.shippingMethods.length === 0 && (
                 <div className="rounded-lg border border-line bg-surface/40 p-4 space-y-3">

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function SizeOptionsEditor({ value = [], onChange }) {
+export default function SizeOptionsEditor({ value = [], onChange, onDirectSave }) {
   const [draft, setDraft] = useState({ name: '', additional: '' })
   const [editIndex, setEditIndex] = useState(null)
   const [editDraft, setEditDraft] = useState(null)
@@ -9,12 +9,16 @@ export default function SizeOptionsEditor({ value = [], onChange }) {
     const name = draft.name.trim()
     const additional = parseFloat(draft.additional)
     if (!name || !Number.isFinite(additional) || additional < 0) return
-    onChange([...value, { name, additionalCents: Math.round(additional * 100) }])
+    const next = [...value, { name, additionalCents: Math.round(additional * 100) }]
+    onChange(next)
+    onDirectSave?.(next)
     setDraft({ name: '', additional: '' })
   }
 
   function remove(i) {
-    onChange(value.filter((_, idx) => idx !== i))
+    const next = value.filter((_, idx) => idx !== i)
+    onChange(next)
+    onDirectSave?.(next)
   }
 
   function startEdit(i) {
@@ -26,7 +30,9 @@ export default function SizeOptionsEditor({ value = [], onChange }) {
     const name = editDraft.name.trim()
     const additional = parseFloat(editDraft.additional)
     if (!name || !Number.isFinite(additional) || additional < 0) return
-    onChange(value.map((item, i) => i === editIndex ? { name, additionalCents: Math.round(additional * 100) } : item))
+    const next = value.map((item, i) => i === editIndex ? { name, additionalCents: Math.round(additional * 100) } : item)
+    onChange(next)
+    onDirectSave?.(next)
     setEditIndex(null)
     setEditDraft(null)
   }

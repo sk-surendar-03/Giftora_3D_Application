@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function MaterialOptionsEditor({ value = [], onChange }) {
+export default function MaterialOptionsEditor({ value = [], onChange, onDirectSave }) {
   const [draft, setDraft] = useState({ name: '', price: '' })
   const [editIndex, setEditIndex] = useState(null)
   const [editDraft, setEditDraft] = useState(null)
@@ -9,12 +9,16 @@ export default function MaterialOptionsEditor({ value = [], onChange }) {
     const name = draft.name.trim()
     const price = parseFloat(draft.price)
     if (!name || !Number.isFinite(price) || price < 0) return
-    onChange([...value, { name, priceCents: Math.round(price * 100) }])
+    const next = [...value, { name, priceCents: Math.round(price * 100) }]
+    onChange(next)
+    onDirectSave?.(next)
     setDraft({ name: '', price: '' })
   }
 
   function remove(i) {
-    onChange(value.filter((_, idx) => idx !== i))
+    const next = value.filter((_, idx) => idx !== i)
+    onChange(next)
+    onDirectSave?.(next)
   }
 
   function startEdit(i) {
@@ -26,7 +30,9 @@ export default function MaterialOptionsEditor({ value = [], onChange }) {
     const name = editDraft.name.trim()
     const price = parseFloat(editDraft.price)
     if (!name || !Number.isFinite(price) || price < 0) return
-    onChange(value.map((item, i) => i === editIndex ? { name, priceCents: Math.round(price * 100) } : item))
+    const next = value.map((item, i) => i === editIndex ? { name, priceCents: Math.round(price * 100) } : item)
+    onChange(next)
+    onDirectSave?.(next)
     setEditIndex(null)
     setEditDraft(null)
   }
