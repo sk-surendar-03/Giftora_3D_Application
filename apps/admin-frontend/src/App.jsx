@@ -14,6 +14,7 @@ import CustomerDetail from './app/customers/CustomerDetail.jsx'
 import Inquiries from './app/inquiries/Inquiries.jsx'
 import Reports from './app/reports/Reports.jsx'
 import Settings from './app/settings/Settings.jsx'
+import CustomizationSettings from './app/customization/CustomizationSettings.jsx'
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
           <Route path="/inquiries" element={<Inquiries />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/customization" element={<CustomizationSettings />} />
         </Route>
       </Routes>
     </AuthProvider>

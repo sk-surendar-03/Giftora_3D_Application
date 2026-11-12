@@ -42,6 +42,13 @@ const NAV_GROUPS = [
           <path d="M3 12V4h8l10 10-8 8L3 12Z M7.5 8.5a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Z" />
         ),
       },
+      {
+        to: '/customization',
+        label: '3D Customization',
+        icon: (
+          <path d="M12 2L2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5" />
+        ),
+      },
     ],
   },
   {
