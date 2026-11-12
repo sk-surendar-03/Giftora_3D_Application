@@ -58,7 +58,7 @@ function AdminDetailsCard({ currentUser, onUserUpdated }) {
       <div className="border-b border-line pb-3 mb-4 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-base font-semibold text-ink">Admin Details</h2>
-          <p className="mt-1 text-xs text-muted">Update your name, phone number, or change your login password.</p>
+          <p className="mt-1 text-xs text-muted">Update your name, email, or change your login password.</p>
         </div>
         <button type="button" onClick={handleSave} disabled={saving}
           className="shrink-0 rounded-control bg-accent px-4 py-2 text-sm font-bold text-on-accent hover:bg-accent-dark transition-colors disabled:opacity-50 cursor-pointer shadow-sm">
