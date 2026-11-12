@@ -48,4 +48,34 @@ export async function loginUser({ email, password }) {
   return { user: toPublicUser(user), token: signAccessToken(user) }
 }
 
+export async function updateProfile(userId, { name, phone, currentPassword, newPassword }) {
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) throw new HttpError(404, 'User not found.')
+
+  const data = {}
+
+  if (name !== undefined) {
+    if (typeof name !== 'string' || !name.trim()) throw new HttpError(400, 'Name is required.')
+    data.name = name.trim()
+  }
+
+  if (phone !== undefined) {
+    if (typeof phone !== 'string' || !/^[0-9+\-() ]{6,20}$/.test(phone.trim())) throw new HttpError(400, 'A valid phone number is required.')
+    data.phone = phone.trim()
+  }
+
+  if (newPassword !== undefined) {
+    if (typeof currentPassword !== 'string' || !currentPassword) throw new HttpError(400, 'Current password is required to set a new password.')
+    const matches = await bcrypt.compare(currentPassword, user.passwordHash)
+    if (!matches) throw new HttpError(401, 'Current password is incorrect.')
+    if (typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 128) throw new HttpError(400, 'New password must be 8-128 characters.')
+    data.passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS)
+  }
+
+  if (Object.keys(data).length === 0) return toPublicUser(user)
+
+  const updated = await prisma.user.update({ where: { id: userId }, data })
+  return toPublicUser(updated)
+}
+
 export { toPublicUser }

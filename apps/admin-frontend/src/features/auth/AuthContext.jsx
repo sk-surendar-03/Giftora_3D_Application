@@ -28,6 +28,10 @@ export function AuthProvider({ children }) {
         setUser(null)
         api.post('/auth/logout').catch(() => {})
       },
+      updateUser(updated) {
+        saveSession(getToken(), updated)
+        setUser(updated)
+      },
     }),
     [user],
   )

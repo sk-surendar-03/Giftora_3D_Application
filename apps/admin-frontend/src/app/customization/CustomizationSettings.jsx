@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import Banner from '../../components/Banner.jsx'
+import api from '../../services/api.js'
+import { useAuth } from '../../features/auth/useAuth.js'
 import {
-  fetchPricing,
-  updatePricing,
   fetchCustomizerColors,
   updateCustomizerColors,
   fetchCustomizerShipping,
@@ -321,18 +321,116 @@ function Card({ title, description, onSave, saving, saveStatus, children }) {
   )
 }
 
+// ─── Admin Details Card ───────────────────────────────────────────────────────
+function AdminDetailsCard({ currentUser, onUserUpdated }) {
+  const [name, setName] = useState(currentUser?.name ?? '')
+  const [phone, setPhone] = useState(currentUser?.phone ?? '')
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [status, setStatus] = useState(null) // 'ok' | 'err' | null
+  const [error, setError] = useState(null)
+
+  async function handleSave(e) {
+    e.preventDefault()
+    setError(null); setStatus(null)
+
+    if (newPassword && newPassword !== confirmPassword) {
+      setError('New passwords do not match.')
+      return
+    }
+
+    const body = {}
+    if (name.trim() !== (currentUser?.name ?? '')) body.name = name.trim()
+    if (phone.trim() !== (currentUser?.phone ?? '')) body.phone = phone.trim()
+    if (newPassword) { body.currentPassword = currentPassword; body.newPassword = newPassword }
+
+    if (Object.keys(body).length === 0) { setStatus('ok'); return }
+
+    setSaving(true)
+    try {
+      const { data } = await api.patch('/auth/me', body)
+      onUserUpdated(data.user)
+      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('')
+      setStatus('ok')
+      setTimeout(() => setStatus(null), 2500)
+    } catch (err) {
+      setError(err.response?.data?.error ?? err.message ?? 'Save failed.')
+      setStatus('err')
+    }
+    setSaving(false)
+  }
+
+  return (
+    <div className="rounded-card border border-line bg-surface p-5 shadow-sm flex flex-col gap-4">
+      <div className="border-b border-line pb-3 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-ink">Admin Details</h2>
+          <p className="mt-0.5 text-xs text-muted">Update your name, phone, or change your password.</p>
+        </div>
+        <button type="button" onClick={handleSave} disabled={saving}
+          className="shrink-0 rounded-control bg-accent px-3 py-1.5 text-xs font-bold text-on-accent hover:bg-accent-dark transition-colors disabled:opacity-50 cursor-pointer shadow-sm">
+          {saving ? 'Saving…' : status === 'ok' ? '✓ Saved!' : status === 'err' ? 'Error!' : 'Save'}
+        </button>
+      </div>
+
+      {error && <div><Banner tone="error">{error}</Banner></div>}
+
+      <form onSubmit={handleSave} className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-ink mb-1">Full Name</label>
+            <input value={name} onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+              placeholder="Your name" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink mb-1">Phone</label>
+            <input value={phone} onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+              placeholder="+91 98765 43210" />
+          </div>
+        </div>
+
+        <div className="pt-1 border-t border-line">
+          <p className="text-[10px] text-muted uppercase tracking-wide mb-2">Change Password (leave blank to keep current)</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-ink mb-1">Current Password</label>
+              <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+                placeholder="••••••••" autoComplete="current-password" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink mb-1">New Password</label>
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+                placeholder="••••••••" autoComplete="new-password" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink mb-1">Confirm New Password</label>
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+                placeholder="••••••••" autoComplete="new-password" />
+            </div>
+          </div>
+        </div>
+
+        <div className="text-[11px] text-muted pt-1">
+          <span className="font-medium text-ink">Email:</span> {currentUser?.email ?? '—'} &nbsp;·&nbsp;
+          <span className="font-medium text-ink">Role:</span> {currentUser?.role ?? '—'}
+        </div>
+      </form>
+    </div>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CustomizationSettings() {
+  const { user, updateUser } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
-
-  // Pricing
-  const [pricePerChar, setPricePerChar] = useState('')
-  const [baseChars, setBaseChars] = useState('')
-  const [basePrice, setBasePrice] = useState('')
-  const [savingPricing, setSavingPricing] = useState(false)
-  const [pricingError, setPricingError] = useState(null)
-  const [pricingSuccess, setPricingSuccess] = useState(null)
 
   // Colors
   const [colors, setColors] = useState([])
@@ -357,11 +455,8 @@ export default function CustomizationSettings() {
   function load() {
     setIsLoading(true)
     setLoadError(null)
-    Promise.all([fetchPricing(), fetchCustomizerColors(), fetchCustomizerShipping(), fetchCustomizerSizes(), fetchCustomizerThicknesses()])
-      .then(([pricing, cols, methods, szs, thks]) => {
-        setPricePerChar((pricing.perCharacterPriceCents / 100).toString())
-        setBaseChars((pricing.baseCharacters ?? 0).toString())
-        setBasePrice(((pricing.basePriceCents ?? 0) / 100).toString())
+    Promise.all([fetchCustomizerColors(), fetchCustomizerShipping(), fetchCustomizerSizes(), fetchCustomizerThicknesses()])
+      .then(([cols, methods, szs, thks]) => {
         setColors(Array.isArray(cols) ? cols : [])
         setShippingMethods(Array.isArray(methods) ? methods : [])
         setSizes(Array.isArray(szs) ? szs : [])
@@ -372,24 +467,6 @@ export default function CustomizationSettings() {
   }
 
   useEffect(() => { const t = setTimeout(load, 0); return () => clearTimeout(t) }, [])
-
-  async function handleSavePricing(e) {
-    e.preventDefault()
-    setPricingError(null); setPricingSuccess(null)
-    const rupees = Number(pricePerChar); const baseChs = Number(baseChars); const baseRupees = Number(basePrice)
-    if (!Number.isFinite(rupees) || rupees < 0) return setPricingError('Enter a valid price per character.')
-    if (!Number.isFinite(baseChs) || baseChs < 0 || !Number.isInteger(baseChs)) return setPricingError('Base characters must be a whole number.')
-    if (!Number.isFinite(baseRupees) || baseRupees < 0) return setPricingError('Enter a valid base price.')
-    setSavingPricing(true)
-    try {
-      const pricing = await updatePricing({ perCharacterPriceCents: Math.round(rupees * 100), baseCharacters: baseChs, basePriceCents: Math.round(baseRupees * 100) })
-      setPricePerChar((pricing.perCharacterPriceCents / 100).toString())
-      setBaseChars((pricing.baseCharacters ?? 0).toString())
-      setBasePrice(((pricing.basePriceCents ?? 0) / 100).toString())
-      setPricingSuccess('Pricing saved.')
-    } catch (err) { setPricingError(extractError(err)) }
-    setSavingPricing(false)
-  }
 
   async function saveColors() {
     setSavingColors(true); setColorsStatus(null)
@@ -419,15 +496,10 @@ export default function CustomizationSettings() {
     setSavingThicknesses(false)
   }
 
-  // Pricing preview
-  const prevChars = Number(baseChars) || 0
-  const prevBase = Number(basePrice) || 0
-  const prevPerChar = Number(pricePerChar) || 0
-
   return (
     <div className="pb-16">
       <h1 className="text-xl font-semibold text-ink">3D Customization Settings</h1>
-      <p className="mt-1 text-sm text-muted">Configure pricing, colors, sizes, thickness, and shipping for the 3D customizer.</p>
+      <p className="mt-1 text-sm text-muted">Configure colors, sizes, thickness, and shipping for the 3D customizer.</p>
 
       {loadError && <div className="mt-4"><Banner tone="error">{loadError}</Banner></div>}
 
@@ -439,48 +511,8 @@ export default function CustomizationSettings() {
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-6">
 
-            {/* Pricing */}
-            <div className="rounded-card border border-line bg-surface p-5 shadow-sm">
-              <div className="border-b border-line pb-3 mb-4">
-                <h2 className="text-sm font-semibold text-ink">3D Customizer Pricing</h2>
-                <p className="mt-0.5 text-xs text-muted">Base price for first N chars, then per-char rate above. e.g. ₹500 for ≤10 chars, ₹50/char above → 12 chars = ₹600.</p>
-              </div>
-              {pricingError && <div className="mb-3"><Banner tone="error">{pricingError}</Banner></div>}
-              {pricingSuccess && <div className="mb-3"><Banner tone="success">{pricingSuccess}</Banner></div>}
-              <form onSubmit={handleSavePricing} className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-ink mb-1">Min Characters</label>
-                    <input type="number" min="0" step="1" value={baseChars} onChange={(e) => setBaseChars(e.target.value)}
-                      className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-brand" placeholder="10" />
-                    <p className="mt-1 text-[10px] text-muted">≤ this → flat price</p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-ink mb-1">Base Price (₹)</label>
-                    <input type="number" min="0" step="0.01" value={basePrice} onChange={(e) => setBasePrice(e.target.value)}
-                      className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-brand" placeholder="500" />
-                    <p className="mt-1 text-[10px] text-muted">Flat charge up to min</p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-ink mb-1">Extra (₹/char)</label>
-                    <input type="number" min="0" step="0.01" value={pricePerChar} onChange={(e) => setPricePerChar(e.target.value)}
-                      className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-brand" placeholder="50" />
-                    <p className="mt-1 text-[10px] text-muted">Above minimum</p>
-                  </div>
-                </div>
-                {prevBase > 0 && (
-                  <div className="rounded-md border border-line bg-surface/60 px-3 py-2 text-xs text-muted space-y-0.5">
-                    <div className="font-semibold text-ink text-[10px] uppercase tracking-wider mb-1">Preview</div>
-                    <div>• {prevChars} chars → ₹{prevBase.toFixed(0)} (flat)</div>
-                    <div>• {prevChars + 2} chars → ₹{(prevBase + 2 * prevPerChar).toFixed(0)} (base + {prevChars > 0 ? '2' : (prevChars + 2)} extra)</div>
-                  </div>
-                )}
-                <button type="submit" disabled={savingPricing}
-                  className="rounded-control bg-accent px-5 py-2 text-sm font-bold text-on-accent hover:bg-accent-dark transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-sm">
-                  {savingPricing ? 'Saving…' : 'Save Pricing'}
-                </button>
-              </form>
-            </div>
+            {/* Admin Details */}
+            <AdminDetailsCard currentUser={user} onUserUpdated={updateUser} />
 
             {/* Colors */}
             <Card title="Color Options" description="Colors customers can choose in the 3D customizer. These replace the default hardcoded palette."

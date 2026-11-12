@@ -1,6 +1,6 @@
 import { HttpError } from '../../utils/httpError.js'
 import { isValidEmail, isValidPassword, isNonEmptyString } from '../../utils/validation.js'
-import { registerUser, loginUser } from './authService.js'
+import { registerUser, loginUser, updateProfile } from './authService.js'
 
 export async function register(req, res) {
   const { name, email, password, phone } = req.body ?? {}
@@ -40,4 +40,10 @@ export function logout(req, res) {
 
 export function me(req, res) {
   res.json({ user: req.user })
+}
+
+export async function updateMe(req, res) {
+  const { name, phone, currentPassword, newPassword } = req.body ?? {}
+  const user = await updateProfile(req.user.id, { name, phone, currentPassword, newPassword })
+  res.json({ user })
 }
