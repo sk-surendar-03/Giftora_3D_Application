@@ -81,5 +81,5 @@ export function useAddCustomDesignToCart() {
     }
   }
 
-  return { addToCart, phase, error, added, busy: phase !== 'idle', clearAdded: () => setAdded(false) }
+  return { addToCart, phase, error, added, busy: phase !== 'idle', clearAdded: () => { setAdded(false); setError(null) } }
 }
