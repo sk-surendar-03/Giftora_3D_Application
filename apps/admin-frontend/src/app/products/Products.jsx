@@ -304,39 +304,75 @@ export default function Products() {
               </p>
             </div>
 
-            {/* Materials, Sizes, Colors Specifications */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              {/* Materials */}
-              <div className="rounded-control border border-line bg-alt/50 p-3 space-y-1.5">
-                <span className="font-semibold text-muted uppercase tracking-wider block">Supported Materials</span>
-                {Array.isArray(viewingProduct.materials) && viewingProduct.materials.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {viewingProduct.materials.map((mat) => (
-                      <span key={mat} className="rounded bg-soft border border-line px-2 py-0.5 text-ink">
-                        {mat}
+            {/* Materials, Sizes, Shipping */}
+            <div className="space-y-3 text-xs">
+              {/* Material Options (structured with price) */}
+              {Array.isArray(viewingProduct.materialOptions) && viewingProduct.materialOptions.length > 0 ? (
+                <div className="rounded-control border border-line bg-alt/50 p-3 space-y-1.5">
+                  <span className="font-semibold text-muted uppercase tracking-wider block">Materials & Pricing</span>
+                  <div className="flex flex-wrap gap-2">
+                    {viewingProduct.materialOptions.map((m) => (
+                      <span key={m.name} className="rounded bg-soft border border-line px-2 py-0.5 text-ink">
+                        {m.name} — ₹{(m.priceCents / 100).toFixed(0)}
                       </span>
                     ))}
                   </div>
-                ) : (
-                  <span className="text-muted">Standard</span>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="rounded-control border border-line bg-alt/50 p-3 space-y-1.5">
+                  <span className="font-semibold text-muted uppercase tracking-wider block">Supported Materials</span>
+                  {Array.isArray(viewingProduct.materials) && viewingProduct.materials.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {viewingProduct.materials.map((mat) => (
+                        <span key={mat} className="rounded bg-soft border border-line px-2 py-0.5 text-ink">{mat}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-muted">Standard</span>
+                  )}
+                </div>
+              )}
 
-              {/* Sizes */}
-              <div className="rounded-control border border-line bg-alt/50 p-3 space-y-1.5">
-                <span className="font-semibold text-muted uppercase tracking-wider block">Available Sizes</span>
-                {Array.isArray(viewingProduct.sizes) && viewingProduct.sizes.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {viewingProduct.sizes.map((sz) => (
-                      <span key={sz} className="rounded bg-soft border border-line px-2 py-0.5 text-ink">
-                        {sz}
+              {/* Size Options (structured with addon price) */}
+              {Array.isArray(viewingProduct.sizeOptions) && viewingProduct.sizeOptions.length > 0 ? (
+                <div className="rounded-control border border-line bg-alt/50 p-3 space-y-1.5">
+                  <span className="font-semibold text-muted uppercase tracking-wider block">Sizes & Additional Pricing</span>
+                  <div className="flex flex-wrap gap-2">
+                    {viewingProduct.sizeOptions.map((s) => (
+                      <span key={s.name} className="rounded bg-soft border border-line px-2 py-0.5 text-ink">
+                        {s.name}{s.additionalCents > 0 ? ` +₹${(s.additionalCents / 100).toFixed(0)}` : ''}
                       </span>
                     ))}
                   </div>
-                ) : (
-                  <span className="text-muted">One Size</span>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="rounded-control border border-line bg-alt/50 p-3 space-y-1.5">
+                  <span className="font-semibold text-muted uppercase tracking-wider block">Available Sizes</span>
+                  {Array.isArray(viewingProduct.sizes) && viewingProduct.sizes.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {viewingProduct.sizes.map((sz) => (
+                        <span key={sz} className="rounded bg-soft border border-line px-2 py-0.5 text-ink">{sz}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-muted">One Size</span>
+                  )}
+                </div>
+              )}
+
+              {/* Shipping Methods */}
+              {Array.isArray(viewingProduct.shippingMethods) && viewingProduct.shippingMethods.length > 0 && (
+                <div className="rounded-control border border-line bg-alt/50 p-3 space-y-1.5">
+                  <span className="font-semibold text-muted uppercase tracking-wider block">Shipping Methods</span>
+                  <div className="flex flex-wrap gap-2">
+                    {viewingProduct.shippingMethods.map((m) => (
+                      <span key={m.name} className="rounded bg-soft border border-line px-2 py-0.5 text-ink">
+                        {m.name}{m.estimatedDays ? ` (${m.estimatedDays})` : ''} — {m.priceCents === 0 ? 'Free' : `₹${(m.priceCents / 100).toFixed(0)}`}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Colors by Material Swatches */}
