@@ -289,9 +289,6 @@ function ProductDetailView({ slug }) {
                           className={`flex flex-col items-center px-4 py-2 rounded-control border text-[13px] font-medium transition-colors cursor-pointer ${isSelected ? 'border-accent bg-soft text-accent ring-1 ring-accent' : 'border-line bg-surface text-ink hover:border-accent/40'}`}
                         >
                           <span>{opt.name}</span>
-                          <span className={`text-[12px] font-semibold mt-0.5 ${isSelected ? 'text-accent' : 'text-muted'}`}>
-                            ₹{(opt.priceCents / 100).toFixed(2).replace(/\.00$/, '')}
-                          </span>
                         </button>
                       )
                     })}
@@ -318,11 +315,6 @@ function ProductDetailView({ slug }) {
                           className={`flex flex-col items-center px-4 py-2 rounded-control border text-[13px] font-medium transition-colors cursor-pointer ${isSelected ? 'border-accent bg-soft text-accent ring-1 ring-accent' : 'border-line bg-surface text-ink hover:border-accent/40'}`}
                         >
                           <span>{opt.name}</span>
-                          {opt.additionalCents > 0 && (
-                            <span className={`text-[12px] font-semibold mt-0.5 ${isSelected ? 'text-accent' : 'text-muted'}`}>
-                              +₹{(opt.additionalCents / 100).toFixed(2).replace(/\.00$/, '')}
-                            </span>
-                          )}
                         </button>
                       )
                     })}
