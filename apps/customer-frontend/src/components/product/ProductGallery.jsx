@@ -1,21 +1,32 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { resolveImageUrl } from '../../utils/imageUrl.js'
 
-export default function ProductGallery({ product, activeColor, overrideImageUrl }) {
-  // Extract all available images (from product.images array or product.image fallback)
+export default function ProductGallery({ product, activeColor, overrideImageUrl, activeMaterial }) {
+  // Extract all available images, filtered by activeMaterial if imageMaterials mapping exists
   const images = useMemo(() => {
-    if (Array.isArray(product.images) && product.images.length > 0) {
-      return product.images.map((src, idx) => ({
-        id: idx,
-        src: resolveImageUrl(src),
-        label: `Angle ${idx + 1}`,
-      }))
-    }
-    if (product.image) {
-      return [{ id: 0, src: resolveImageUrl(product.image), label: 'Primary View' }]
-    }
-    return []
-  }, [product.images, product.image])
+    const allImages = Array.isArray(product.images) && product.images.length > 0
+      ? product.images
+      : product.image ? [product.image] : []
+
+    const tagMap = product.imageMaterials && typeof product.imageMaterials === 'object' ? product.imageMaterials : null
+
+    const filtered = tagMap && activeMaterial
+      ? allImages.filter((src) => {
+          const tags = tagMap[src]
+          // Show image if: no tags (applies to all), or tagged for this material
+          return !tags || tags.length === 0 || tags.includes(activeMaterial)
+        })
+      : allImages
+
+    // Fall back to all images if filter removes everything
+    const list = filtered.length > 0 ? filtered : allImages
+
+    return list.map((src, idx) => ({
+      id: idx,
+      src: resolveImageUrl(src),
+      label: `Angle ${idx + 1}`,
+    }))
+  }, [product.images, product.image, product.imageMaterials, activeMaterial])
 
   const [selectedIndex, setSelectedIndex] = useState(0)
   // When a color-specific image is provided, show it as the main image

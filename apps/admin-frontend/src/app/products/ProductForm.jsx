@@ -31,6 +31,7 @@ const EMPTY_FORM = {
   materialOptions: [], // [{name, priceCents}]
   sizeOptions: [],     // [{name, additionalCents}]
   shippingMethods: [], // [{name, priceCents, estimatedDays?}]
+  imageMaterials: {},  // { [imageUrl]: [material, ...] }
   isActive: true,
 }
 
@@ -82,6 +83,7 @@ export default function ProductForm() {
             materialOptions: Array.isArray(product.materialOptions) ? product.materialOptions : [],
             sizeOptions: Array.isArray(product.sizeOptions) ? product.sizeOptions : [],
             shippingMethods: Array.isArray(product.shippingMethods) ? product.shippingMethods : [],
+            imageMaterials: product.imageMaterials && typeof product.imageMaterials === 'object' ? product.imageMaterials : {},
             isActive: product.isActive,
           })
         })
@@ -171,6 +173,7 @@ export default function ProductForm() {
       materialOptions: form.materialOptions.length > 0 ? form.materialOptions : null,
       sizeOptions: form.sizeOptions.length > 0 ? form.sizeOptions : null,
       shippingMethods: form.shippingMethods.length > 0 ? form.shippingMethods : null,
+      imageMaterials: Object.keys(form.imageMaterials).length > 0 ? form.imageMaterials : null,
       isActive: form.isActive,
     }
   }
@@ -337,7 +340,13 @@ export default function ProductForm() {
           <div className="flex flex-col gap-5 h-full">
             <div className="rounded-lg border border-line bg-surface p-6 space-y-5">
               <h2 className="text-sm font-semibold text-muted uppercase tracking-wider border-b border-line pb-2">Media</h2>
-              <ProductImagesSection images={form.images} onChange={(v) => update('images', v)} />
+              <ProductImagesSection
+                images={form.images}
+                onChange={(v) => update('images', v)}
+                materials={form.materialOptions.length > 0 ? form.materialOptions.map((m) => m.name) : []}
+                imageMaterials={form.imageMaterials}
+                onImageMaterialsChange={(v) => update('imageMaterials', v)}
+              />
               <ModelUploadSection
                 productId={isEditing ? id : null}
                 model={model} onModelChange={setModel}

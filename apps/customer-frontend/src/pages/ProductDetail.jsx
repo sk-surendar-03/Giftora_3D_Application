@@ -148,7 +148,7 @@ function ProductDetailView({ slug }) {
         {/* 2-column Product View */}
         <div className="grid gap-12 min-[1041px]:grid-cols-[1.05fr_1fr]">
           <div>
-            <ProductGallery product={product} activeColor={color?.hex} overrideImageUrl={color?.imageUrl} />
+            <ProductGallery product={product} activeColor={color?.hex} overrideImageUrl={color?.imageUrl} activeMaterial={material} />
 
             {/* Optional interactive 3D preview (uploaded STL / 3MF). Product images stay the primary visuals. */}
             {product.model && (

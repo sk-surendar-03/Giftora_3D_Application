@@ -55,5 +55,6 @@ export function mapApiProduct(apiProduct) {
     materialOptions: Array.isArray(apiProduct.materialOptions) ? apiProduct.materialOptions : null,
     sizeOptions: Array.isArray(apiProduct.sizeOptions) ? apiProduct.sizeOptions : null,
     shippingMethods: Array.isArray(apiProduct.shippingMethods) ? apiProduct.shippingMethods : null,
+    imageMaterials: apiProduct.imageMaterials && typeof apiProduct.imageMaterials === 'object' ? apiProduct.imageMaterials : null,
   }
 }
