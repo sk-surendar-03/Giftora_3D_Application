@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
 import Banner from '../../components/Banner.jsx'
-import api from '../../services/api.js'
-import { useAuth } from '../../features/auth/useAuth.js'
 import { fetchAnnouncement, updateAnnouncement } from '../../features/settings/settingsApi.js'
 
 function extractError(err) {
@@ -128,7 +126,6 @@ function AdminDetailsCard({ currentUser, onUserUpdated }) {
 
 // ─── Main Settings Page ───────────────────────────────────────────────────────
 export default function Settings() {
-  const { user, updateUser } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
 
@@ -170,7 +167,7 @@ export default function Settings() {
   return (
     <div className="max-w-4xl pb-16">
       <h1 className="text-xl font-semibold text-ink">Store Settings</h1>
-      <p className="mt-1 text-sm text-muted">Manage your admin account and store announcement.</p>
+      <p className="mt-1 text-sm text-muted">Configure store announcement and promotional messages.</p>
 
       {loadError && <div className="mt-4"><Banner tone="error">{loadError}</Banner></div>}
 
@@ -179,8 +176,6 @@ export default function Settings() {
       ) : (
         <div className="mt-6 space-y-8">
 
-          {/* Admin Details */}
-          <AdminDetailsCard currentUser={user} onUserUpdated={updateUser} />
 
           {/* Announcement Bar */}
           <section className="rounded-card border border-line bg-surface p-6 shadow-sm">
