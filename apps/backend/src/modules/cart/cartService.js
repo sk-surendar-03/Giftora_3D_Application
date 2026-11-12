@@ -48,8 +48,13 @@ export async function addItem(userId, { productId, quantity, customization }) {
   // preview price and the actual cart price always agree, and a later rate
   // change doesn't retroactively alter what's already in a customer's cart
   // (see the price-snapshot note below).
-  const { perCharacterPriceCents } = await getPricingConfig()
-  const customizationPriceCents = calculateTotalCustomizationPriceCents(customization?.text, customization?.subtitle, perCharacterPriceCents)
+  let unitPriceCents
+  if (customization?.text) {
+    const { perCharacterPriceCents } = await getPricingConfig()
+    unitPriceCents = calculateTotalCustomizationPriceCents(customization.text, customization?.subtitle, perCharacterPriceCents)
+  } else {
+    unitPriceCents = product.priceCents
+  }
 
   return prisma.cartItem.create({
     data: {
@@ -58,10 +63,7 @@ export async function addItem(userId, { productId, quantity, customization }) {
       productId,
       quantity,
       customization: customization ?? undefined,
-      // Snapshot the price at add-time — standard ecommerce practice, so a
-      // later price change doesn't silently alter what's already in a
-      // customer's cart.
-      unitPriceCents: customizationPriceCents,
+      unitPriceCents,
     },
     include: { product: true, customDesign: true },
   })
