@@ -17,12 +17,35 @@ function extractError(err) {
   return err.response?.data?.error ?? err.message ?? 'Something went wrong.'
 }
 
+const PRESET_COLORS = [
+  { name: 'Black', hex: '#1a1a1a' },
+  { name: 'White', hex: '#f5f5f0' },
+  { name: 'Steel Grey', hex: '#7a8591' },
+  { name: 'Silver', hex: '#c0c0c0' },
+  { name: 'Red', hex: '#e03131' },
+  { name: 'Orange', hex: '#e8590c' },
+  { name: 'Gold', hex: '#c9930a' },
+  { name: 'Yellow', hex: '#f5c518' },
+  { name: 'Green', hex: '#2f9e44' },
+  { name: 'Teal', hex: '#0c8599' },
+  { name: 'Blue', hex: '#1971c2' },
+  { name: 'Navy', hex: '#1864ab' },
+  { name: 'Purple', hex: '#7048e8' },
+  { name: 'Pink', hex: '#e64980' },
+  { name: 'Rose Gold', hex: '#b5726a' },
+  { name: 'Bronze', hex: '#8b6914' },
+]
+
 // ─── Color Manager ────────────────────────────────────────────────────────────
 function ColorManager({ colors, onChange }) {
   const [draft, setDraft] = useState({ name: '', hex: '#000000' })
   const [editIndex, setEditIndex] = useState(null)
   const [editDraft, setEditDraft] = useState(null)
 
+  function addPreset(preset) {
+    if (colors.some((c) => c.hex === preset.hex)) return
+    onChange([...colors, preset])
+  }
   function add() {
     if (!draft.name.trim() || !draft.hex) return
     onChange([...colors, { name: draft.name.trim(), hex: draft.hex }])
@@ -37,7 +60,28 @@ function ColorManager({ colors, onChange }) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      {/* Preset swatches */}
+      <div>
+        <p className="text-[10px] text-muted uppercase tracking-wide mb-1.5">Click to add/remove</p>
+        <div className="flex flex-wrap gap-1.5">
+          {PRESET_COLORS.map((p) => {
+            const active = colors.some((c) => c.hex === p.hex)
+            return (
+              <button
+                key={p.hex}
+                type="button"
+                title={p.name}
+                onClick={() => active ? onChange(colors.filter((c) => c.hex !== p.hex)) : addPreset(p)}
+                className={`h-7 w-7 rounded-full border-2 transition-all cursor-pointer ${active ? 'border-accent scale-110 shadow-md' : 'border-transparent hover:border-muted hover:scale-105'}`}
+                style={{ background: p.hex }}
+              />
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Added colors list */}
       {colors.length > 0 && (
         <div className="space-y-1.5">
           {colors.map((c, i) => (
@@ -64,15 +108,17 @@ function ColorManager({ colors, onChange }) {
           ))}
         </div>
       )}
-      <div className="flex items-center gap-2 pt-1">
+
+      {/* Custom color add row */}
+      <div className="flex items-center gap-2 pt-1 border-t border-line">
         <input type="color" value={draft.hex} onChange={(e) => setDraft((p) => ({ ...p, hex: e.target.value }))}
           className="h-8 w-9 cursor-pointer rounded border border-line" />
         <input value={draft.name} onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
-          placeholder="Color name (e.g. Red, Gold, Silver)" className="flex-1 rounded-md border border-line px-3 py-1.5 text-xs"
+          placeholder="Custom name" className="flex-1 rounded-md border border-line px-3 py-1.5 text-xs"
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
         <button type="button" onClick={add} disabled={!draft.name.trim()}
           className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
-          + Add
+          +Add
         </button>
       </div>
     </div>
