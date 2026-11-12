@@ -73,8 +73,9 @@ export default function Cart() {
   }
 
   const totalShippingCents = cart.items.reduce((sum, item) => {
-    if (item.itemType === 'PRODUCT' && item.product?.shippingCents > 0) {
-      return sum + item.product.shippingCents * item.quantity
+    if (item.itemType === 'PRODUCT') {
+      const shipCents = item.customization?.shippingMethod?.priceCents ?? item.product?.shippingCents ?? 0
+      return sum + shipCents * item.quantity
     }
     return sum
   }, 0)
@@ -144,20 +145,29 @@ export default function Cart() {
                           <CustomizationDetails customization={item.customization} />
                         </div>
                         <div className="mt-2 text-xs">
-                          {item.product.shippingCents > 0 ? (
-                            <span className="font-medium text-muted bg-soft px-2 py-0.5 rounded-full border border-line">
-                              Shipping: <span className="font-semibold text-ink">₹{(item.product.shippingCents / 100).toFixed(2).replace(/\.00$/, '')}</span>
-                              {item.quantity > 1 && (
-                                <span className="text-muted/70 ml-1">
-                                  (₹{((item.product.shippingCents * item.quantity) / 100).toFixed(2).replace(/\.00$/, '')} total)
+                          {(() => {
+                            const sm = item.customization?.shippingMethod
+                            const shipCents = sm?.priceCents ?? item.product.shippingCents ?? 0
+                            const shipLabel = sm?.name ?? null
+                            if (shipCents > 0) {
+                              return (
+                                <span className="font-medium text-muted bg-soft px-2 py-0.5 rounded-full border border-line">
+                                  {shipLabel ? <>{shipLabel}: </> : 'Shipping: '}
+                                  <span className="font-semibold text-ink">₹{(shipCents / 100).toFixed(2).replace(/\.00$/, '')}</span>
+                                  {item.quantity > 1 && (
+                                    <span className="text-muted/70 ml-1">
+                                      (₹{((shipCents * item.quantity) / 100).toFixed(2).replace(/\.00$/, '')} total)
+                                    </span>
+                                  )}
                                 </span>
-                              )}
-                            </span>
-                          ) : (
-                            <span className="font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
-                              Free Shipping
-                            </span>
-                          )}
+                              )
+                            }
+                            return (
+                              <span className="font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
+                                Free Shipping
+                              </span>
+                            )
+                          })()}
                         </div>
                       </>
                     )}
