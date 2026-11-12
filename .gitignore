@@ -27,3 +27,4 @@ npm-debug.log*
 /apps/backend/backups/
 /apps/backend/storage/
 Admin Portal Login Credentials.txt
+.vercel

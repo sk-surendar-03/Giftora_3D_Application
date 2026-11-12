@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { resolveImageUrl } from '../../utils/imageUrl.js'
 
-export default function ProductGallery({ product, activeColor }) {
+export default function ProductGallery({ product, activeColor, overrideImageUrl }) {
   // Extract all available images (from product.images array or product.image fallback)
   const images = useMemo(() => {
     if (Array.isArray(product.images) && product.images.length > 0) {
@@ -18,13 +18,18 @@ export default function ProductGallery({ product, activeColor }) {
   }, [product.images, product.image])
 
   const [selectedIndex, setSelectedIndex] = useState(0)
+  // When a color-specific image is provided, show it as the main image
+  const resolvedOverride = overrideImageUrl ? resolveImageUrl(overrideImageUrl) : null
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const [isZoomed, setIsZoomed] = useState(false)
   const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 })
 
   // Ensure selectedIndex is within bounds if images change
   const activeIndex = images.length > 0 ? Math.min(selectedIndex, images.length - 1) : 0
-  const activeItem = images[activeIndex]
+  // Color override takes priority over the gallery selection
+  const activeItem = resolvedOverride
+    ? { ...images[activeIndex], src: resolvedOverride }
+    : images[activeIndex]
 
   const handlePrev = useCallback(() => {
     if (images.length <= 1) return

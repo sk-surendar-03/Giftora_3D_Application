@@ -30,11 +30,40 @@ function ProductDetailView({ slug }) {
   const navigate = useNavigate()
   const [addedMessage, setAddedMessage] = useState(null)
 
-  const [material, setMaterial] = useState(product?.materials?.[0])
-  const [color, setColor] = useState(product ? colorsForMaterial(product, product.materials?.[0])?.[0] : undefined)
-  const [size, setSize] = useState(product?.sizes?.[0])
+  // Resolve option lists — prefer new structured options over legacy flat arrays
+  const materialOptions = Array.isArray(product?.materialOptions) && product.materialOptions.length > 0
+    ? product.materialOptions
+    : null
+  const sizeOptions = Array.isArray(product?.sizeOptions) && product.sizeOptions.length > 0
+    ? product.sizeOptions
+    : null
+  const shippingMethods = Array.isArray(product?.shippingMethods) && product.shippingMethods.length > 0
+    ? product.shippingMethods
+    : null
+
+  const firstMaterial = materialOptions ? materialOptions[0].name : product?.materials?.[0]
+  const [material, setMaterial] = useState(firstMaterial)
+  const [color, setColor] = useState(product ? colorsForMaterial(product, firstMaterial)?.[0] : undefined)
+  const [size, setSize] = useState(sizeOptions ? sizeOptions[0].name : product?.sizes?.[0])
+  const [selectedShipping, setSelectedShipping] = useState(shippingMethods ? shippingMethods[0] : null)
   const [quantity, setQuantity] = useState(1)
   const [showModel, setShowModel] = useState(false)
+
+  // Dynamic price from selected material + size options
+  const selectedMaterialOption = materialOptions?.find((m) => m.name === material)
+  const selectedSizeOption = sizeOptions?.find((s) => s.name === size)
+  const displayPriceCents = selectedMaterialOption
+    ? selectedMaterialOption.priceCents + (selectedSizeOption?.additionalCents || 0)
+    : null
+  const displayPrice = displayPriceCents !== null
+    ? (displayPriceCents / 100)
+    : product?.price
+
+  const effectiveShippingCents = selectedShipping
+    ? selectedShipping.priceCents
+    : (product?.shippingPrice ?? 0) * 100
+  const effectiveShippingPrice = effectiveShippingCents / 100
+  const isFreeShipping = effectiveShippingCents === 0
 
   const availableColors = product ? colorsForMaterial(product, material) : undefined
 
@@ -83,14 +112,23 @@ function ProductDetailView({ slug }) {
     }
     setAddedMessage(null)
     try {
-      await addToCart({ productId: product.id, quantity, customization: { material, color, size } })
+      await addToCart({
+        productId: product.id,
+        quantity,
+        customization: {
+          material,
+          color,
+          size,
+          ...(selectedShipping ? { shippingMethod: { name: selectedShipping.name, priceCents: selectedShipping.priceCents } } : {}),
+        },
+      })
       setAddedMessage('Added to cart.')
     } catch {
       // mutationError already handled
     }
   }
 
-  const hasOriginalPrice = typeof product.originalPrice === 'number' && product.originalPrice > product.price
+  const hasOriginalPrice = typeof product.originalPrice === 'number' && product.originalPrice > (displayPrice ?? product.price)
   const hasDiscount = typeof product.discountPercent === 'number' && product.discountPercent > 0
   const hasRating = typeof product.rating === 'number' && product.rating > 0
 
@@ -110,7 +148,7 @@ function ProductDetailView({ slug }) {
         {/* 2-column Product View */}
         <div className="grid gap-12 min-[1041px]:grid-cols-[1.05fr_1fr]">
           <div>
-            <ProductGallery product={product} activeColor={color?.hex} />
+            <ProductGallery product={product} activeColor={color?.hex} overrideImageUrl={color?.imageUrl} />
 
             {/* Optional interactive 3D preview (uploaded STL / 3MF). Product images stay the primary visuals. */}
             {product.model && (
@@ -169,28 +207,26 @@ function ProductDetailView({ slug }) {
               </div>
             )}
 
-            {/* Price section with selling price and optional original strikethrough price & discount */}
+            {/* Price section */}
             <div className="mt-4 flex flex-wrap items-baseline gap-3">
               <span className="font-sans text-[30px] font-bold text-ink">
-                ₹{product.price}
+                ₹{(displayPrice ?? product.price).toFixed(2).replace(/\.00$/, '')}
               </span>
               {hasOriginalPrice && (
-                <s className="font-sans text-[18px] text-muted">
-                  ₹{product.originalPrice}
-                </s>
+                <s className="font-sans text-[18px] text-muted">₹{product.originalPrice}</s>
               )}
               {hasDiscount && (
                 <span className="font-sans text-[14px] font-semibold text-[#17683f] bg-[#e3f4ea] px-2.5 py-0.5 rounded-full">
                   {product.discountPercent}% off
                 </span>
               )}
-              {product.isFreeShipping ? (
+              {isFreeShipping ? (
                 <span className="font-sans text-[13.5px] font-semibold text-[#17683f] bg-[#e3f4ea] px-2.5 py-0.5 rounded-full">
                   Free shipping
                 </span>
               ) : (
                 <span className="font-sans text-[13.5px] font-medium text-muted bg-soft px-2.5 py-0.5 rounded-full border border-line">
-                  + ₹{product.shippingPrice} shipping
+                  + ₹{effectiveShippingPrice} shipping
                 </span>
               )}
             </div>
@@ -199,20 +235,20 @@ function ProductDetailView({ slug }) {
             <div className="mt-3 rounded-control border border-line bg-surface/70 px-4 py-2.5 text-[13px] text-muted flex flex-wrap items-center gap-x-5 gap-y-1">
               <div>
                 <span>Product Price: </span>
-                <span className="font-semibold text-ink">₹{product.price}</span>
+                <span className="font-semibold text-ink">₹{(displayPrice ?? product.price).toFixed(2).replace(/\.00$/, '')}</span>
               </div>
               <span className="text-line hidden sm:inline">•</span>
               <div>
                 <span>Shipping: </span>
-                <span className={`font-semibold ${product.isFreeShipping ? 'text-[#17683f]' : 'text-ink'}`}>
-                  {product.isFreeShipping ? 'Free' : `₹${product.shippingPrice}`}
+                <span className={`font-semibold ${isFreeShipping ? 'text-[#17683f]' : 'text-ink'}`}>
+                  {isFreeShipping ? 'Free' : `₹${effectiveShippingPrice}`}
                 </span>
               </div>
               <span className="text-line hidden sm:inline">•</span>
               <div>
                 <span>Total: </span>
                 <span className="font-bold text-accent text-[14.5px]">
-                  ₹{(product.price + (product.shippingPrice || 0)).toFixed(2).replace(/\.00$/, '')}
+                  ₹{((displayPrice ?? product.price) + effectiveShippingPrice).toFixed(2).replace(/\.00$/, '')}
                 </span>
               </div>
             </div>
@@ -223,9 +259,90 @@ function ProductDetailView({ slug }) {
 
             {/* Options configuration */}
             <div className="mt-8 space-y-6">
-              <OptionPicker label="Material finish" options={product.materials} value={material} onChange={setMaterial} />
+              {/* Material picker — with per-material price */}
+              {materialOptions ? (
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="block font-sans text-[13px] font-bold tracking-[0.04em] text-ink">Material finish</span>
+                    {material && <span className="font-sans text-[13px] text-muted">{material}</span>}
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap gap-2.5">
+                    {materialOptions.map((opt) => {
+                      const isSelected = material === opt.name
+                      return (
+                        <button key={opt.name} type="button" onClick={() => setMaterial(opt.name)} aria-pressed={isSelected}
+                          className={`flex flex-col items-center px-4 py-2 rounded-control border text-[13px] font-medium transition-colors cursor-pointer ${isSelected ? 'border-accent bg-soft text-accent ring-1 ring-accent' : 'border-line bg-surface text-ink hover:border-accent/40'}`}
+                        >
+                          <span>{opt.name}</span>
+                          <span className={`text-[12px] font-semibold mt-0.5 ${isSelected ? 'text-accent' : 'text-muted'}`}>
+                            ₹{(opt.priceCents / 100).toFixed(2).replace(/\.00$/, '')}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <OptionPicker label="Material finish" options={product.materials} value={material} onChange={setMaterial} />
+              )}
+
               <ColorSwatchPicker label="Colour palette" colors={availableColors} value={color} onChange={setColor} />
-              <OptionPicker label="Scale / size" options={product.sizes} value={size} onChange={setSize} />
+
+              {/* Size picker — with per-size additional price */}
+              {sizeOptions ? (
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="block font-sans text-[13px] font-bold tracking-[0.04em] text-ink">Scale / size</span>
+                    {size && <span className="font-sans text-[13px] text-muted">{size}</span>}
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap gap-2.5">
+                    {sizeOptions.map((opt) => {
+                      const isSelected = size === opt.name
+                      return (
+                        <button key={opt.name} type="button" onClick={() => setSize(opt.name)} aria-pressed={isSelected}
+                          className={`flex flex-col items-center px-4 py-2 rounded-control border text-[13px] font-medium transition-colors cursor-pointer ${isSelected ? 'border-accent bg-soft text-accent ring-1 ring-accent' : 'border-line bg-surface text-ink hover:border-accent/40'}`}
+                        >
+                          <span>{opt.name}</span>
+                          {opt.additionalCents > 0 && (
+                            <span className={`text-[12px] font-semibold mt-0.5 ${isSelected ? 'text-accent' : 'text-muted'}`}>
+                              +₹{(opt.additionalCents / 100).toFixed(2).replace(/\.00$/, '')}
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <OptionPicker label="Scale / size" options={product.sizes} value={size} onChange={setSize} />
+              )}
+
+              {/* Shipping method picker */}
+              {shippingMethods && shippingMethods.length > 0 && (
+                <div>
+                  <span className="block font-sans text-[13px] font-bold tracking-[0.04em] text-ink mb-2.5">Shipping method</span>
+                  <div className="space-y-2">
+                    {shippingMethods.map((method) => {
+                      const isSelected = selectedShipping?.name === method.name
+                      return (
+                        <button key={method.name} type="button" onClick={() => setSelectedShipping(method)}
+                          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-control border text-[13px] transition-colors cursor-pointer ${isSelected ? 'border-accent bg-soft text-accent ring-1 ring-accent' : 'border-line bg-surface text-ink hover:border-accent/40'}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className={`h-3.5 w-3.5 rounded-full border-2 ${isSelected ? 'border-accent bg-accent' : 'border-muted'}`} />
+                            <span className="font-medium">{method.name}</span>
+                            {method.estimatedDays && <span className="text-muted text-[12px]">({method.estimatedDays})</span>}
+                          </div>
+                          <span className="font-semibold">
+                            {method.priceCents === 0 ? 'Free' : `₹${(method.priceCents / 100).toFixed(2).replace(/\.00$/, '')}`}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               <QuantitySelector value={quantity} onChange={setQuantity} />
             </div>
 

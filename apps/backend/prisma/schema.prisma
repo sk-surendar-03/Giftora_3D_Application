@@ -158,6 +158,10 @@ model Product {
   materials        Json     @default("[]")
   sizes            Json     @default("[]")
   colorsByMaterial Json?
+  // Per-option pricing: when set, overrides the flat priceCents / sizes / shippingCents for display
+  materialOptions  Json?   // [{name, priceCents}]
+  sizeOptions      Json?   // [{name, additionalCents}]
+  shippingMethods  Json?   // [{name, priceCents, estimatedDays?}]
   // Optional downloadable-free 3D preview model (STL or 3MF). Only a storage
   // *key* is kept here; the bytes live in the storage driver (never Base64 in
   // the DB). All four are NULL when the product has no model.

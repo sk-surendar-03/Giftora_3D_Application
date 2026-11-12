@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { uploadProductImage } from '../../features/products/productsApi.js'
+import { resolveImageUrl } from '../../utils/imageUrl.js'
 
 const PRESET_COLORS = [
   { label: 'White', hex: '#f5f3ee' },
@@ -26,6 +28,9 @@ export default function ColorPaletteEditor({ materials = [], value = {}, onChang
   const [addingMaterial, setAddingMaterial] = useState(false)
   const [editingColor, setEditingColor] = useState(null) // { material, index, label, hex }
   const [newColorDrafts, setNewColorDrafts] = useState({}) // { [material]: { label, hex } }
+  const [uploadingFor, setUploadingFor] = useState(null) // { material, index }
+  const colorImageInputRef = useRef(null)
+  const pendingUploadRef = useRef(null)
 
   // Combine configured materials from the form field with any extra materials already present in value
   const allMaterials = Array.from(
@@ -101,6 +106,39 @@ export default function ColorPaletteEditor({ materials = [], value = {}, onChang
     }))
   }
 
+  function handleColorImageClick(material, index) {
+    pendingUploadRef.current = { material, index }
+    if (colorImageInputRef.current) {
+      colorImageInputRef.current.value = ''
+      colorImageInputRef.current.click()
+    }
+  }
+
+  async function handleColorImageSelected(e) {
+    const file = e.target.files?.[0]
+    const target = pendingUploadRef.current
+    if (!file || !target) return
+    setUploadingFor(target)
+    try {
+      const result = await uploadProductImage(file)
+      const { material, index } = target
+      const currentColors = value[material] || []
+      const updated = currentColors.map((c, i) => i === index ? { ...c, imageUrl: result.url } : c)
+      updatePalette((prev) => ({ ...prev, [material]: updated }))
+    } catch (err) {
+      alert(`Image upload failed: ${err?.response?.data?.error ?? err.message}`)
+    } finally {
+      setUploadingFor(null)
+      pendingUploadRef.current = null
+    }
+  }
+
+  function removeColorImage(material, index) {
+    const currentColors = value[material] || []
+    const updated = currentColors.map((c, i) => i === index ? { ...c, imageUrl: undefined } : c)
+    updatePalette((prev) => ({ ...prev, [material]: updated }))
+  }
+
   function setDraftField(material, field, val) {
     setNewColorDrafts((prev) => {
       const current = prev[material] || { label: '', hex: '#000000' }
@@ -116,6 +154,13 @@ export default function ColorPaletteEditor({ materials = [], value = {}, onChang
 
   return (
     <div className="space-y-4 rounded-lg border border-line bg-alt/40 p-4">
+      <input
+        ref={colorImageInputRef}
+        type="file"
+        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+        onChange={handleColorImageSelected}
+        className="hidden"
+      />
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-ink">Color Palette Editor</h3>
@@ -279,6 +324,28 @@ export default function ColorPaletteEditor({ materials = [], value = {}, onChang
                           <span className="text-[10px] text-muted font-mono">{color.hex}</span>
 
                           <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity ml-1">
+                            {/* Color image upload */}
+                            {color.imageUrl ? (
+                              <div className="flex items-center gap-1">
+                                <img src={resolveImageUrl(color.imageUrl)} alt="" className="h-4 w-4 rounded object-cover border border-line" />
+                                <button
+                                  type="button"
+                                  onClick={() => removeColorImage(material, idx)}
+                                  title="Remove color image"
+                                  className="text-[10px] text-muted hover:text-danger cursor-pointer"
+                                >✕img</button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleColorImageClick(material, idx)}
+                                disabled={uploadingFor?.material === material && uploadingFor?.index === idx}
+                                title="Upload image for this color"
+                                className="text-[10px] text-muted hover:text-accent cursor-pointer disabled:opacity-50"
+                              >
+                                {uploadingFor?.material === material && uploadingFor?.index === idx ? '…' : '📷'}
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() =>

@@ -49,7 +49,15 @@ export async function addItem(userId, { productId, quantity, customization }) {
   // change doesn't retroactively alter what's already in a customer's cart
   // (see the price-snapshot note below).
   let unitPriceCents
-  if (customization?.text) {
+  // If the product has per-material pricing and a material was selected, use it
+  const matOpts = Array.isArray(product.materialOptions) ? product.materialOptions : []
+  const sizeOpts = Array.isArray(product.sizeOptions) ? product.sizeOptions : []
+  const selMat = matOpts.find((m) => m.name === customization?.material)
+  if (selMat) {
+    unitPriceCents = selMat.priceCents
+    const selSize = sizeOpts.find((s) => s.name === customization?.size)
+    if (selSize) unitPriceCents += (selSize.additionalCents || 0)
+  } else if (customization?.text) {
     const { perCharacterPriceCents } = await getPricingConfig()
     unitPriceCents = calculateTotalCustomizationPriceCents(customization.text, customization?.subtitle, perCharacterPriceCents)
   } else {

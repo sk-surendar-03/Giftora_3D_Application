@@ -39,11 +39,23 @@ export async function reviewCheckout(userId, addressId) {
     // this item was added) is the only current price source, same as
     // cartService.js.
     const available = isCustom ? await stlIsAvailable(design) : product.isActive
-    const currentUnitPriceCents = isCustom
-      ? priceForDesign(design.params, perCharacterPriceCents)
-      : item.customization?.text
-        ? calculateTotalCustomizationPriceCents(item.customization.text, item.customization?.subtitle, perCharacterPriceCents)
-        : (product?.priceCents ?? 0)
+    let currentUnitPriceCents
+    if (isCustom) {
+      currentUnitPriceCents = priceForDesign(design.params, perCharacterPriceCents)
+    } else {
+      const matOpts = Array.isArray(product?.materialOptions) ? product.materialOptions : []
+      const sizeOpts = Array.isArray(product?.sizeOptions) ? product.sizeOptions : []
+      const selMat = matOpts.find((m) => m.name === item.customization?.material)
+      if (selMat) {
+        currentUnitPriceCents = selMat.priceCents
+        const selSize = sizeOpts.find((s) => s.name === item.customization?.size)
+        if (selSize) currentUnitPriceCents += (selSize.additionalCents || 0)
+      } else if (item.customization?.text) {
+        currentUnitPriceCents = calculateTotalCustomizationPriceCents(item.customization.text, item.customization?.subtitle, perCharacterPriceCents)
+      } else {
+        currentUnitPriceCents = product?.priceCents ?? 0
+      }
+    }
     const priceChanged = currentUnitPriceCents !== item.unitPriceCents
     const lineTotalCents = available ? currentUnitPriceCents * item.quantity : 0
     if (available) subtotalCents += lineTotalCents
@@ -83,8 +95,14 @@ export async function reviewCheckout(userId, addressId) {
 
   let shippingCents = 0
   for (const item of cart.items) {
-    if (item.itemType === 'PRODUCT' && item.product?.shippingCents > 0) {
-      shippingCents += item.product.shippingCents * item.quantity
+    if (item.itemType === 'PRODUCT' && item.product) {
+      // Use the customer's selected shipping method if stored in customization
+      const selMethod = item.customization?.shippingMethod
+      if (selMethod && typeof selMethod.priceCents === 'number') {
+        shippingCents += selMethod.priceCents * item.quantity
+      } else if (item.product.shippingCents > 0) {
+        shippingCents += item.product.shippingCents * item.quantity
+      }
     }
   }
   const totalCents = subtotalCents + shippingCents

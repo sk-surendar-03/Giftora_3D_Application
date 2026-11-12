@@ -19,7 +19,7 @@ export async function getBySlug(req, res) {
 }
 
 function validateProductInput(body, { partial }) {
-  const { slug, name, description, priceCents, originalPriceCents, shippingCents, images, materials, sizes, colorsByMaterial, categoryId, isActive } = body ?? {}
+  const { slug, name, description, priceCents, originalPriceCents, shippingCents, images, materials, sizes, colorsByMaterial, categoryId, isActive, materialOptions, sizeOptions, shippingMethods } = body ?? {}
 
   if (!partial || slug !== undefined) {
     if (!isValidSlug(slug)) throw new HttpError(400, 'A valid slug (lowercase letters, numbers, hyphens) is required.')
@@ -71,6 +71,9 @@ function validateProductInput(body, { partial }) {
     ...(colorsByMaterial !== undefined ? { colorsByMaterial } : {}),
     ...(categoryId !== undefined ? { categoryId } : {}),
     ...(isActive !== undefined ? { isActive } : {}),
+    ...(materialOptions !== undefined ? { materialOptions: materialOptions ?? null } : {}),
+    ...(sizeOptions !== undefined ? { sizeOptions: sizeOptions ?? null } : {}),
+    ...(shippingMethods !== undefined ? { shippingMethods: shippingMethods ?? null } : {}),
   }
 }
 

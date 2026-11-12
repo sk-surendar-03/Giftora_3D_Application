@@ -5,6 +5,9 @@ import { slugify } from '../../utils/slugify.js'
 import { fetchCategories } from '../../features/categories/categoriesApi.js'
 import { fetchAdminProducts, createProduct, updateProduct, uploadProductModel } from '../../features/products/productsApi.js'
 import ColorPaletteEditor from './ColorPaletteEditor.jsx'
+import MaterialOptionsEditor from './MaterialOptionsEditor.jsx'
+import SizeOptionsEditor from './SizeOptionsEditor.jsx'
+import ShippingMethodsEditor from './ShippingMethodsEditor.jsx'
 import ModelUploadSection from './ModelUploadSection.jsx'
 import ProductImagesSection from './ProductImagesSection.jsx'
 
@@ -21,10 +24,13 @@ const EMPTY_FORM = {
   shippingType: 'FREE', // 'FREE' or 'PAID'
   shippingPrice: '0', // in rupees
   categoryId: '',
-  materials: '', // comma-separated
-  sizes: '', // comma-separated
+  materials: '', // comma-separated (legacy fallback)
+  sizes: '', // comma-separated (legacy fallback)
   images: [], // array of image URLs
-  colorsByMaterial: {}, // object: { [material]: [{ label, hex }] }
+  colorsByMaterial: {}, // object: { [material]: [{ label, hex, imageUrl? }] }
+  materialOptions: [], // [{name, priceCents}]
+  sizeOptions: [],     // [{name, additionalCents}]
+  shippingMethods: [], // [{name, priceCents, estimatedDays?}]
   isActive: true,
 }
 
@@ -73,6 +79,9 @@ export default function ProductForm() {
             sizes: (product.sizes ?? []).join(', '),
             images: Array.isArray(product.images) ? product.images : (product.images ? [product.images] : []),
             colorsByMaterial: product.colorsByMaterial && typeof product.colorsByMaterial === 'object' ? product.colorsByMaterial : {},
+            materialOptions: Array.isArray(product.materialOptions) ? product.materialOptions : [],
+            sizeOptions: Array.isArray(product.sizeOptions) ? product.sizeOptions : [],
+            shippingMethods: Array.isArray(product.shippingMethods) ? product.shippingMethods : [],
             isActive: product.isActive,
           })
         })
@@ -159,6 +168,9 @@ export default function ProductForm() {
       sizes: parseListField(form.sizes),
       images: resolvedImages,
       ...(colorsByMaterial !== null ? { colorsByMaterial } : { colorsByMaterial: null }),
+      materialOptions: form.materialOptions.length > 0 ? form.materialOptions : null,
+      sizeOptions: form.sizeOptions.length > 0 ? form.sizeOptions : null,
+      shippingMethods: form.shippingMethods.length > 0 ? form.shippingMethods : null,
       isActive: form.isActive,
     }
   }
@@ -274,69 +286,46 @@ export default function ProductForm() {
           </label>
         </div>
 
-        {/* Shipping Configuration Section */}
-        <div className="rounded-lg border border-line bg-surface/40 p-4 space-y-3">
-          <div className="border-b border-line pb-2">
-            <h3 className="text-sm font-semibold text-ink">Shipping Configuration</h3>
-            <p className="text-xs text-muted">Configure shipping charges or offer free shipping for this product.</p>
-          </div>
+        {/* Shipping Methods Editor */}
+        <ShippingMethodsEditor
+          value={form.shippingMethods}
+          onChange={(v) => update('shippingMethods', v)}
+        />
 
-          <div className="flex flex-col sm:flex-row gap-5 pt-1">
-            <label className="flex items-center gap-2.5 cursor-pointer">
-              <input
-                type="radio"
-                name="shippingType"
-                value="FREE"
-                checked={form.shippingType === 'FREE'}
-                onChange={() => {
-                  update('shippingType', 'FREE')
-                  update('shippingPrice', '0')
-                }}
-                className="h-4 w-4 text-accent border-line focus:ring-accent"
-              />
-              <span className="text-sm font-medium text-ink">Option B — Free Shipping (₹0)</span>
-            </label>
-
-            <label className="flex items-center gap-2.5 cursor-pointer">
-              <input
-                type="radio"
-                name="shippingType"
-                value="PAID"
-                checked={form.shippingType === 'PAID'}
-                onChange={() => update('shippingType', 'PAID')}
-                className="h-4 w-4 text-accent border-line focus:ring-accent"
-              />
-              <span className="text-sm font-medium text-ink">Option A — Paid Shipping</span>
-            </label>
-          </div>
-
-          {form.shippingType === 'PAID' && (
-            <div className="pt-2">
-              <label className="block text-sm font-medium text-ink">
-                Shipping Charge (₹)
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.shippingPrice}
-                  onChange={(e) => update('shippingPrice', e.target.value)}
-                  className="mt-1 block w-full max-w-xs rounded-md border border-line px-3 py-2 text-sm text-ink outline-none focus:border-brand"
-                  placeholder="e.g. 50"
-                  required
-                />
-                <span className="mt-1 block text-xs text-muted">
-                  Amount charged to customer for shipping this product (e.g. ₹50).
-                </span>
+        {/* Legacy single shipping fallback — shown only when no methods configured */}
+        {form.shippingMethods.length === 0 && (
+          <div className="rounded-lg border border-line bg-surface/40 p-4 space-y-3">
+            <div className="border-b border-line pb-2">
+              <h3 className="text-sm font-semibold text-ink">Fallback Shipping</h3>
+              <p className="text-xs text-muted">Used when no shipping methods above are configured.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-5 pt-1">
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input type="radio" name="shippingType" value="FREE" checked={form.shippingType === 'FREE'}
+                  onChange={() => { update('shippingType', 'FREE'); update('shippingPrice', '0') }}
+                  className="h-4 w-4 text-accent border-line focus:ring-accent" />
+                <span className="text-sm font-medium text-ink">Free Shipping (₹0)</span>
+              </label>
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input type="radio" name="shippingType" value="PAID" checked={form.shippingType === 'PAID'}
+                  onChange={() => update('shippingType', 'PAID')}
+                  className="h-4 w-4 text-accent border-line focus:ring-accent" />
+                <span className="text-sm font-medium text-ink">Paid Shipping</span>
               </label>
             </div>
-          )}
-
-          {form.shippingType === 'FREE' && (
-            <p className="text-xs text-[#17683f] font-medium pt-1">
-              ✓ Free Shipping enabled (Shipping charge: ₹0).
-            </p>
-          )}
-        </div>
+            {form.shippingType === 'PAID' && (
+              <label className="block text-sm font-medium text-ink">
+                Shipping Charge (₹)
+                <input type="number" min="0" step="0.01" value={form.shippingPrice}
+                  onChange={(e) => update('shippingPrice', e.target.value)}
+                  className="mt-1 block w-full max-w-xs rounded-md border border-line px-3 py-2 text-sm" placeholder="e.g. 50" />
+              </label>
+            )}
+            {form.shippingType === 'FREE' && (
+              <p className="text-xs text-[#17683f] font-medium pt-1">✓ Free Shipping enabled.</p>
+            )}
+          </div>
+        )}
 
         <label className="block text-sm font-medium text-ink">
           Category
@@ -354,25 +343,15 @@ export default function ProductForm() {
           </select>
         </label>
 
-        <label className="block text-sm font-medium text-ink">
-          Materials (comma-separated)
-          <input
-            value={form.materials}
-            onChange={(e) => update('materials', e.target.value)}
-            placeholder="Standard PLA, Silk Metallic PLA"
-            className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
-          />
-        </label>
+        <MaterialOptionsEditor
+          value={form.materialOptions}
+          onChange={(v) => update('materialOptions', v)}
+        />
 
-        <label className="block text-sm font-medium text-ink">
-          Sizes (comma-separated)
-          <input
-            value={form.sizes}
-            onChange={(e) => update('sizes', e.target.value)}
-            placeholder="Small (4 cm), Medium (5.5 cm)"
-            className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
-          />
-        </label>
+        <SizeOptionsEditor
+          value={form.sizeOptions}
+          onChange={(v) => update('sizeOptions', v)}
+        />
 
         {/* Dedicated Product Images Upload Section (Replaces manual comma-separated URLs) */}
         <ProductImagesSection
@@ -392,7 +371,9 @@ export default function ProductForm() {
         <div className="block text-sm font-medium text-ink">
           <span className="block mb-1.5 font-medium">Colors by Material</span>
           <ColorPaletteEditor
-            materials={parseListField(form.materials)}
+            materials={form.materialOptions.length > 0
+              ? form.materialOptions.map((m) => m.name)
+              : parseListField(form.materials)}
             value={form.colorsByMaterial || {}}
             onChange={(nextPalette) => update('colorsByMaterial', nextPalette)}
           />

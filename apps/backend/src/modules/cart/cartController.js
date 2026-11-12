@@ -24,6 +24,9 @@ function toCartResponse(cart) {
           images: item.product.images,
           isActive: item.product.isActive,
           shippingCents: item.product.shippingCents ?? 0,
+          shippingMethods: item.product.shippingMethods ?? null,
+          materialOptions: item.product.materialOptions ?? null,
+          sizeOptions: item.product.sizeOptions ?? null,
         }
       : null,
     design: item.customDesign ? toPublicDesign(item.customDesign) : null,
