@@ -225,10 +225,10 @@ export default function ProductForm() {
 
       <form onSubmit={handleSubmit} className="w-full">
         {/* Two-column layout: left = core info, right = options/media */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
 
           {/* ── LEFT COLUMN ── */}
-          <div className="space-y-5 rounded-lg border border-line bg-surface p-6">
+          <div className="space-y-5 rounded-lg border border-line bg-surface p-6 h-full">
             <h2 className="text-sm font-semibold text-muted uppercase tracking-wider border-b border-line pb-2">Basic Info</h2>
 
             <label className="block text-sm font-medium text-ink">
@@ -333,8 +333,8 @@ export default function ProductForm() {
             </button>
           </div>
 
-          {/* ── RIGHT COLUMN ── */}
-          <div className="space-y-5">
+          {/* ── RIGHT COLUMN ── equal height via flex-col + flex-1 on last card */}
+          <div className="flex flex-col gap-5 h-full">
             <div className="rounded-lg border border-line bg-surface p-6 space-y-5">
               <h2 className="text-sm font-semibold text-muted uppercase tracking-wider border-b border-line pb-2">Media</h2>
               <ProductImagesSection images={form.images} onChange={(v) => update('images', v)} />
@@ -345,7 +345,7 @@ export default function ProductForm() {
               />
             </div>
 
-            <div className="rounded-lg border border-line bg-surface p-6">
+            <div className="rounded-lg border border-line bg-surface p-6 flex-1">
               <h2 className="text-sm font-semibold text-muted uppercase tracking-wider border-b border-line pb-2 mb-4">Colors by Material</h2>
               <ColorPaletteEditor
                 materials={form.materialOptions.length > 0
