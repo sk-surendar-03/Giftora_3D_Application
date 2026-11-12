@@ -299,6 +299,7 @@ export default function ProductForm() {
                 onColorsByMaterialChange={(v) => update('colorsByMaterial', v)}
                 imageMaterials={form.imageMaterials}
                 onImageMaterialsChange={(v) => update('imageMaterials', v)}
+                productId={isEditing ? id : null}
               />
             </div>
           </div>

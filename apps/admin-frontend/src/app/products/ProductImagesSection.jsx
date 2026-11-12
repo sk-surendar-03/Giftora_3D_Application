@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { uploadProductImage } from '../../features/products/productsApi.js'
+import { uploadProductImage, updateProduct } from '../../features/products/productsApi.js'
 import { resolveImageUrl, extractImageFilename } from '../../utils/imageUrl.js'
 
 function formatBytes(bytes) {
@@ -26,7 +26,7 @@ const PRESET_COLORS = [
 ]
 
 // Full popup: material checkboxes + per-material color management (add/delete/tag)
-function MaterialFilterPopup({ materials, colorsByMaterial, assigned, onToggle, onColorsByMaterialChange, onClose }) {
+function MaterialFilterPopup({ materials, colorsByMaterial, assigned, onToggle, onColorsByMaterialChange, onClose, onSave, saving, saveStatus }) {
   const ref = useRef(null)
   const [drafts, setDrafts] = useState({}) // { [material]: { label, hex } }
 
@@ -60,15 +60,15 @@ function MaterialFilterPopup({ materials, colorsByMaterial, assigned, onToggle, 
 
   if (!materials || materials.length === 0) {
     return (
-      <div ref={ref} className="absolute top-10 right-0 z-50 w-60 rounded-lg border border-line bg-[#141414] shadow-2xl p-3 text-xs text-muted">
-        Add materials in the Materials & Pricing section first.
+      <div ref={ref} className="absolute top-10 left-0 z-50 w-64 rounded-lg border border-line bg-[#141414] shadow-2xl p-3 text-xs text-muted">
+        Add materials in the Materials &amp; Pricing section first.
       </div>
     )
   }
 
   return (
-    <div ref={ref} className="absolute top-10 right-0 z-50 w-72 rounded-lg border border-line bg-[#141414] shadow-2xl overflow-hidden">
-      <div className="max-h-[420px] overflow-y-auto p-3 space-y-4">
+    <div ref={ref} className="absolute top-10 left-0 z-50 w-80 rounded-lg border border-line bg-[#141414] shadow-2xl overflow-hidden">
+      <div className="max-h-[400px] overflow-y-auto p-3 space-y-4">
         {materials.map((mat) => {
           const colors = Array.isArray(colorsByMaterial[mat]) ? colorsByMaterial[mat] : []
           const matChecked = assigned.includes(mat)
@@ -154,23 +154,50 @@ function MaterialFilterPopup({ materials, colorsByMaterial, assigned, onToggle, 
           )
         })}
       </div>
-      <div className="border-t border-line px-3 py-2 text-[10px] text-muted bg-[#0D0D0D]">
-        Check material or color to tag this image · Untagged = shows for all
+      <div className="border-t border-line px-3 py-2.5 bg-[#0D0D0D] flex items-center justify-between gap-2">
+        <span className="text-[10px] text-muted">Check material or color to tag this image · Untagged = shows for all</span>
+        {onSave && (
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saving}
+            className="shrink-0 rounded bg-accent px-3 py-1 text-[11px] font-bold text-white cursor-pointer hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? 'Saving…' : saveStatus === 'ok' ? '✓ Saved' : saveStatus === 'err' ? 'Error!' : 'Save'}
+          </button>
+        )}
       </div>
     </div>
   )
 }
 
-export default function ProductImagesSection({ images = [], onChange, materials = [], colorsByMaterial = {}, onColorsByMaterialChange, imageMaterials = {}, onImageMaterialsChange }) {
+export default function ProductImagesSection({ images = [], onChange, materials = [], colorsByMaterial = {}, onColorsByMaterialChange, imageMaterials = {}, onImageMaterialsChange, productId = null }) {
   const [items, setItems] = useState([])
   const [dragOverZone, setDragOverZone] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState(null)
   const [showUrlInput, setShowUrlInput] = useState(false)
   const [urlInputValue, setUrlInputValue] = useState('')
   const [filterPopupId, setFilterPopupId] = useState(null)
+  const [popupSaving, setPopupSaving] = useState(false)
+  const [popupSaveStatus, setPopupSaveStatus] = useState(null) // null | 'ok' | 'err'
   const fileInputRef = useRef(null)
   const replaceInputRef = useRef(null)
   const replacingIndexRef = useRef(null)
+
+  async function handlePopupSave() {
+    if (!productId) return
+    setPopupSaving(true)
+    setPopupSaveStatus(null)
+    try {
+      await updateProduct(productId, { colorsByMaterial, imageMaterials })
+      setPopupSaveStatus('ok')
+      setTimeout(() => setPopupSaveStatus(null), 2500)
+    } catch {
+      setPopupSaveStatus('err')
+      setTimeout(() => setPopupSaveStatus(null), 3000)
+    }
+    setPopupSaving(false)
+  }
 
   useEffect(() => {
     const propUrls = Array.isArray(images) ? images.filter(Boolean) : []
@@ -565,6 +592,9 @@ export default function ProductImagesSection({ images = [], onChange, materials 
                       onToggle={(tag) => handleToggleMaterial(item.url, tag)}
                       onColorsByMaterialChange={onColorsByMaterialChange}
                       onClose={() => setFilterPopupId(null)}
+                      onSave={productId ? handlePopupSave : null}
+                      saving={popupSaving}
+                      saveStatus={popupSaveStatus}
                     />
                   )}
 
