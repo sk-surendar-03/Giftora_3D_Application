@@ -226,117 +226,69 @@ export default function ProductForm() {
       <Banner tone="error">{error}</Banner>
 
       <form onSubmit={handleSubmit} className="w-full">
-        {/* Two-column layout: left = core info, right = options/media */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-          {/* ── LEFT COLUMN ── */}
-          <div className="space-y-5 rounded-lg border border-line bg-surface p-6 h-full">
-            <h2 className="text-sm font-semibold text-muted uppercase tracking-wider border-b border-line pb-2">Basic Info</h2>
+          {/* ── LEFT COLUMN: Basic Info + Media ── */}
+          <div className="flex flex-col gap-5">
+            <div className="space-y-5 rounded-lg border border-line bg-surface p-6">
+              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider border-b border-line pb-2">Basic Info</h2>
 
-            <label className="block text-sm font-medium text-ink">
-              Name
-              <input
-                value={form.name}
-                onChange={(e) => {
-                  update('name', e.target.value)
-                  if (!slugTouched) update('slug', slugify(e.target.value))
-                }}
-                className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
-              />
-            </label>
-
-            <label className="block text-sm font-medium text-ink">
-              Slug
-              <input
-                value={form.slug}
-                onChange={(e) => { update('slug', e.target.value); setSlugTouched(true) }}
-                className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
-              />
-            </label>
-
-            <label className="block text-sm font-medium text-ink">
-              Description
-              <textarea
-                value={form.description}
-                onChange={(e) => update('description', e.target.value)}
-                rows={4}
-                className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
-              />
-            </label>
-
-            <div className="grid grid-cols-2 gap-4">
               <label className="block text-sm font-medium text-ink">
-                Selling Price (₹)
-                <input type="number" min="0" step="0.01" value={form.price}
-                  onChange={(e) => update('price', e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm" placeholder="e.g. 399" />
+                Name
+                <input
+                  value={form.name}
+                  onChange={(e) => {
+                    update('name', e.target.value)
+                    if (!slugTouched) update('slug', slugify(e.target.value))
+                  }}
+                  className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
+                />
               </label>
+
               <label className="block text-sm font-medium text-ink">
-                Original Price (₹) <span className="text-xs text-muted">(strikethrough)</span>
-                <input type="number" min="0" step="0.01" value={form.originalPrice}
-                  onChange={(e) => update('originalPrice', e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm" placeholder="e.g. 499" />
+                Slug
+                <input
+                  value={form.slug}
+                  onChange={(e) => { update('slug', e.target.value); setSlugTouched(true) }}
+                  className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
+                />
+              </label>
+
+              <label className="block text-sm font-medium text-ink">
+                Description
+                <textarea
+                  value={form.description}
+                  onChange={(e) => update('description', e.target.value)}
+                  rows={4}
+                  className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm"
+                />
+              </label>
+
+              <div className="grid grid-cols-2 gap-4">
+                <label className="block text-sm font-medium text-ink">
+                  Selling Price (₹)
+                  <input type="number" min="0" step="0.01" value={form.price}
+                    onChange={(e) => update('price', e.target.value)}
+                    className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm" placeholder="e.g. 399" />
+                </label>
+                <label className="block text-sm font-medium text-ink">
+                  Original Price (₹) <span className="text-xs text-muted">(strikethrough)</span>
+                  <input type="number" min="0" step="0.01" value={form.originalPrice}
+                    onChange={(e) => update('originalPrice', e.target.value)}
+                    className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm" placeholder="e.g. 499" />
+                </label>
+              </div>
+
+              <label className="block text-sm font-medium text-ink">
+                Category
+                <select value={form.categoryId} onChange={(e) => update('categoryId', e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm">
+                  <option value="">No category</option>
+                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
               </label>
             </div>
 
-            <label className="block text-sm font-medium text-ink">
-              Category
-              <select value={form.categoryId} onChange={(e) => update('categoryId', e.target.value)}
-                className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm">
-                <option value="">No category</option>
-                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </label>
-
-            <MaterialOptionsEditor value={form.materialOptions} onChange={(v) => update('materialOptions', v)} />
-            <SizeOptionsEditor value={form.sizeOptions} onChange={(v) => update('sizeOptions', v)} />
-            <ShippingMethodsEditor value={form.shippingMethods} onChange={(v) => update('shippingMethods', v)} />
-
-            {/* Legacy single shipping fallback */}
-            {form.shippingMethods.length === 0 && (
-              <div className="rounded-lg border border-line bg-surface/40 p-4 space-y-3">
-                <div className="border-b border-line pb-2">
-                  <h3 className="text-sm font-semibold text-ink">Fallback Shipping</h3>
-                  <p className="text-xs text-muted">Used when no shipping methods above are configured.</p>
-                </div>
-                <div className="flex gap-5">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="shippingType" value="FREE" checked={form.shippingType === 'FREE'}
-                      onChange={() => { update('shippingType', 'FREE'); update('shippingPrice', '0') }}
-                      className="h-4 w-4" />
-                    <span className="text-sm text-ink">Free (₹0)</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="shippingType" value="PAID" checked={form.shippingType === 'PAID'}
-                      onChange={() => update('shippingType', 'PAID')} className="h-4 w-4" />
-                    <span className="text-sm text-ink">Paid</span>
-                  </label>
-                </div>
-                {form.shippingType === 'PAID' && (
-                  <label className="block text-sm font-medium text-ink">
-                    Charge (₹)
-                    <input type="number" min="0" step="0.01" value={form.shippingPrice}
-                      onChange={(e) => update('shippingPrice', e.target.value)}
-                      className="mt-1 block w-32 rounded-md border border-line px-3 py-2 text-sm" placeholder="50" />
-                  </label>
-                )}
-                {form.shippingType === 'FREE' && <p className="text-xs text-[#17683f] font-medium">✓ Free Shipping enabled.</p>}
-              </div>
-            )}
-
-            <label className="flex items-center gap-2 text-sm font-medium text-ink">
-              <input type="checkbox" checked={form.isActive} onChange={(e) => update('isActive', e.target.checked)} />
-              Active (visible to customers)
-            </label>
-
-            <button type="submit" disabled={submitting}
-              className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
-              {submitting ? 'Saving…' : isEditing ? 'Save changes' : 'Create product'}
-            </button>
-          </div>
-
-          {/* ── RIGHT COLUMN ── equal height via flex-col + flex-1 on last card */}
-          <div className="flex flex-col gap-5 h-full">
             <div className="rounded-lg border border-line bg-surface p-6 space-y-5">
               <h2 className="text-sm font-semibold text-muted uppercase tracking-wider border-b border-line pb-2">Media</h2>
               <ProductImagesSection
@@ -354,7 +306,59 @@ export default function ProductForm() {
                 stagedFile={stagedModel} onStage={setStagedModel}
               />
             </div>
+          </div>
 
+          {/* ── RIGHT COLUMN: Options + Save ── */}
+          <div className="flex flex-col gap-5">
+            <div className="space-y-5 rounded-lg border border-line bg-surface p-6">
+              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider border-b border-line pb-2">Options</h2>
+
+              <MaterialOptionsEditor value={form.materialOptions} onChange={(v) => update('materialOptions', v)} />
+              <SizeOptionsEditor value={form.sizeOptions} onChange={(v) => update('sizeOptions', v)} />
+              <ShippingMethodsEditor value={form.shippingMethods} onChange={(v) => update('shippingMethods', v)} />
+
+              {form.shippingMethods.length === 0 && (
+                <div className="rounded-lg border border-line bg-surface/40 p-4 space-y-3">
+                  <div className="border-b border-line pb-2">
+                    <h3 className="text-sm font-semibold text-ink">Fallback Shipping</h3>
+                    <p className="text-xs text-muted">Used when no shipping methods above are configured.</p>
+                  </div>
+                  <div className="flex gap-5">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="shippingType" value="FREE" checked={form.shippingType === 'FREE'}
+                        onChange={() => { update('shippingType', 'FREE'); update('shippingPrice', '0') }}
+                        className="h-4 w-4" />
+                      <span className="text-sm text-ink">Free (₹0)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="shippingType" value="PAID" checked={form.shippingType === 'PAID'}
+                        onChange={() => update('shippingType', 'PAID')} className="h-4 w-4" />
+                      <span className="text-sm text-ink">Paid</span>
+                    </label>
+                  </div>
+                  {form.shippingType === 'PAID' && (
+                    <label className="block text-sm font-medium text-ink">
+                      Charge (₹)
+                      <input type="number" min="0" step="0.01" value={form.shippingPrice}
+                        onChange={(e) => update('shippingPrice', e.target.value)}
+                        className="mt-1 block w-32 rounded-md border border-line px-3 py-2 text-sm" placeholder="50" />
+                    </label>
+                  )}
+                  {form.shippingType === 'FREE' && <p className="text-xs text-[#17683f] font-medium">✓ Free Shipping enabled.</p>}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-lg border border-line bg-surface p-6 flex items-center justify-between gap-4">
+              <label className="flex items-center gap-2 text-sm font-medium text-ink">
+                <input type="checkbox" checked={form.isActive} onChange={(e) => update('isActive', e.target.checked)} />
+                Active (visible to customers)
+              </label>
+              <button type="submit" disabled={submitting}
+                className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
+                {submitting ? 'Saving…' : isEditing ? 'Save changes' : 'Create product'}
+              </button>
+            </div>
           </div>
 
         </div>
