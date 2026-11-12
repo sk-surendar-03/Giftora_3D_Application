@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth.js'
 import { useCart } from '../../features/cart/useCart.js'
+import api from '../../services/api.js'
 
 const navLinks = [
   { to: '/', label: 'Home' },
@@ -10,11 +11,144 @@ const navLinks = [
   { to: '/contact', label: 'Contact' },
 ]
 
+function ProfileDropdown({ user, updateUser, onLogout }) {
+  const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [name, setName] = useState(user?.name ?? '')
+  const [phone, setPhone] = useState(user?.phone ?? '')
+  const [saving, setSaving] = useState(false)
+  const [status, setStatus] = useState(null)
+  const [error, setError] = useState(null)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    setName(user?.name ?? '')
+    setPhone(user?.phone ?? '')
+  }, [user])
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false)
+        setEditing(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  async function handleSave(e) {
+    e.preventDefault()
+    setError(null)
+    setSaving(true)
+    try {
+      const { data } = await api.patch('/auth/me', { name: name.trim(), phone: phone.trim() })
+      updateUser(data.user)
+      setEditing(false)
+      setStatus('ok')
+      setTimeout(() => setStatus(null), 2000)
+    } catch (err) {
+      setError(err.response?.data?.error ?? err.message ?? 'Save failed.')
+    }
+    setSaving(false)
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => { setOpen(v => !v); setEditing(false) }}
+        className="flex h-[42px] w-[42px] items-center justify-center rounded-full text-ink hover:bg-soft"
+        title="My Account"
+      >
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-[50px] w-80 rounded-xl border border-border bg-surface shadow-xl z-50 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-alt">
+            <div>
+              <p className="text-sm font-semibold text-ink">{user?.name}</p>
+              <p className="text-xs text-muted">{user?.email}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditing(v => !v)}
+              className="text-xs font-semibold text-accent hover:underline cursor-pointer"
+            >
+              {editing ? 'Cancel' : 'Edit'}
+            </button>
+          </div>
+
+          {editing ? (
+            <form onSubmit={handleSave} className="p-4 space-y-3">
+              {error && <p className="text-xs text-red-500">{error}</p>}
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">Full Name</label>
+                <input value={name} onChange={e => setName(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-alt px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+                  placeholder="Your name" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">Phone</label>
+                <input value={phone} onChange={e => setPhone(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-alt px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+                  placeholder="+91 98765 43210" />
+              </div>
+              <button type="submit" disabled={saving}
+                className="w-full rounded-lg bg-accent py-2 text-sm font-semibold text-on-accent hover:bg-accent-dark disabled:opacity-50 cursor-pointer">
+                {saving ? 'Saving…' : 'Save Changes'}
+              </button>
+            </form>
+          ) : (
+            <div className="p-4 space-y-2">
+              {status === 'ok' && <p className="text-xs text-green-500 font-medium">✓ Profile updated</p>}
+              <div className="flex justify-between text-sm">
+                <span className="text-muted">Name</span>
+                <span className="font-medium text-ink">{user?.name || '—'}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted">Email</span>
+                <span className="font-medium text-ink text-xs">{user?.email || '—'}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted">Phone</span>
+                <span className="font-medium text-ink">{user?.phone || '—'}</span>
+              </div>
+              <div className="pt-2 border-t border-border space-y-1">
+                <Link to="/my-orders" onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 py-1.5 text-sm text-ink hover:text-accent">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  My Orders
+                </Link>
+                <Link to="/addresses" onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 py-1.5 text-sm text-ink hover:text-accent">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                  Saved Addresses
+                </Link>
+                <button type="button" onClick={onLogout}
+                  className="flex items-center gap-2 py-1.5 text-sm text-red-500 hover:text-red-600 w-full cursor-pointer">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const { isAuthenticated, logout } = useAuth()
+  const { isAuthenticated, user, logout, updateUser } = useAuth()
   const { cart } = useCart()
   const navigate = useNavigate()
 
@@ -132,26 +266,10 @@ export default function Header() {
             </svg>
           </button>
 
-          {/* Account Icon Button / Link */}
+          {/* Account Icon Button / Profile Dropdown */}
           {isAuthenticated ? (
-            <div className="hidden min-[761px]:flex items-center gap-2">
-              <Link
-                to="/my-orders"
-                title="Track Orders / My Orders"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-ink hover:bg-soft text-[13.5px] font-medium"
-              >
-                <svg className="h-4 w-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-                <span>Track Orders</span>
-              </Link>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="text-[13.5px] font-medium text-muted hover:text-ink px-2"
-              >
-                Logout
-              </button>
+            <div className="hidden min-[761px]:flex items-center">
+              <ProfileDropdown user={user} updateUser={updateUser} onLogout={handleLogout} />
             </div>
           ) : (
             <Link
