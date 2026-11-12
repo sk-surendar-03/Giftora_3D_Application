@@ -1,7 +1,7 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
 import { getStorage } from '../storage/storage.js'
-import { getPricingConfig } from '../settings/settingsService.js'
+import { getPricingConfig, getCustomizerColors, getCustomizerSizes, getCustomizerThicknesses } from '../settings/settingsService.js'
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { DESIGN_SCHEMA_VERSION } from './designOptions.js'
 import { validateDesignInput } from './designValidator.js'
@@ -55,7 +55,12 @@ export const getOwnedDesign = findOwnedDesign
  * existing record back, so retries never create duplicates.
  */
 export async function createDesign(userId, input) {
-  const { params, engineParams, title, paramsHash } = validateDesignInput(input)
+  const [{ colors }, { sizes }, { thicknesses }] = await Promise.all([
+    getCustomizerColors(),
+    getCustomizerSizes(),
+    getCustomizerThicknesses(),
+  ])
+  const { params, engineParams, title, paramsHash } = validateDesignInput(input, { colors, sizes, thicknesses })
 
   const existing = await prisma.customDesign.findUnique({ where: { userId_paramsHash: { userId, paramsHash } } })
   if (existing) return { design: existing, created: false }

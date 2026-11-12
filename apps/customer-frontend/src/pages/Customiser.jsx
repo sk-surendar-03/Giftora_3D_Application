@@ -401,10 +401,10 @@ function CustomiserWorkspace({ options }) {
               />
             </section>
 
-            {/* Step 5: Thickness & Dimensions */}
-            <section className="py-4">
-              <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">Base thickness</span>
-              {adminThicknesses.length > 0 ? (
+            {/* Step 5: Thickness — only shown when admin has configured options */}
+            {adminThicknesses.length > 0 && (
+              <section className="py-4">
+                <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">Base thickness</span>
                 <div className="space-y-2">
                   {adminThicknesses.map((t) => {
                     const isSelected = thickness === t.name
@@ -419,10 +419,8 @@ function CustomiserWorkspace({ options }) {
                     )
                   })}
                 </div>
-              ) : (
-                <ThicknessPicker value={thickness} onChange={setThickness} />
-              )}
-            </section>
+              </section>
+            )}
 
             {/* Step 6: Size & Quantity */}
             <section className="py-4">

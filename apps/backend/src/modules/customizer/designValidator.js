@@ -28,10 +28,17 @@ function cleanText(value, field, { required }) {
   return text
 }
 
-function pickPaletteColor(input, palette, field) {
+function pickPaletteColor(input, palette, adminColors, field) {
   const hex = typeof input === 'string' ? input : input?.hex
   if (typeof hex !== 'string') throw bad(`${field} is required.`)
-  const match = palette.find((color) => color.hex.toLowerCase() === hex.trim().toLowerCase())
+  const normalHex = hex.trim().toLowerCase()
+  // Check admin colors first (if any are configured)
+  if (adminColors.length > 0) {
+    const adminMatch = adminColors.find((c) => c.hex.toLowerCase() === normalHex)
+    if (adminMatch) return { label: adminMatch.name, hex: adminMatch.hex }
+  }
+  // Fall back to hardcoded material palette
+  const match = palette.find((color) => color.hex.toLowerCase() === normalHex)
   if (!match) throw bad(`${field} is not available for the selected material.`)
   return { label: match.label, hex: match.hex }
 }
@@ -40,9 +47,17 @@ function pickPaletteColor(input, palette, field) {
  * Validates a customer's design against the server's allow-lists and returns
  * the canonical design, the exact geometry-engine parameters, and a title.
  * Nothing the client sends about price, labels or derived values is trusted.
+ *
+ * @param {object} input  Raw design from the client
+ * @param {object} [adminSettings]  Admin-configured palette overrides
+ *   { colors: [{name, hex}], sizes: [{name, priceCents}], thicknesses: [{name, priceCents}] }
  */
-export function validateDesignInput(input) {
+export function validateDesignInput(input, adminSettings = {}) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw bad('A design object is required.')
+
+  const adminColors = Array.isArray(adminSettings.colors) ? adminSettings.colors : []
+  const adminSizes = Array.isArray(adminSettings.sizes) ? adminSettings.sizes : []
+  const adminThicknesses = Array.isArray(adminSettings.thicknesses) ? adminSettings.thicknesses : []
 
   const template = TEMPLATES[input.templateId]
   if (!template) throw bad('templateId is not a supported template.')
@@ -65,13 +80,26 @@ export function validateDesignInput(input) {
 
   if (!template.materials.includes(input.material)) throw bad('material is not available for this template.')
   const palette = MATERIALS[input.material].colors
-  const color = pickPaletteColor(input.color, palette, 'color')
-  const textColor = pickPaletteColor(input.textColor, palette, 'textColor')
+  const color = pickPaletteColor(input.color, palette, adminColors, 'color')
+  const textColor = pickPaletteColor(input.textColor, palette, adminColors, 'textColor')
 
-  if (!template.sizes.includes(input.size)) throw bad('size is not available for this template.')
+  // Size: accept admin-configured sizes if any, else fall back to template sizes
+  if (adminSizes.length > 0) {
+    if (!adminSizes.some((s) => s.name === input.size)) throw bad('size is not available.')
+  } else {
+    if (!template.sizes.includes(input.size)) throw bad('size is not available for this template.')
+  }
 
-  const thickness = THICKNESSES[input.thickness]
-  if (!thickness) throw bad('thickness is not a supported option.')
+  // Thickness: accept admin-configured thicknesses if any, else fall back to hardcoded
+  let thickness
+  if (adminThicknesses.length > 0) {
+    if (!adminThicknesses.some((t) => t.name === input.thickness)) throw bad('thickness is not a supported option.')
+    // Use standard baseThicknessMm as the geometry default for admin-defined thicknesses
+    thickness = THICKNESSES.standard
+  } else {
+    thickness = THICKNESSES[input.thickness]
+    if (!thickness) throw bad('thickness is not a supported option.')
+  }
 
   let keyringPosition = null
   if (template.supportsKeyring) {
