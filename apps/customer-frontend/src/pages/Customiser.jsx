@@ -114,6 +114,9 @@ function CustomiserWorkspace({ options }) {
       : templateOption.sizes[0]
   const styleId = templateOption.styles.length ? (templateOption.styles.includes(styleChoice) ? styleChoice : templateOption.styles[0]) : null
 
+  const pricing = usePricing()
+  const customizerSettings = useCustomizerSettings()
+
   // Use admin-configured colors if available, else fall back to hardcoded material colors
   const hardcodedColors = useMemo(() => options.materials.find((m) => m.name === material)?.colors ?? [], [options.materials, material])
   const availableColors = useMemo(() => {
@@ -152,8 +155,6 @@ function CustomiserWorkspace({ options }) {
   // (subtitle contributes 0 when empty/unsupported by this template). Never
   // hardcoded here. Only the price the server calculates when the design is
   // added to the cart is authoritative; this is the live, as-you-type estimate.
-  const pricing = usePricing()
-  const customizerSettings = useCustomizerSettings()
   const nameCharacterCount = useMemo(() => countBillableCharacters(text), [text])
   const subtitleCharacterCount = useMemo(() => countBillableCharacters(cleanSubtitle), [cleanSubtitle])
   const billableCharacterCount = nameCharacterCount + subtitleCharacterCount
