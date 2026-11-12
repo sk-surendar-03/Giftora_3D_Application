@@ -4,7 +4,6 @@ import Banner from '../../components/Banner.jsx'
 import { slugify } from '../../utils/slugify.js'
 import { fetchCategories } from '../../features/categories/categoriesApi.js'
 import { fetchAdminProducts, createProduct, updateProduct, uploadProductModel } from '../../features/products/productsApi.js'
-import ColorPaletteEditor from './ColorPaletteEditor.jsx'
 import MaterialOptionsEditor from './MaterialOptionsEditor.jsx'
 import SizeOptionsEditor from './SizeOptionsEditor.jsx'
 import ShippingMethodsEditor from './ShippingMethodsEditor.jsx'
@@ -356,16 +355,6 @@ export default function ProductForm() {
               />
             </div>
 
-            <div className="rounded-lg border border-line bg-surface p-6 flex-1">
-              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider border-b border-line pb-2 mb-4">Colors by Material</h2>
-              <ColorPaletteEditor
-                materials={form.materialOptions.length > 0
-                  ? form.materialOptions.map((m) => m.name)
-                  : parseListField(form.materials)}
-                value={form.colorsByMaterial || {}}
-                onChange={(v) => update('colorsByMaterial', v)}
-              />
-            </div>
           </div>
 
         </div>
