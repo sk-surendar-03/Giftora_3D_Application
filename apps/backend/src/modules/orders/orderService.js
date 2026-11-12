@@ -87,6 +87,10 @@ export async function createOrder(userId, { addressId, idempotencyKey }) {
         // separate base price; see cartService.js's addItem.
         const subtotalCents = cart.items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0)
         const shippingCents = cart.items.reduce((sum, item) => {
+          const selMethod = item.customization?.shippingMethod
+          if (selMethod && typeof selMethod.priceCents === 'number') {
+            return sum + selMethod.priceCents
+          }
           if (item.itemType === 'PRODUCT' && item.product?.shippingCents > 0) {
             return sum + item.product.shippingCents * item.quantity
           }
