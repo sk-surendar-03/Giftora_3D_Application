@@ -99,9 +99,9 @@ export async function reviewCheckout(userId, addressId) {
       // Use the customer's selected shipping method if stored in customization
       const selMethod = item.customization?.shippingMethod
       if (selMethod && typeof selMethod.priceCents === 'number') {
-        shippingCents += selMethod.priceCents * item.quantity
+        shippingCents += selMethod.priceCents
       } else if (item.product.shippingCents > 0) {
-        shippingCents += item.product.shippingCents * item.quantity
+        shippingCents += item.product.shippingCents
       }
     }
   }

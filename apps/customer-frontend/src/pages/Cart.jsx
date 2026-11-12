@@ -75,7 +75,7 @@ export default function Cart() {
   const totalShippingCents = cart.items.reduce((sum, item) => {
     if (item.itemType === 'PRODUCT') {
       const shipCents = item.customization?.shippingMethod?.priceCents ?? item.product?.shippingCents ?? 0
-      return sum + shipCents * item.quantity
+      return sum + shipCents
     }
     return sum
   }, 0)
@@ -154,11 +154,6 @@ export default function Cart() {
                                 <span className="font-medium text-muted bg-soft px-2 py-0.5 rounded-full border border-line">
                                   {shipLabel ? <>{shipLabel}: </> : 'Shipping: '}
                                   <span className="font-semibold text-ink">₹{(shipCents / 100).toFixed(2).replace(/\.00$/, '')}</span>
-                                  {item.quantity > 1 && (
-                                    <span className="text-muted/70 ml-1">
-                                      (₹{((shipCents * item.quantity) / 100).toFixed(2).replace(/\.00$/, '')} total)
-                                    </span>
-                                  )}
                                 </span>
                               )
                             }
