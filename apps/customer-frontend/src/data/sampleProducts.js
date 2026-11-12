@@ -6,8 +6,8 @@
 export function colorsForMaterial(product, material) {
   const byMaterial = product.colorsByMaterial
   if (byMaterial && typeof byMaterial === 'object') {
-    // exact match first, then first available material's colors as fallback
-    return byMaterial[material] ?? Object.values(byMaterial)[0] ?? product.colors
+    // exact match only — no fallback to another material's colors
+    return byMaterial[material] ?? []
   }
   return product.colors
 }

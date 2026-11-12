@@ -41,13 +41,34 @@ function ProductDetailView({ slug }) {
     ? product.shippingMethods
     : null
 
-  const firstMaterial = materialOptions ? materialOptions[0].name : product?.materials?.[0]
-  const [material, setMaterial] = useState(firstMaterial)
-  const [color, setColor] = useState(product ? colorsForMaterial(product, firstMaterial)?.[0] : undefined)
-  const [size, setSize] = useState(sizeOptions ? sizeOptions[0].name : product?.sizes?.[0])
-  const [selectedShipping, setSelectedShipping] = useState(shippingMethods ? shippingMethods[0] : null)
+  const [material, setMaterial] = useState(null)
+  const [color, setColor] = useState(null)
+  const [size, setSize] = useState(null)
+  const [selectedShipping, setSelectedShipping] = useState(null)
   const [quantity, setQuantity] = useState(1)
   const [showModel, setShowModel] = useState(false)
+
+  // Set defaults once product loads (useState initial values run before product is available)
+  useEffect(() => {
+    if (!product) return
+    const matOpts = Array.isArray(product.materialOptions) && product.materialOptions.length > 0 ? product.materialOptions : null
+    const sizeOpts = Array.isArray(product.sizeOptions) && product.sizeOptions.length > 0 ? product.sizeOptions : null
+    const shipMethods = Array.isArray(product.shippingMethods) && product.shippingMethods.length > 0 ? product.shippingMethods : null
+    const defaultMat = matOpts ? matOpts[0].name : product.materials?.[0] ?? null
+    setMaterial((prev) => prev ?? defaultMat)
+    setSize((prev) => prev ?? (sizeOpts ? sizeOpts[0].name : product.sizes?.[0] ?? null))
+    setSelectedShipping((prev) => prev ?? (shipMethods ? shipMethods[0] : null))
+    const initColors = colorsForMaterial(product, defaultMat)
+    setColor((prev) => prev ?? initColors?.[0] ?? null)
+  }, [product])
+
+  // When material changes, reset color to first available for that material
+  useEffect(() => {
+    if (!product || !material) return
+    const cols = colorsForMaterial(product, material)
+    if (!cols?.length) { setColor(null); return }
+    setColor((prev) => cols.some((c) => c.label === prev?.label) ? prev : cols[0])
+  }, [material, product])
 
   // Dynamic price from selected material + size options
   const selectedMaterialOption = materialOptions?.find((m) => m.name === material)
@@ -65,13 +86,7 @@ function ProductDetailView({ slug }) {
   const effectiveShippingPrice = effectiveShippingCents / 100
   const isFreeShipping = effectiveShippingCents === 0
 
-  const availableColors = product ? colorsForMaterial(product, material) : undefined
-
-  useEffect(() => {
-    if (!availableColors?.length) return
-    if (availableColors.some((option) => option.label === color?.label)) return
-    setColor(availableColors[0])
-  }, [material, product])
+  const availableColors = product ? colorsForMaterial(product, material) : []
 
   // Ensure the viewport is at the top whenever this product is opened or changes
   useEffect(() => {
