@@ -58,114 +58,101 @@ function MaterialFilterPopup({ materials, colorsByMaterial, assigned, onToggle, 
     onColorsByMaterialChange(updated)
   }
 
-  if (!materials || materials.length === 0) {
-    return (
-      <div ref={ref} className="absolute top-10 left-0 z-50 w-64 rounded-lg border border-line bg-[#141414] shadow-2xl p-3 text-xs text-muted">
-        Add materials in the Materials &amp; Pricing section first.
-      </div>
-    )
-  }
-
   return (
-    <div ref={ref} className="absolute top-10 left-0 z-50 w-80 rounded-lg border border-line bg-[#141414] shadow-2xl overflow-hidden">
-      <div className="max-h-[400px] overflow-y-auto p-3 space-y-4">
-        {materials.map((mat) => {
-          const colors = Array.isArray(colorsByMaterial[mat]) ? colorsByMaterial[mat] : []
-          const matChecked = assigned.includes(mat)
-          const draft = getDraft(mat)
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="absolute inset-0 bg-black/60" />
+      <div ref={ref} className="relative z-10 w-full max-w-2xl rounded-xl border border-line bg-[#141414] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
 
-          return (
-            <div key={mat} className="space-y-2">
-              {/* Material row with checkbox */}
-              <div className="flex items-center gap-2 pb-1 border-b border-line">
-                <input type="checkbox" checked={matChecked} onChange={() => onToggle(mat)} className="h-3.5 w-3.5 accent-amber-500 cursor-pointer" />
-                <span className={`text-[12px] font-bold flex-1 ${matChecked ? 'text-accent' : 'text-ink'}`}>{mat}</span>
-              </div>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-line bg-[#0D0D0D]">
+          <span className="text-[13px] font-bold text-ink">Assign Materials &amp; Colors to this Image</span>
+          <button type="button" onClick={onClose} className="text-muted hover:text-ink cursor-pointer text-xl leading-none px-1">×</button>
+        </div>
 
-              {/* Existing colors */}
-              {colors.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pl-1">
-                  {colors.map((c, idx) => {
-                    const tag = `${mat}/${c.label}`
-                    const colorChecked = assigned.includes(tag)
-                    return (
-                      <div key={idx} className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] transition-colors ${colorChecked ? 'border-accent bg-accent/20' : 'border-line'}`}>
-                        <button type="button" onClick={() => onToggle(tag)} className="flex items-center gap-1 cursor-pointer" title={`Tag image for ${mat} / ${c.label}`}>
-                          <span className="h-3 w-3 rounded-full border border-white/20 shrink-0" style={{ backgroundColor: c.hex }} />
-                          <span className={colorChecked ? 'text-accent font-semibold' : 'text-muted'}>{c.label}</span>
-                        </button>
-                        <button type="button" onClick={() => removeColor(mat, idx)} className="text-muted hover:text-red-400 cursor-pointer ml-0.5 text-[10px]" title="Remove color">×</button>
+        {!materials || materials.length === 0 ? (
+          <div className="p-5 text-xs text-muted">Add materials in the Materials &amp; Pricing section first.</div>
+        ) : (
+          <div className="overflow-y-auto p-4 flex-1">
+            <div className="grid grid-cols-2 gap-4">
+              {materials.map((mat) => {
+                const colors = Array.isArray(colorsByMaterial[mat]) ? colorsByMaterial[mat] : []
+                const matChecked = assigned.includes(mat)
+                const draft = getDraft(mat)
+
+                return (
+                  <div key={mat} className="rounded-lg border border-line bg-[#1a1a1a] p-3 space-y-2">
+                    {/* Material checkbox row */}
+                    <div className="flex items-center gap-2 pb-1.5 border-b border-line">
+                      <input type="checkbox" checked={matChecked} onChange={() => onToggle(mat)} className="h-3.5 w-3.5 accent-amber-500 cursor-pointer" />
+                      <span className={`text-[12px] font-bold flex-1 truncate ${matChecked ? 'text-accent' : 'text-ink'}`}>{mat}</span>
+                    </div>
+
+                    {/* Existing color tags */}
+                    {colors.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {colors.map((c, idx) => {
+                          const tag = `${mat}/${c.label}`
+                          const colorChecked = assigned.includes(tag)
+                          return (
+                            <div key={idx} className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] transition-colors ${colorChecked ? 'border-accent bg-accent/20' : 'border-line'}`}>
+                              <button type="button" onClick={() => onToggle(tag)} className="flex items-center gap-1 cursor-pointer">
+                                <span className="h-2.5 w-2.5 rounded-full border border-white/20 shrink-0" style={{ backgroundColor: c.hex }} />
+                                <span className={colorChecked ? 'text-accent font-semibold' : 'text-muted'}>{c.label}</span>
+                              </button>
+                              <button type="button" onClick={() => removeColor(mat, idx)} className="text-muted hover:text-red-400 cursor-pointer text-[10px] ml-0.5">×</button>
+                            </div>
+                          )
+                        })}
                       </div>
-                    )
-                  })}
-                </div>
-              )}
+                    )}
 
-              {/* Preset colors — click to toggle add/remove instantly */}
-              <div className="pl-1 space-y-1.5">
-                <p className="text-[10px] text-muted">Click presets to add/remove · multiple allowed</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {PRESET_COLORS.map((p) => {
-                    const already = colors.some((c) => c.label === p.label)
-                    return (
-                      <button
-                        key={p.label}
-                        type="button"
-                        title={p.label}
-                        onClick={() => {
-                          if (already) {
-                            const idx = colors.findIndex((c) => c.label === p.label)
-                            removeColor(mat, idx)
-                          } else {
-                            const updated = { ...colorsByMaterial, [mat]: [...colors, { label: p.label, hex: p.hex }] }
-                            onColorsByMaterialChange(updated)
-                          }
-                        }}
-                        className={`h-5 w-5 rounded-full border-2 cursor-pointer transition-all hover:scale-110 ${
-                          already ? 'border-accent ring-1 ring-accent scale-110' : 'border-white/20'
-                        }`}
-                        style={{ backgroundColor: p.hex }}
-                      />
-                    )
-                  })}
-                </div>
+                    {/* Preset dots */}
+                    <div className="space-y-1">
+                      <p className="text-[9px] text-muted">Click to add/remove</p>
+                      <div className="flex flex-wrap gap-1">
+                        {PRESET_COLORS.map((p) => {
+                          const already = colors.some((c) => c.label === p.label)
+                          return (
+                            <button key={p.label} type="button" title={p.label}
+                              onClick={() => {
+                                if (already) { removeColor(mat, colors.findIndex((c) => c.label === p.label)) }
+                                else { onColorsByMaterialChange({ ...colorsByMaterial, [mat]: [...colors, { label: p.label, hex: p.hex }] }) }
+                              }}
+                              className={`h-4 w-4 rounded-full border-2 cursor-pointer transition-all hover:scale-110 ${already ? 'border-accent ring-1 ring-accent scale-110' : 'border-white/20'}`}
+                              style={{ backgroundColor: p.hex }}
+                            />
+                          )
+                        })}
+                      </div>
+                    </div>
 
-                {/* Custom color row for non-preset colors */}
-                <div className="flex items-center gap-1.5 pt-0.5">
-                  <input
-                    type="color"
-                    value={draft.hex}
-                    onChange={(e) => setDraft(mat, { hex: e.target.value })}
-                    className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 shrink-0"
-                    title="Custom color"
-                  />
-                  <input
-                    type="text"
-                    value={draft.label}
-                    onChange={(e) => setDraft(mat, { label: e.target.value })}
-                    onKeyDown={(e) => e.key === 'Enter' && addColor(mat)}
-                    placeholder="Custom color name"
-                    className="flex-1 rounded border border-line bg-surface px-2 py-0.5 text-[11px] text-ink outline-none focus:border-accent"
-                  />
-                  <button type="button" onClick={() => addColor(mat)} className="rounded bg-accent px-2 py-0.5 text-[11px] font-bold text-white cursor-pointer hover:bg-amber-600 whitespace-nowrap">+ Add</button>
-                </div>
-              </div>
+                    {/* Custom color */}
+                    <div className="flex items-center gap-1 pt-0.5">
+                      <input type="color" value={draft.hex} onChange={(e) => setDraft(mat, { hex: e.target.value })}
+                        className="h-5 w-5 rounded cursor-pointer border-0 bg-transparent p-0 shrink-0" />
+                      <input type="text" value={draft.label} onChange={(e) => setDraft(mat, { label: e.target.value })}
+                        onKeyDown={(e) => e.key === 'Enter' && addColor(mat)} placeholder="Custom name"
+                        className="flex-1 min-w-0 rounded border border-line bg-surface px-1.5 py-0.5 text-[10px] text-ink outline-none focus:border-accent" />
+                      <button type="button" onClick={() => addColor(mat)}
+                        className="rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold text-white cursor-pointer hover:bg-amber-600 whitespace-nowrap shrink-0">+Add</button>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          )
-        })}
-      </div>
-      <div className="border-t border-line px-3 py-2.5 bg-[#0D0D0D] flex items-center justify-between gap-2">
-        <span className="text-[10px] text-muted">Check material or color to tag this image · Untagged = shows for all</span>
-        {onSave && (
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={saving}
-            className="shrink-0 rounded bg-accent px-3 py-1 text-[11px] font-bold text-white cursor-pointer hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? 'Saving…' : saveStatus === 'ok' ? '✓ Saved' : saveStatus === 'err' ? 'Error!' : 'Save'}
-          </button>
+          </div>
         )}
+
+        {/* Footer */}
+        <div className="border-t border-line px-5 py-3 bg-[#0D0D0D] flex items-center justify-between gap-3">
+          <span className="text-[10px] text-muted">Checked = image tagged to that material/color · Untagged = shows for all</span>
+          {onSave && (
+            <button type="button" onClick={onSave} disabled={saving}
+              className="shrink-0 rounded-md bg-accent px-4 py-1.5 text-[12px] font-bold text-white cursor-pointer hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed">
+              {saving ? 'Saving…' : saveStatus === 'ok' ? '✓ Saved!' : saveStatus === 'err' ? 'Error!' : 'Save to DB'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

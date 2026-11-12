@@ -182,16 +182,41 @@ export default function Checkout() {
               <h3 className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent m-0 mb-4">
                 2. Shipping method
               </h3>
-              <div className="rounded-control border border-accent bg-soft p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-on-accent text-[11px] font-bold">✓</span>
-                  <div>
-                    <div className="font-sans text-[14.5px] font-semibold text-ink">Standard Dispatch</div>
-                    <div className="text-[12.5px] text-muted">Dispatched in 3 working days via tracked express courier</div>
-                  </div>
+              {review.data?.items?.length > 0 ? (
+                <div className="space-y-2">
+                  {review.data.items.filter((it) => it.itemType === 'PRODUCT').map((it) => {
+                    const sm = it.customization?.shippingMethod
+                    const shipCents = sm?.priceCents ?? it.product?.shippingCents ?? 0
+                    const shipName = sm?.name ?? 'Standard Shipping'
+                    const shipDays = sm?.estimatedDays ?? null
+                    return (
+                      <div key={it.id} className="rounded-control border border-accent bg-soft p-4 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent text-[11px] font-bold">✓</span>
+                          <div className="min-w-0">
+                            <div className="font-sans text-[14px] font-semibold text-ink capitalize">{shipName}</div>
+                            <div className="text-[12px] text-muted truncate">
+                              {it.title}
+                              {shipDays && ` · ${shipDays}`}
+                            </div>
+                          </div>
+                        </div>
+                        <span className={`text-[13.5px] font-bold shrink-0 ${shipCents === 0 ? 'text-[#17683f]' : 'text-ink'}`}>
+                          {shipCents === 0 ? 'FREE' : `₹${(shipCents / 100).toFixed(2).replace(/\.00$/, '')}`}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
-                <span className="text-[13.5px] font-bold text-[#17683f]">FREE</span>
-              </div>
+              ) : (
+                <div className="rounded-control border border-accent bg-soft p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-on-accent text-[11px] font-bold">✓</span>
+                    <div className="font-sans text-[14.5px] font-semibold text-ink">Standard Dispatch</div>
+                  </div>
+                  <span className="text-[13.5px] font-bold text-[#17683f]">FREE</span>
+                </div>
+              )}
             </section>
 
             {/* Payment method card */}
