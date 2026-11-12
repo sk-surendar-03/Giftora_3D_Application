@@ -1,6 +1,6 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
-import { getPricingConfig } from '../settings/settingsService.js'
+import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses } from '../settings/settingsService.js'
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { priceForDesign, stlIsAvailable } from '../customizer/designService.js'
 
@@ -103,16 +103,28 @@ export async function addCustomItem(userId, { customDesignId, quantity, shipping
     })
   }
 
-  const { perCharacterPriceCents, baseCharacters, basePriceCents } = await getPricingConfig()
-  const customization = shippingMethod && typeof shippingMethod.name === 'string' ? { shippingMethod } : undefined
+  const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }] =
+    await Promise.all([getPricingConfig(), getCustomizerSizes(), getCustomizerThicknesses()])
+
+  const charPrice = priceForDesign(design.params, perCharacterPriceCents, baseCharacters, basePriceCents)
+  const sizePriceCents = adminSizes.find((s) => s.name === design.params.size)?.priceCents ?? 0
+  const thicknessPriceCents = adminThicknesses.find((t) => t.name === design.params.thickness)?.priceCents ?? 0
+  const unitPriceCents = charPrice + sizePriceCents + thicknessPriceCents
+
+  const customizationData = {
+    ...(shippingMethod && typeof shippingMethod.name === 'string' ? { shippingMethod } : {}),
+    ...(sizePriceCents > 0 ? { sizePriceCents } : {}),
+    ...(thicknessPriceCents > 0 ? { thicknessPriceCents } : {}),
+  }
+
   return prisma.cartItem.create({
     data: {
       cartId: cart.id,
       itemType: 'CUSTOM_DESIGN',
       customDesignId: design.id,
       quantity,
-      unitPriceCents: priceForDesign(design.params, perCharacterPriceCents, baseCharacters, basePriceCents),
-      ...(customization ? { customization } : {}),
+      unitPriceCents,
+      ...(Object.keys(customizationData).length > 0 ? { customization: customizationData } : {}),
     },
     include: { product: true, customDesign: true },
   })

@@ -1,7 +1,7 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
 import { getOrCreateCart } from '../cart/cartService.js'
-import { getPricingConfig } from '../settings/settingsService.js'
+import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses } from '../settings/settingsService.js'
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { priceForDesign, stlIsAvailable, toPublicDesign } from '../customizer/designService.js'
 
@@ -24,7 +24,8 @@ export async function reviewCheckout(userId, addressId) {
     throw new HttpError(404, 'Address not found.')
   }
 
-  const { perCharacterPriceCents, baseCharacters, basePriceCents } = await getPricingConfig()
+  const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }] =
+    await Promise.all([getPricingConfig(), getCustomizerSizes(), getCustomizerThicknesses()])
 
   let subtotalCents = 0
   const items = []
@@ -41,7 +42,10 @@ export async function reviewCheckout(userId, addressId) {
     const available = isCustom ? await stlIsAvailable(design) : product.isActive
     let currentUnitPriceCents
     if (isCustom) {
-      currentUnitPriceCents = priceForDesign(design.params, perCharacterPriceCents)
+      const charPrice = priceForDesign(design.params, perCharacterPriceCents, baseCharacters, basePriceCents)
+      const sizePriceCents = adminSizes.find((s) => s.name === design.params.size)?.priceCents ?? 0
+      const thicknessPriceCents = adminThicknesses.find((t) => t.name === design.params.thickness)?.priceCents ?? 0
+      currentUnitPriceCents = charPrice + sizePriceCents + thicknessPriceCents
     } else {
       const matOpts = Array.isArray(product?.materialOptions) ? product.materialOptions : []
       const sizeOpts = Array.isArray(product?.sizeOptions) ? product.sizeOptions : []
