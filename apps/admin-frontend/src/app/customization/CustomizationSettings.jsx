@@ -126,23 +126,34 @@ function ColorManager({ colors, onChange }) {
 }
 
 // ─── Shipping Manager ─────────────────────────────────────────────────────────
-function ShippingManager({ methods, onChange }) {
+function ShippingManager({ methods, onChange, onAutoSave }) {
   const [draft, setDraft] = useState({ name: '', price: '', days: '' })
   const [editIndex, setEditIndex] = useState(null)
   const [editDraft, setEditDraft] = useState(null)
+  const [autoSaving, setAutoSaving] = useState(false)
+  const [autoStatus, setAutoStatus] = useState(null)
+
+  async function commit(newMethods) {
+    onChange(newMethods)
+    if (!onAutoSave) return
+    setAutoSaving(true); setAutoStatus(null)
+    try { await onAutoSave(newMethods); setAutoStatus('ok'); setTimeout(() => setAutoStatus(null), 2000) }
+    catch { setAutoStatus('err'); setTimeout(() => setAutoStatus(null), 3000) }
+    setAutoSaving(false)
+  }
 
   function add() {
     const name = draft.name.trim(); const price = parseFloat(draft.price)
     if (!name || !Number.isFinite(price) || price < 0) return
-    onChange([...methods, { name, priceCents: Math.round(price * 100), estimatedDays: draft.days.trim() || undefined }])
+    commit([...methods, { name, priceCents: Math.round(price * 100), estimatedDays: draft.days.trim() || undefined }])
     setDraft({ name: '', price: '', days: '' })
   }
-  function remove(i) { onChange(methods.filter((_, idx) => idx !== i)) }
+  function remove(i) { commit(methods.filter((_, idx) => idx !== i)) }
   function startEdit(i) { setEditIndex(i); setEditDraft({ name: methods[i].name, price: String(methods[i].priceCents / 100), days: methods[i].estimatedDays || '' }) }
   function saveEdit() {
     const name = editDraft.name.trim(); const price = parseFloat(editDraft.price)
     if (!name || !Number.isFinite(price) || price < 0) return
-    onChange(methods.map((m, i) => i === editIndex ? { name, priceCents: Math.round(price * 100), estimatedDays: editDraft.days.trim() || undefined } : m))
+    commit(methods.map((m, i) => i === editIndex ? { name, priceCents: Math.round(price * 100), estimatedDays: editDraft.days.trim() || undefined } : m))
     setEditIndex(null); setEditDraft(null)
   }
 
@@ -162,7 +173,9 @@ function ShippingManager({ methods, onChange }) {
                     className="w-16 rounded border border-line px-2 py-1 text-xs" />
                   <input value={editDraft.days} onChange={(e) => setEditDraft((p) => ({ ...p, days: e.target.value }))}
                     className="w-20 rounded border border-line px-2 py-1 text-xs" placeholder="3-5 days" />
-                  <button type="button" onClick={saveEdit} className="rounded bg-accent px-2 py-1 text-xs font-semibold text-white cursor-pointer">Save</button>
+                  <button type="button" onClick={saveEdit} disabled={autoSaving} className="rounded bg-accent px-2 py-1 text-xs font-semibold text-white cursor-pointer disabled:opacity-50">
+                    {autoSaving ? '…' : 'Save'}
+                  </button>
                   <button type="button" onClick={() => setEditIndex(null)} className="text-xs text-muted hover:text-ink cursor-pointer">✕</button>
                 </>
               ) : (
@@ -171,7 +184,7 @@ function ShippingManager({ methods, onChange }) {
                   {m.estimatedDays && <span className="text-[10px] text-muted">{m.estimatedDays}</span>}
                   <span className="text-xs font-semibold text-accent">{m.priceCents === 0 ? 'Free' : `₹${(m.priceCents / 100).toFixed(2).replace(/\.00$/, '')}`}</span>
                   <button type="button" onClick={() => startEdit(i)} className="text-xs text-muted hover:text-ink cursor-pointer">✎</button>
-                  <button type="button" onClick={() => remove(i)} className="text-xs text-muted hover:text-danger cursor-pointer">✕</button>
+                  <button type="button" onClick={() => remove(i)} disabled={autoSaving} className="text-xs text-muted hover:text-danger cursor-pointer disabled:opacity-50">✕</button>
                 </>
               )}
             </div>
@@ -187,33 +200,49 @@ function ShippingManager({ methods, onChange }) {
           placeholder="0" className="rounded-md border border-line px-2 py-1.5 text-xs" />
         <input value={draft.days} onChange={(e) => setDraft((p) => ({ ...p, days: e.target.value }))}
           placeholder="3-5 days" className="rounded-md border border-line px-2 py-1.5 text-xs" />
-        <button type="button" onClick={add} disabled={!draft.name.trim() || draft.price === ''}
+        <button type="button" onClick={add} disabled={!draft.name.trim() || draft.price === '' || autoSaving}
           className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
-          + Add
+          {autoSaving ? '…' : '+ Add'}
         </button>
       </div>
+      {autoStatus && (
+        <p className={`text-[10px] font-medium ${autoStatus === 'ok' ? 'text-green-500' : 'text-danger'}`}>
+          {autoStatus === 'ok' ? '✓ Saved to database' : '✗ Save failed — try again'}
+        </p>
+      )}
     </div>
   )
 }
 
 // ─── Generic price list editor (sizes, thicknesses) ──────────────────────────
-function PriceListEditor({ items, onChange, namePlaceholder = 'Name' }) {
+function PriceListEditor({ items, onChange, onAutoSave, namePlaceholder = 'Name' }) {
   const [draft, setDraft] = useState({ name: '', price: '' })
   const [editIndex, setEditIndex] = useState(null)
   const [editDraft, setEditDraft] = useState(null)
+  const [autoSaving, setAutoSaving] = useState(false)
+  const [autoStatus, setAutoStatus] = useState(null)
+
+  async function commit(newItems) {
+    onChange(newItems)
+    if (!onAutoSave) return
+    setAutoSaving(true); setAutoStatus(null)
+    try { await onAutoSave(newItems); setAutoStatus('ok'); setTimeout(() => setAutoStatus(null), 2000) }
+    catch { setAutoStatus('err'); setTimeout(() => setAutoStatus(null), 3000) }
+    setAutoSaving(false)
+  }
 
   function add() {
     const name = draft.name.trim(); const price = parseFloat(draft.price)
     if (!name || !Number.isFinite(price) || price < 0) return
-    onChange([...items, { name, priceCents: Math.round(price * 100) }])
+    commit([...items, { name, priceCents: Math.round(price * 100) }])
     setDraft({ name: '', price: '' })
   }
-  function remove(i) { onChange(items.filter((_, idx) => idx !== i)) }
+  function remove(i) { commit(items.filter((_, idx) => idx !== i)) }
   function startEdit(i) { setEditIndex(i); setEditDraft({ name: items[i].name, price: String(items[i].priceCents / 100) }) }
   function saveEdit() {
     const name = editDraft.name.trim(); const price = parseFloat(editDraft.price)
     if (!name || !Number.isFinite(price) || price < 0) return
-    onChange(items.map((item, i) => i === editIndex ? { name, priceCents: Math.round(price * 100) } : item))
+    commit(items.map((item, i) => i === editIndex ? { name, priceCents: Math.round(price * 100) } : item))
     setEditIndex(null); setEditDraft(null)
   }
 
@@ -257,11 +286,16 @@ function PriceListEditor({ items, onChange, namePlaceholder = 'Name' }) {
           onChange={(e) => setDraft((p) => ({ ...p, price: e.target.value }))}
           placeholder="0" className="w-20 rounded-md border border-line px-3 py-1.5 text-xs"
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
-        <button type="button" onClick={add} disabled={!draft.name.trim() || draft.price === ''}
+        <button type="button" onClick={add} disabled={!draft.name.trim() || draft.price === '' || autoSaving}
           className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
-          + Add
+          {autoSaving ? '…' : '+ Add'}
         </button>
       </div>
+      {autoStatus && (
+        <p className={`text-[10px] font-medium ${autoStatus === 'ok' ? 'text-green-500' : 'text-danger'}`}>
+          {autoStatus === 'ok' ? '✓ Saved to database' : '✗ Save failed — try again'}
+        </p>
+      )}
     </div>
   )
 }
@@ -462,19 +496,24 @@ export default function CustomizationSettings() {
             {/* Sizes */}
             <Card title="Size Options" description="Sizes shown in the customizer. Each size adds to the base character price. Set ₹0 for no extra charge."
               onSave={saveSizes} saving={savingSizes} saveStatus={sizesStatus}>
-              <PriceListEditor items={sizes} onChange={setSizes} namePlaceholder="Size (e.g. Small 4cm, Large 7cm)" />
+              <PriceListEditor items={sizes} onChange={setSizes}
+                onAutoSave={(newSizes) => updateCustomizerSizes(newSizes).then((s) => setSizes(s))}
+                namePlaceholder="Size (e.g. Small 4cm, Large 7cm)" />
             </Card>
 
             {/* Thicknesses */}
             <Card title="Base Thickness Options" description="Thickness choices in the customizer. Each option adds to the total price."
               onSave={saveThicknesses} saving={savingThicknesses} saveStatus={thicknessesStatus}>
-              <PriceListEditor items={thicknesses} onChange={setThicknesses} namePlaceholder="Thickness (e.g. Standard, Premium)" />
+              <PriceListEditor items={thicknesses} onChange={setThicknesses}
+                onAutoSave={(newThicknesses) => updateCustomizerThicknesses(newThicknesses).then((s) => setThicknesses(s))}
+                namePlaceholder="Thickness (e.g. Standard, Premium)" />
             </Card>
 
             {/* Shipping */}
             <Card title="Shipping Methods" description="Shipping options shown when customers order a customized item."
               onSave={saveShipping} saving={savingShipping} saveStatus={shippingStatus}>
-              <ShippingManager methods={shippingMethods} onChange={setShippingMethods} />
+              <ShippingManager methods={shippingMethods} onChange={setShippingMethods}
+                onAutoSave={(newMethods) => updateCustomizerShipping(newMethods).then((s) => setShippingMethods(s))} />
             </Card>
 
           </div>
