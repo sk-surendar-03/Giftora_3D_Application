@@ -13,9 +13,22 @@ function extractError(err) {
   return err.response?.data?.error ?? err.message ?? 'Upload failed.'
 }
 
-// Popup for assigning materials/colors to an image
-function MaterialFilterPopup({ materials, colorsByMaterial, assigned, onToggle, onClose }) {
+const PRESET_COLORS = [
+  { label: 'White', hex: '#f5f3ee' }, { label: 'Black', hex: '#1a1a1a' },
+  { label: 'Red', hex: '#b33a3a' }, { label: 'Natural', hex: '#e8d9b5' },
+  { label: 'Gold', hex: '#c9a227' }, { label: 'Silver', hex: '#c0c0c0' },
+  { label: 'Bronze', hex: '#8c6239' }, { label: 'Copper', hex: '#b5651d' },
+  { label: 'Steel Grey', hex: '#71797e' }, { label: 'Steel Silver', hex: '#c4c8cc' },
+  { label: 'Matte Black', hex: '#2a2a2a' }, { label: 'Gold Finish', hex: '#b9923f' },
+  { label: 'Clear', hex: '#eef2f3' }, { label: 'Frosted White', hex: '#f7f5f0' },
+  { label: 'Royal Blue', hex: '#1e3a8a' }, { label: 'Emerald Green', hex: '#047857' },
+  { label: 'Rose Gold', hex: '#b76e79' }, { label: 'Navy', hex: '#0f172a' },
+]
+
+// Full popup: material checkboxes + per-material color management (add/delete/tag)
+function MaterialFilterPopup({ materials, colorsByMaterial, assigned, onToggle, onColorsByMaterialChange, onClose }) {
   const ref = useRef(null)
+  const [drafts, setDrafts] = useState({}) // { [material]: { label, hex } }
 
   useEffect(() => {
     function onClickOutside(e) {
@@ -25,80 +38,115 @@ function MaterialFilterPopup({ materials, colorsByMaterial, assigned, onToggle, 
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [onClose])
 
-  // Collect unique colors across all materials
-  const allColors = []
-  const seen = new Set()
-  if (colorsByMaterial && typeof colorsByMaterial === 'object') {
-    Object.values(colorsByMaterial).forEach((cols) => {
-      if (Array.isArray(cols)) {
-        cols.forEach((c) => {
-          const key = c.label || c
-          if (!seen.has(key)) { seen.add(key); allColors.push(c) }
-        })
-      }
-    })
+  function getDraft(mat) {
+    return drafts[mat] || { label: '', hex: '#c9a227' }
+  }
+  function setDraft(mat, patch) {
+    setDrafts((prev) => ({ ...prev, [mat]: { ...getDraft(mat), ...patch } }))
+  }
+  function addColor(mat) {
+    const d = getDraft(mat)
+    if (!d.label.trim()) return
+    const existing = Array.isArray(colorsByMaterial[mat]) ? colorsByMaterial[mat] : []
+    const updated = { ...colorsByMaterial, [mat]: [...existing, { label: d.label.trim(), hex: d.hex }] }
+    onColorsByMaterialChange(updated)
+    setDrafts((prev) => ({ ...prev, [mat]: { label: '', hex: '#c9a227' } }))
+  }
+  function removeColor(mat, idx) {
+    const existing = Array.isArray(colorsByMaterial[mat]) ? colorsByMaterial[mat] : []
+    const updated = { ...colorsByMaterial, [mat]: existing.filter((_, i) => i !== idx) }
+    onColorsByMaterialChange(updated)
   }
 
-  const hasAnything = (materials && materials.length > 0) || allColors.length > 0
-
-  if (!hasAnything) {
+  if (!materials || materials.length === 0) {
     return (
-      <div ref={ref} className="absolute top-10 right-0 z-50 w-52 rounded-lg border border-line bg-[#141414] shadow-2xl p-3 text-xs text-muted">
-        Add materials or colors first to tag this image.
+      <div ref={ref} className="absolute top-10 right-0 z-50 w-60 rounded-lg border border-line bg-[#141414] shadow-2xl p-3 text-xs text-muted">
+        Add materials in the Materials & Pricing section first.
       </div>
     )
   }
 
   return (
-    <div ref={ref} className="absolute top-10 right-0 z-50 w-56 rounded-lg border border-line bg-[#141414] shadow-2xl p-3 space-y-3 max-h-72 overflow-y-auto">
-      {materials && materials.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-bold text-muted uppercase tracking-wider pb-1 border-b border-line">Materials</p>
-          {materials.map((mat) => {
-            const checked = assigned.includes(mat)
-            return (
-              <label key={mat} className="flex items-center gap-2 cursor-pointer select-none">
-                <input type="checkbox" checked={checked} onChange={() => onToggle(mat)} className="h-3.5 w-3.5 accent-amber-500" />
-                <span className={`text-[12px] ${checked ? 'text-ink font-semibold' : 'text-muted'}`}>{mat}</span>
-              </label>
-            )
-          })}
-        </div>
-      )}
+    <div ref={ref} className="absolute top-10 right-0 z-50 w-72 rounded-lg border border-line bg-[#141414] shadow-2xl overflow-hidden">
+      <div className="max-h-[420px] overflow-y-auto p-3 space-y-4">
+        {materials.map((mat) => {
+          const colors = Array.isArray(colorsByMaterial[mat]) ? colorsByMaterial[mat] : []
+          const matChecked = assigned.includes(mat)
+          const draft = getDraft(mat)
 
-      {allColors.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-bold text-muted uppercase tracking-wider pb-1 border-b border-line">Colors</p>
-          <div className="flex flex-wrap gap-1.5">
-            {allColors.map((c) => {
-              const label = c.label || c
-              const hex = c.hex || c
-              const checked = assigned.includes(label)
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => onToggle(label)}
-                  title={label}
-                  className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] cursor-pointer transition-colors ${
-                    checked ? 'border-accent bg-accent/20 text-accent font-semibold' : 'border-line text-muted hover:border-muted'
-                  }`}
-                >
-                  <span className="h-3 w-3 rounded-full border border-white/20 shrink-0" style={{ backgroundColor: hex }} />
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
+          return (
+            <div key={mat} className="space-y-2">
+              {/* Material row with checkbox */}
+              <div className="flex items-center gap-2 pb-1 border-b border-line">
+                <input type="checkbox" checked={matChecked} onChange={() => onToggle(mat)} className="h-3.5 w-3.5 accent-amber-500 cursor-pointer" />
+                <span className={`text-[12px] font-bold flex-1 ${matChecked ? 'text-accent' : 'text-ink'}`}>{mat}</span>
+              </div>
 
-      <p className="text-[10px] text-muted pt-1 border-t border-line">Untagged = shows for all</p>
+              {/* Existing colors */}
+              {colors.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pl-1">
+                  {colors.map((c, idx) => {
+                    const tag = `${mat}/${c.label}`
+                    const colorChecked = assigned.includes(tag)
+                    return (
+                      <div key={idx} className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] transition-colors ${colorChecked ? 'border-accent bg-accent/20' : 'border-line'}`}>
+                        <button type="button" onClick={() => onToggle(tag)} className="flex items-center gap-1 cursor-pointer" title={`Tag image for ${mat} / ${c.label}`}>
+                          <span className="h-3 w-3 rounded-full border border-white/20 shrink-0" style={{ backgroundColor: c.hex }} />
+                          <span className={colorChecked ? 'text-accent font-semibold' : 'text-muted'}>{c.label}</span>
+                        </button>
+                        <button type="button" onClick={() => removeColor(mat, idx)} className="text-muted hover:text-red-400 cursor-pointer ml-0.5 text-[10px]" title="Remove color">×</button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Add color row */}
+              <div className="pl-1 space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="color"
+                    value={draft.hex}
+                    onChange={(e) => setDraft(mat, { hex: e.target.value })}
+                    className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0"
+                    title="Pick color"
+                  />
+                  <input
+                    type="text"
+                    value={draft.label}
+                    onChange={(e) => setDraft(mat, { label: e.target.value })}
+                    onKeyDown={(e) => e.key === 'Enter' && addColor(mat)}
+                    placeholder="Color name"
+                    className="flex-1 rounded border border-line bg-surface px-2 py-0.5 text-[11px] text-ink outline-none focus:border-accent"
+                  />
+                  <button type="button" onClick={() => addColor(mat)} className="rounded bg-accent px-2 py-0.5 text-[11px] font-bold text-white cursor-pointer hover:bg-amber-600 whitespace-nowrap">+ Add</button>
+                </div>
+                {/* Presets */}
+                <div className="flex flex-wrap gap-1">
+                  {PRESET_COLORS.map((p) => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => setDraft(mat, { label: p.label, hex: p.hex })}
+                      title={p.label}
+                      className="h-4 w-4 rounded-full border border-white/20 cursor-pointer hover:scale-110 transition-transform"
+                      style={{ backgroundColor: p.hex }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <div className="border-t border-line px-3 py-2 text-[10px] text-muted bg-[#0D0D0D]">
+        Check material or color to tag this image · Untagged = shows for all
+      </div>
     </div>
   )
 }
 
-export default function ProductImagesSection({ images = [], onChange, materials = [], colorsByMaterial = {}, imageMaterials = {}, onImageMaterialsChange }) {
+export default function ProductImagesSection({ images = [], onChange, materials = [], colorsByMaterial = {}, onColorsByMaterialChange, imageMaterials = {}, onImageMaterialsChange }) {
   const [items, setItems] = useState([])
   const [dragOverZone, setDragOverZone] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState(null)
@@ -500,6 +548,7 @@ export default function ProductImagesSection({ images = [], onChange, materials 
                       colorsByMaterial={colorsByMaterial}
                       assigned={assignedMaterials}
                       onToggle={(tag) => handleToggleMaterial(item.url, tag)}
+                      onColorsByMaterialChange={onColorsByMaterialChange}
                       onClose={() => setFilterPopupId(null)}
                     />
                   )}

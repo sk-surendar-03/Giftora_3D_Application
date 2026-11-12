@@ -13,8 +13,9 @@ export default function ProductGallery({ product, activeColor, overrideImageUrl,
     const filtered = tagMap && activeMaterial
       ? allImages.filter((src) => {
           const tags = tagMap[src]
-          // Show image if: no tags (applies to all), or tagged for this material
-          return !tags || tags.length === 0 || tags.includes(activeMaterial)
+          if (!tags || tags.length === 0) return true // untagged = show for all
+          // Match exact material name OR material/color tags for this material
+          return tags.some((t) => t === activeMaterial || t.startsWith(`${activeMaterial}/`))
         })
       : allImages
 
