@@ -76,10 +76,10 @@ function AdminDetailsCard({ currentUser, onUserUpdated }) {
               placeholder="Your name" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">Phone</label>
+            <label className="block text-sm font-medium text-ink mb-1.5">Email</label>
             <input value={phone} onChange={(e) => setPhone(e.target.value)}
               className="w-full rounded-control border border-line bg-surface px-3.5 py-2 text-sm text-ink outline-none focus:border-brand"
-              placeholder="+91 98765 43210" />
+              placeholder="contact@example.com" />
           </div>
         </div>
 

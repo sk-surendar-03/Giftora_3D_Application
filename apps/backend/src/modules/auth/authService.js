@@ -60,7 +60,7 @@ export async function updateProfile(userId, { name, phone, currentPassword, newP
   }
 
   if (phone !== undefined) {
-    if (typeof phone !== 'string' || !/^[0-9+\-() ]{6,20}$/.test(phone.trim())) throw new HttpError(400, 'A valid phone number is required.')
+    if (typeof phone !== 'string' || !phone.trim()) throw new HttpError(400, 'Contact info is required.')
     data.phone = phone.trim()
   }
 
