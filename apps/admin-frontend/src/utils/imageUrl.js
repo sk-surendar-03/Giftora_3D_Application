@@ -7,7 +7,7 @@ export function resolveImageUrl(url) {
   if (/^(?:https?:)?\/\//i.test(url) || url.startsWith('blob:') || url.startsWith('data:')) {
     return url
   }
-  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1'
+  const apiBase = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1'
   const host = apiBase.replace(/\/api\/v1\/?$/, '')
   const path = url.startsWith('/') ? url : `/${url}`
   return `${host}${path}`
