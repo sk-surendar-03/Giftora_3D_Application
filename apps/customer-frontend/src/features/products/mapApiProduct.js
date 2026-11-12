@@ -51,5 +51,9 @@ export function mapApiProduct(apiProduct) {
     sizes: apiProduct.sizes ?? [],
     // STL/3MF preview model summary ({ format, sizeBytes, url }) or null.
     model: apiProduct.model ?? null,
+    // Structured pricing options added in Nov 2026
+    materialOptions: Array.isArray(apiProduct.materialOptions) ? apiProduct.materialOptions : null,
+    sizeOptions: Array.isArray(apiProduct.sizeOptions) ? apiProduct.sizeOptions : null,
+    shippingMethods: Array.isArray(apiProduct.shippingMethods) ? apiProduct.shippingMethods : null,
   }
 }
