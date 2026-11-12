@@ -104,7 +104,7 @@ function AdminDetailsCard({ currentUser, onUserUpdated }) {
                     className="absolute inset-y-0 right-0 flex items-center px-3 text-muted hover:text-ink cursor-pointer select-none"
                     tabIndex={-1}
                   >
-                    <span className="text-base leading-none">{show ? '🙈' : '👁'}</span>
+                    <span className="text-[11px] font-semibold">{show ? 'Hide' : 'Show'}</span>
                   </button>
                 </div>
               </div>

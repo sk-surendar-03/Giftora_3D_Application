@@ -60,8 +60,7 @@ export async function updateProfile(userId, { name, phone, currentPassword, newP
   }
 
   if (phone !== undefined) {
-    if (typeof phone !== 'string' || !phone.trim()) throw new HttpError(400, 'Contact info is required.')
-    data.phone = phone.trim()
+    data.phone = typeof phone === 'string' ? phone.trim() || null : null
   }
 
   if (newPassword !== undefined) {
