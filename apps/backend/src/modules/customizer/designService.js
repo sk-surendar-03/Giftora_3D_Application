@@ -65,7 +65,7 @@ export async function createDesign(userId, input) {
   const existing = await prisma.customDesign.findUnique({ where: { userId_paramsHash: { userId, paramsHash } } })
   if (existing) return { design: existing, created: false }
 
-  const { perCharacterPriceCents } = await getPricingConfig()
+  const { perCharacterPriceCents, baseCharacters, basePriceCents } = await getPricingConfig()
   try {
     const design = await prisma.customDesign.create({
       data: {
@@ -75,7 +75,7 @@ export async function createDesign(userId, input) {
         params,
         engineParams,
         paramsHash,
-        unitPriceCents: priceForDesign(params, perCharacterPriceCents),
+        unitPriceCents: priceForDesign(params, perCharacterPriceCents, baseCharacters, basePriceCents),
       },
     })
     return { design, created: true }

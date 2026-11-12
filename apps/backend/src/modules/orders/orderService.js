@@ -121,7 +121,7 @@ export async function createOrder(userId, { addressId, idempotencyKey }) {
                       productSlug: null,
                       productImage: null,
                       quantity: item.quantity,
-                      customization: item.customDesign.params,
+                      customization: { ...item.customDesign.params, ...(item.customization ?? {}) },
                       unitPriceCents: item.unitPriceCents,
                     }
                   : {
