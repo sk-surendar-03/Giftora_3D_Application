@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
 import Banner from '../../components/Banner.jsx'
-import api from '../../services/api.js'
-import { useAuth } from '../../features/auth/useAuth.js'
 import {
   fetchCustomizerColors,
   updateCustomizerColors,
@@ -321,114 +319,8 @@ function Card({ title, description, onSave, saving, saveStatus, children }) {
   )
 }
 
-// ─── Admin Details Card ───────────────────────────────────────────────────────
-function AdminDetailsCard({ currentUser, onUserUpdated }) {
-  const [name, setName] = useState(currentUser?.name ?? '')
-  const [phone, setPhone] = useState(currentUser?.phone ?? '')
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [status, setStatus] = useState(null) // 'ok' | 'err' | null
-  const [error, setError] = useState(null)
-
-  async function handleSave(e) {
-    e.preventDefault()
-    setError(null); setStatus(null)
-
-    if (newPassword && newPassword !== confirmPassword) {
-      setError('New passwords do not match.')
-      return
-    }
-
-    const body = {}
-    if (name.trim() !== (currentUser?.name ?? '')) body.name = name.trim()
-    if (phone.trim() !== (currentUser?.phone ?? '')) body.phone = phone.trim()
-    if (newPassword) { body.currentPassword = currentPassword; body.newPassword = newPassword }
-
-    if (Object.keys(body).length === 0) { setStatus('ok'); return }
-
-    setSaving(true)
-    try {
-      const { data } = await api.patch('/auth/me', body)
-      onUserUpdated(data.user)
-      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('')
-      setStatus('ok')
-      setTimeout(() => setStatus(null), 2500)
-    } catch (err) {
-      setError(err.response?.data?.error ?? err.message ?? 'Save failed.')
-      setStatus('err')
-    }
-    setSaving(false)
-  }
-
-  return (
-    <div className="rounded-card border border-line bg-surface p-5 shadow-sm flex flex-col gap-4">
-      <div className="border-b border-line pb-3 flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold text-ink">Admin Details</h2>
-          <p className="mt-0.5 text-xs text-muted">Update your name, phone, or change your password.</p>
-        </div>
-        <button type="button" onClick={handleSave} disabled={saving}
-          className="shrink-0 rounded-control bg-accent px-3 py-1.5 text-xs font-bold text-on-accent hover:bg-accent-dark transition-colors disabled:opacity-50 cursor-pointer shadow-sm">
-          {saving ? 'Saving…' : status === 'ok' ? '✓ Saved!' : status === 'err' ? 'Error!' : 'Save'}
-        </button>
-      </div>
-
-      {error && <div><Banner tone="error">{error}</Banner></div>}
-
-      <form onSubmit={handleSave} className="space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-ink mb-1">Full Name</label>
-            <input value={name} onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-accent"
-              placeholder="Your name" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-ink mb-1">Phone</label>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-accent"
-              placeholder="+91 98765 43210" />
-          </div>
-        </div>
-
-        <div className="pt-1 border-t border-line">
-          <p className="text-[10px] text-muted uppercase tracking-wide mb-2">Change Password (leave blank to keep current)</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-ink mb-1">Current Password</label>
-              <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-accent"
-                placeholder="••••••••" autoComplete="current-password" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-ink mb-1">New Password</label>
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-accent"
-                placeholder="••••••••" autoComplete="new-password" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-ink mb-1">Confirm New Password</label>
-              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-control border border-line px-3 py-2 text-sm text-ink outline-none focus:border-accent"
-                placeholder="••••••••" autoComplete="new-password" />
-            </div>
-          </div>
-        </div>
-
-        <div className="text-[11px] text-muted pt-1">
-          <span className="font-medium text-ink">Email:</span> {currentUser?.email ?? '—'} &nbsp;·&nbsp;
-          <span className="font-medium text-ink">Role:</span> {currentUser?.role ?? '—'}
-        </div>
-      </form>
-    </div>
-  )
-}
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CustomizationSettings() {
-  const { user, updateUser } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
 
@@ -510,9 +402,6 @@ export default function CustomizationSettings() {
 
           {/* ── LEFT COLUMN ── */}
           <div className="space-y-6">
-
-            {/* Admin Details */}
-            <AdminDetailsCard currentUser={user} onUserUpdated={updateUser} />
 
             {/* Colors */}
             <Card title="Color Options" description="Colors customers can choose in the 3D customizer. These replace the default hardcoded palette."

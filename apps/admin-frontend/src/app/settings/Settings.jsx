@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import Banner from '../../components/Banner.jsx'
+import api from '../../services/api.js'
+import { useAuth } from '../../features/auth/useAuth.js'
 import {
   fetchPricing,
   updatePricing,
@@ -306,8 +308,114 @@ function PriceListEditor({ items, onChange, namePlaceholder = 'Name', pricePlace
   )
 }
 
+// ─── Admin Details Card ───────────────────────────────────────────────────────
+function AdminDetailsCard({ currentUser, onUserUpdated }) {
+  const [name, setName] = useState(currentUser?.name ?? '')
+  const [phone, setPhone] = useState(currentUser?.phone ?? '')
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [status, setStatus] = useState(null)
+  const [error, setError] = useState(null)
+
+  async function handleSave(e) {
+    e.preventDefault()
+    setError(null); setStatus(null)
+
+    if (newPassword && newPassword !== confirmPassword) {
+      setError('New passwords do not match.')
+      return
+    }
+
+    const body = {}
+    if (name.trim() !== (currentUser?.name ?? '')) body.name = name.trim()
+    if (phone.trim() !== (currentUser?.phone ?? '')) body.phone = phone.trim()
+    if (newPassword) { body.currentPassword = currentPassword; body.newPassword = newPassword }
+
+    if (Object.keys(body).length === 0) { setStatus('ok'); return }
+
+    setSaving(true)
+    try {
+      const { data } = await api.patch('/auth/me', body)
+      onUserUpdated(data.user)
+      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('')
+      setStatus('ok')
+      setTimeout(() => setStatus(null), 2500)
+    } catch (err) {
+      setError(err.response?.data?.error ?? err.message ?? 'Save failed.')
+      setStatus('err')
+    }
+    setSaving(false)
+  }
+
+  return (
+    <section className="rounded-card border border-line bg-surface p-6 shadow-sm">
+      <div className="border-b border-line pb-3 mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-base font-semibold text-ink">Admin Details</h2>
+          <p className="mt-1 text-xs text-muted">Update your name, phone number, or change your login password.</p>
+        </div>
+        <button type="button" onClick={handleSave} disabled={saving}
+          className="shrink-0 rounded-control bg-accent px-4 py-2 text-sm font-bold text-on-accent hover:bg-accent-dark transition-colors disabled:opacity-50 cursor-pointer shadow-sm">
+          {saving ? 'Saving…' : status === 'ok' ? '✓ Saved!' : status === 'err' ? 'Error!' : 'Save Changes'}
+        </button>
+      </div>
+
+      {error && <div className="mb-3"><Banner tone="error">{error}</Banner></div>}
+
+      <form onSubmit={handleSave} className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1.5">Full Name</label>
+            <input value={name} onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-control border border-line bg-surface px-3.5 py-2 text-sm text-ink outline-none focus:border-brand"
+              placeholder="Your name" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1.5">Phone</label>
+            <input value={phone} onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-control border border-line bg-surface px-3.5 py-2 text-sm text-ink outline-none focus:border-brand"
+              placeholder="+91 98765 43210" />
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-line">
+          <p className="text-xs text-muted uppercase tracking-wider font-semibold mb-2">Change Password <span className="normal-case font-normal">(leave blank to keep current)</span></p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1.5">Current Password</label>
+              <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full rounded-control border border-line bg-surface px-3.5 py-2 text-sm text-ink outline-none focus:border-brand"
+                placeholder="••••••••" autoComplete="current-password" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1.5">New Password</label>
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full rounded-control border border-line bg-surface px-3.5 py-2 text-sm text-ink outline-none focus:border-brand"
+                placeholder="••••••••" autoComplete="new-password" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1.5">Confirm New Password</label>
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-control border border-line bg-surface px-3.5 py-2 text-sm text-ink outline-none focus:border-brand"
+                placeholder="••••••••" autoComplete="new-password" />
+            </div>
+          </div>
+        </div>
+
+        <p className="text-xs text-muted">
+          <span className="font-medium text-ink">Email:</span> {currentUser?.email ?? '—'} &nbsp;·&nbsp;
+          <span className="font-medium text-ink">Role:</span> {currentUser?.role ?? '—'}
+        </p>
+      </form>
+    </section>
+  )
+}
+
 // ─── Main Settings Page ───────────────────────────────────────────────────────
 export default function Settings() {
+  const { user, updateUser } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
 
@@ -495,6 +603,9 @@ export default function Settings() {
         <p className="mt-6 text-sm text-muted">Loading settings…</p>
       ) : (
         <div className="mt-6 space-y-8">
+
+          {/* Admin Details */}
+          <AdminDetailsCard currentUser={user} onUserUpdated={updateUser} />
 
           {/* Announcement Bar */}
           <section className="rounded-card border border-line bg-surface p-6 shadow-sm">
