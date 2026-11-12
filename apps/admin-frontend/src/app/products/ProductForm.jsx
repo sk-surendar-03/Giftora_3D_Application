@@ -300,11 +300,6 @@ export default function ProductForm() {
                 imageMaterials={form.imageMaterials}
                 onImageMaterialsChange={(v) => update('imageMaterials', v)}
               />
-              <ModelUploadSection
-                productId={isEditing ? id : null}
-                model={model} onModelChange={setModel}
-                stagedFile={stagedModel} onStage={setStagedModel}
-              />
             </div>
           </div>
 
@@ -358,6 +353,15 @@ export default function ProductForm() {
                 className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
                 {submitting ? 'Saving…' : isEditing ? 'Save changes' : 'Create product'}
               </button>
+            </div>
+
+            <div className="rounded-lg border border-line bg-surface p-6 space-y-5">
+              <h2 className="text-sm font-semibold text-muted uppercase tracking-wider border-b border-line pb-2">3D Model</h2>
+              <ModelUploadSection
+                productId={isEditing ? id : null}
+                model={model} onModelChange={setModel}
+                stagedFile={stagedModel} onStage={setStagedModel}
+              />
             </div>
           </div>
 
