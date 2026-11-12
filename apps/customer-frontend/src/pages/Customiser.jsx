@@ -419,9 +419,6 @@ function CustomiserWorkspace({ options }) {
                       <button key={t.name} type="button" onClick={() => setThickness(t.name)}
                         className={`w-full flex items-center justify-between rounded-lg border px-4 py-2.5 text-left transition-colors ${isSelected ? 'border-accent bg-accent/10' : 'border-line bg-surface hover:border-accent/50'}`}>
                         <span className="text-sm font-medium text-ink">{t.name}</span>
-                        <span className={`text-sm font-bold ${isSelected ? 'text-accent' : 'text-muted'}`}>
-                          {t.priceCents === 0 ? 'Included' : `+₹${(t.priceCents / 100).toFixed(2).replace(/\.00$/, '')}`}
-                        </span>
                       </button>
                     )
                   })}
@@ -443,9 +440,6 @@ function CustomiserWorkspace({ options }) {
                           <button key={s.name} type="button" onClick={() => setSizeChoice(s.name)}
                             className={`w-full flex items-center justify-between rounded-lg border px-4 py-2.5 text-left transition-colors ${isSelected ? 'border-accent bg-accent/10' : 'border-line bg-surface hover:border-accent/50'}`}>
                             <span className="text-sm font-medium text-ink">{s.name}</span>
-                            <span className={`text-sm font-bold ${isSelected ? 'text-accent' : 'text-muted'}`}>
-                              {s.priceCents === 0 ? 'Included' : `+₹${(s.priceCents / 100).toFixed(2).replace(/\.00$/, '')}`}
-                            </span>
                           </button>
                         )
                       })}
@@ -505,22 +499,7 @@ function CustomiserWorkspace({ options }) {
               <h1 className="font-display text-[26px] max-[760px]:text-[22px] font-semibold text-ink leading-tight m-0">
                 Create Your Custom 3D Design
               </h1>
-              <p className="mt-1 font-sans text-[13px] text-muted">
-                {totalPriceRupees != null ? (
-                  <>
-                    <span className="font-semibold text-accent">₹{totalPriceRupees.toFixed(2)}</span>{' '}
-                    <span>
-                      {pricing.baseCharacters > 0 && pricing.basePriceCents > 0
-                      ? `(${billableCharacterCount} char${billableCharacterCount === 1 ? '' : 's'} · base ₹${(pricing.basePriceCents / 100).toFixed(0)} for ${pricing.baseCharacters}${billableCharacterCount > pricing.baseCharacters ? ` + ${billableCharacterCount - pricing.baseCharacters} × ₹${(pricing.perCharacterPriceCents / 100).toFixed(0)}` : ''})`
-                      : `(${billableCharacterCount} character${billableCharacterCount === 1 ? '' : 's'} × ₹${(pricing.perCharacterPriceCents / 100).toFixed(2)})`
-                    }
-                    </span>
-                  </>
-                ) : (
-                  'Calculating price…'
-                )}{' '}
-                · Real-time 3D solid model preview
-              </p>
+              <p className="mt-1 font-sans text-[13px] text-muted">Real-time 3D solid model preview</p>
             </div>
             <div className="hidden sm:block">
               <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${
