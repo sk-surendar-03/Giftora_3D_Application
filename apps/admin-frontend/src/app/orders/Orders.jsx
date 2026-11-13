@@ -40,6 +40,8 @@ function formatDate(isoString) {
   })
 }
 
+const RANGE_LABELS = { today: 'Today', '7d': 'Last 7 days', '30d': 'Last 30 days' }
+
 export default function Orders() {
   const [searchParams] = useSearchParams()
   const [orders, setOrders] = useState([])
@@ -48,6 +50,10 @@ export default function Orders() {
   const [status, setStatus] = useState(() => {
     const s = searchParams.get('status')?.toUpperCase()
     return STATUS_OPTIONS.includes(s) ? s : 'ALL'
+  })
+  const [range] = useState(() => {
+    const r = searchParams.get('range')
+    return RANGE_LABELS[r] ? r : null
   })
   const [type, setType] = useState('ALL')
   const [search, setSearch] = useState('')
@@ -64,6 +70,7 @@ export default function Orders() {
         search: search.trim() || undefined,
         status: status === 'ALL' ? undefined : status,
         type: type === 'ALL' ? undefined : type,
+        range: range || undefined,
       })
         .then((result) => {
           const list = Array.isArray(result) ? result : result?.orders ?? []
@@ -95,7 +102,7 @@ export default function Orders() {
           </div>
           <p className="mt-1 text-xs text-muted">
             {meta?.total != null
-              ? `Showing ${orders.length} of ${meta.total} order${meta.total === 1 ? '' : 's'} · Sorted newest first.`
+              ? `Showing ${orders.length} of ${meta.total} order${meta.total === 1 ? '' : 's'} · Sorted newest first.${range ? ` · ${RANGE_LABELS[range]}` : ''}`
               : 'Manage industrial 3D manufacturing orders sorted newest first.'}
           </p>
         </div>

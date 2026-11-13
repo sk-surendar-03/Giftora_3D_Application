@@ -191,11 +191,12 @@ const ADMIN_ORDER_INCLUDE = { items: { include: { customDesign: true } }, user: 
  * orders. Access to these functions must only ever be reached through a
  * route gated by `authorize('ADMIN')` (see adminOrderRoutes.js).
  */
-export async function listOrdersForAdmin({ page, pageSize, search, status, type }) {
+export async function listOrdersForAdmin({ page, pageSize, search, status, type, from, to }) {
   const pagination = parsePagination({ page, pageSize })
 
   const where = {
     ...(status ? { status } : {}),
+    ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lt: to } : {}) } } : {}),
     // Orders containing at least one line of the given kind (PRODUCT or CUSTOM_DESIGN).
     ...(type ? { items: { some: { itemType: type } } } : {}),
     // No `mode: 'insensitive'` (Postgres-only) — MySQL's default collation

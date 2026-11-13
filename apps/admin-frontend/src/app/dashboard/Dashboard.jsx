@@ -89,7 +89,7 @@ function Dashboard() {
         <>
           {/* Top 4 Primary KPIs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link to="/reports" className="block hover:opacity-80 transition-opacity">
+            <Link to={`/reports?range=${filter}`} className="block hover:opacity-80 transition-opacity">
               <StatCard
                 label="Total Revenue"
                 value={formatPrice(summary.totalRevenueCents)}
@@ -101,7 +101,7 @@ function Dashboard() {
                 }
               />
             </Link>
-            <Link to="/orders" className="block hover:opacity-80 transition-opacity">
+            <Link to={`/orders?range=${filter}`} className="block hover:opacity-80 transition-opacity">
               <StatCard
                 label="Total Orders"
                 value={summary.totalOrders}
@@ -155,7 +155,7 @@ function Dashboard() {
                 { label: 'Cancelled', key: 'CANCELLED', color: 'text-muted' },
                 { label: 'Refunded', key: 'REFUNDED', color: 'text-danger' },
               ].map(({ label, key, color }) => (
-                <Link key={key} to={`/orders?status=${key}`} className="rounded-control border border-line bg-alt p-3 hover:border-accent/50 transition-colors block">
+                <Link key={key} to={`/orders?status=${key}&range=${filter}`} className="rounded-control border border-line bg-alt p-3 hover:border-accent/50 transition-colors block">
                   <span className="text-[11px] font-semibold text-muted uppercase">{label}</span>
                   <p className={`mt-1 font-mono text-[20px] font-bold m-0 ${color}`}>{summary.ordersByStatus[key]}</p>
                 </Link>

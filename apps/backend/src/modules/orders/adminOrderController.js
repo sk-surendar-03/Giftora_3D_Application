@@ -6,6 +6,17 @@ import { getPreviewForOrderItem, getStlForOrderItem, getThreeMfForOrderItem } fr
 const VALID_STATUSES = Object.values(OrderStatus)
 const VALID_TYPES = Object.values(OrderItemType)
 
+function parseRangePreset(preset) {
+  if (!preset) return {}
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+  if (preset === 'today') return { from: today, to: tomorrow }
+  if (preset === '7d') return { from: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6), to: tomorrow }
+  if (preset === '30d') return { from: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29), to: tomorrow }
+  return {}
+}
+
 export async function list(req, res) {
   let normalizedType = req.query.type
   if (!normalizedType || normalizedType === 'ALL') {
@@ -27,12 +38,17 @@ export async function list(req, res) {
   if (normalizedType !== undefined && !VALID_TYPES.includes(normalizedType)) {
     throw new HttpError(400, `type must be one of: ${VALID_TYPES.join(', ')}`)
   }
+
+  const { from, to } = parseRangePreset(req.query.range)
+
   const result = await listOrdersForAdmin({
     page: req.query.page,
     pageSize: req.query.pageSize,
     search: req.query.search,
     status: normalizedStatus,
     type: normalizedType,
+    from,
+    to,
   })
   res.json({ orders: result.orders, meta: result.meta })
 }
