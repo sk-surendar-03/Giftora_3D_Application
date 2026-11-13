@@ -4,8 +4,8 @@ const variants = {
   secondary: 'bg-surface text-ink border border-line hover:border-accent hover:text-accent hover:shadow-[0_0_16px_rgba(217,174,78,0.15)] active:scale-[0.97]',
   ghost: 'bg-transparent text-accent hover:bg-soft hover:shadow-[0_0_12px_rgba(217,174,78,0.1)] active:scale-[0.97]',
   danger: 'bg-danger text-white hover:bg-danger/90 hover:shadow-[0_4px_16px_rgba(179,50,31,0.4)] active:scale-[0.97]',
-  hero: 'bg-accent text-on-accent hover:bg-accent-dark hover:shadow-[0_0_28px_rgba(217,174,78,0.5),0_4px_16px_rgba(0,0,0,0.4)] hover:scale-[1.03] active:scale-[0.98]',
-  hero2: 'bg-transparent text-ink border border-white/30 hover:border-accent hover:text-accent hover:shadow-[0_0_16px_rgba(217,174,78,0.2)] hover:scale-[1.03] active:scale-[0.98]',
+  hero: 'btn-glow bg-accent text-on-accent hover:bg-accent-dark hover:scale-[1.03] active:scale-[0.98]',
+  hero2: 'bg-transparent text-ink border border-white/30 hover:border-accent hover:text-accent hover:scale-[1.03] active:scale-[0.98]',
 }
 
 const sizes = {

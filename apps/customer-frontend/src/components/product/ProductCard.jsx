@@ -54,13 +54,13 @@ export default function ProductCard({ product, index = 0 }) {
     <article className="prod flex flex-col justify-between">
       {/* Top Image Tile (.ph) with 8px radius, relative, 1:1 aspect ratio */}
       <div>
-        <div className={`group relative aspect-square w-full rounded-card border border-line overflow-hidden ${tintClass || 'bg-soft'} transition-all duration-300`}>
+        <div className={`prod-tile relative aspect-square w-full rounded-card border border-line overflow-hidden ${tintClass || 'bg-soft'}`}>
           <Link to={`/products/${product.slug}`} className="block h-full w-full">
             {product.image ? (
               <img
                 src={resolveImageUrl(product.image)}
                 alt={product.name}
-                className="prod-img h-full w-full object-cover transition-transform duration-500 group-hover:scale-108"
+                className="prod-img h-full w-full object-cover"
               />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center text-muted gap-2">
@@ -72,9 +72,8 @@ export default function ProductCard({ product, index = 0 }) {
             )}
           </Link>
 
-          {/* Gold shimmer overlay on hover */}
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-            style={{ background: 'linear-gradient(135deg, rgba(217,174,78,0.06) 0%, transparent 60%)' }} />
+          {/* Gold shimmer overlay — controlled by .prod:hover .prod-shimmer in CSS */}
+          <div className="prod-shimmer absolute inset-0 pointer-events-none" />
 
           {/* Badge at top left */}
           {(product.badge || product.material) && (
