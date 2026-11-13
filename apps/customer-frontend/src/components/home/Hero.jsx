@@ -33,8 +33,8 @@ export default function Hero() {
         style={{ height: '28%', background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}
       />
 
-      {/* Text overlay — vertically centered */}
-      <div className="absolute inset-0 flex items-center">
+      {/* Text overlay — centered on desktop, top-aligned on mobile */}
+      <div className="absolute inset-0 flex items-center max-[760px]:items-start max-[760px]:pt-3">
         <div className="w-full mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-4">
           <div className="max-w-[520px] max-[760px]:max-w-[58%]">
 
@@ -73,9 +73,9 @@ export default function Hero() {
               Design a keepsake in 3D, preview it from every angle, and we will make it just for them.
             </p>
 
-            {/* Buttons */}
-            <div className="flex flex-row flex-wrap gap-2 mb-3 min-[761px]:gap-3 min-[761px]:mb-5">
-              <Link to={customiseLink}>
+            {/* Buttons — always one row */}
+            <div className="flex flex-row items-center gap-2 mb-3 min-[761px]:gap-3 min-[761px]:mb-5">
+              <Link to={customiseLink} className="shrink-0">
                 <Button variant="hero" size="lg" className="whitespace-nowrap max-[760px]:!text-[11px] max-[760px]:!py-1.5 max-[760px]:!px-3">
                   <span>Start personalising</span>
                   <svg className="w-[13px] h-[13px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -83,7 +83,7 @@ export default function Hero() {
                   </svg>
                 </Button>
               </Link>
-              <Link to="/products">
+              <Link to="/products" className="shrink-0">
                 <Button variant="hero2" size="lg" className="whitespace-nowrap max-[760px]:!text-[11px] max-[760px]:!py-1.5 max-[760px]:!px-3"
                   style={{ borderColor: 'rgba(217,174,78,0.5)', color: '#f0e0b4' }}>
                   Shop all gifts
