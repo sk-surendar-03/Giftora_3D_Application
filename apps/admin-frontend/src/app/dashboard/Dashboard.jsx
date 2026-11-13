@@ -145,9 +145,10 @@ function Dashboard() {
             <h3 className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent m-0 mb-4">
               Manufacturing & Fulfillment Pipeline
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
               {[
                 { label: 'Pending', key: 'PENDING', color: 'text-accent' },
+                { label: 'Paid', key: 'PAID', color: 'text-accent' },
                 { label: 'Processing', key: 'PROCESSING', color: 'text-[#D9AE4E]' },
                 { label: 'Shipped', key: 'SHIPPED', color: 'text-secondary' },
                 { label: 'Delivered', key: 'DELIVERED', color: 'text-[#17683f]' },
