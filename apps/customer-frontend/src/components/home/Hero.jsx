@@ -7,7 +7,7 @@ export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-bg text-ink border-b border-line">
 
-      <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] pt-10 min-[901px]:pt-10 min-[901px]:min-h-[620px] grid grid-cols-1 min-[901px]:grid-cols-[1.02fr_0.98fr] gap-10 items-center max-[760px]:pt-7 max-[760px]:pb-2.5 max-[760px]:gap-2.5">
+      <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] pt-10 min-[901px]:pt-10 min-[901px]:min-h-[620px] grid grid-cols-1 min-[901px]:grid-cols-[1.02fr_0.98fr] gap-10 items-stretch max-[760px]:pt-7 max-[760px]:pb-2.5 max-[760px]:gap-2.5">
         
         {/* Left Column: Heading and CTAs */}
         <div className="self-center pb-8 min-[901px]:pb-12 max-[760px]:pb-2 z-10">
@@ -68,9 +68,14 @@ export default function Hero() {
         </div>
 
         {/* Right Column: Product Photography */}
-        <div className="relative self-end w-full max-w-[560px] mx-auto min-[901px]:max-w-none flex justify-center">
+        <div className="relative self-stretch w-full max-w-[560px] mx-auto min-[901px]:max-w-none overflow-hidden min-h-[300px] max-[900px]:min-h-[220px]">
+          <img
+            src="/hero-products.png"
+            alt="Jasvel 3D Prints — Ganesha idol, spiritual figurines and personalised gifts"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
           {/* Floating 'Preview in 3D' Badge */}
-          <div className="hidden min-[761px]:flex absolute left-[-8px] top-[120px] z-20 items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)]">
+          <div className="hidden min-[761px]:flex absolute left-0 bottom-10 z-20 items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)]">
             <span className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-soft text-accent">
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" />
@@ -82,12 +87,6 @@ export default function Hero() {
               <div className="text-[13px] text-muted leading-tight">Before we print</div>
             </div>
           </div>
-
-          <img
-            src="/hero-products.png"
-            alt="Jasvel 3D Prints — Ganesha idol, spiritual figurines and personalised gifts"
-            className="block w-full h-auto max-h-[560px] object-contain drop-shadow-2xl"
-          />
         </div>
 
       </div>
