@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import Banner from '../../components/Banner.jsx'
 import Pagination from '../../components/Pagination.jsx'
 import { fetchOrders } from '../../features/orders/ordersApi.js'
@@ -41,10 +41,14 @@ function formatDate(isoString) {
 }
 
 export default function Orders() {
+  const [searchParams] = useSearchParams()
   const [orders, setOrders] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [status, setStatus] = useState('ALL')
+  const [status, setStatus] = useState(() => {
+    const s = searchParams.get('status')?.toUpperCase()
+    return STATUS_OPTIONS.includes(s) ? s : 'ALL'
+  })
   const [type, setType] = useState('ALL')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)

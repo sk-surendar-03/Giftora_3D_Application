@@ -89,47 +89,55 @@ function Dashboard() {
         <>
           {/* Top 4 Primary KPIs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              label="Total Revenue"
-              value={formatPrice(summary.totalRevenueCents)}
-              hint={periodLabel}
-              icon={
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
-              }
-            />
-            <StatCard
-              label="Total Orders"
-              value={summary.totalOrders}
-              hint={periodLabel}
-              icon={
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                  <path d="M5 8h14l-1 12H6L5 8Z" />
-                </svg>
-              }
-            />
-            <StatCard
-              label="Active Customers"
-              value={summary.totalCustomers}
-              hint="Registered accounts"
-              icon={
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                  <circle cx="9" cy="8" r="3.5" />
-                  <path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6" />
-                </svg>
-              }
-            />
-            <StatCard
-              label="Catalog Models"
-              value={summary.totalProducts}
-              hint="Ready for printing"
-              icon={
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                  <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" />
-                </svg>
-              }
-            />
+            <Link to="/reports" className="block hover:opacity-80 transition-opacity">
+              <StatCard
+                label="Total Revenue"
+                value={formatPrice(summary.totalRevenueCents)}
+                hint={periodLabel}
+                icon={
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                }
+              />
+            </Link>
+            <Link to="/orders" className="block hover:opacity-80 transition-opacity">
+              <StatCard
+                label="Total Orders"
+                value={summary.totalOrders}
+                hint={periodLabel}
+                icon={
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <path d="M5 8h14l-1 12H6L5 8Z" />
+                  </svg>
+                }
+              />
+            </Link>
+            <Link to="/customers" className="block hover:opacity-80 transition-opacity">
+              <StatCard
+                label="Active Customers"
+                value={summary.totalCustomers}
+                hint="Registered accounts"
+                icon={
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <circle cx="9" cy="8" r="3.5" />
+                    <path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6" />
+                  </svg>
+                }
+              />
+            </Link>
+            <Link to="/products" className="block hover:opacity-80 transition-opacity">
+              <StatCard
+                label="Catalog Models"
+                value={summary.totalProducts}
+                hint="Ready for printing"
+                icon={
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" />
+                  </svg>
+                }
+              />
+            </Link>
           </div>
 
           {/* Orders by Status Pipeline Grid */}
@@ -138,30 +146,19 @@ function Dashboard() {
               Manufacturing & Fulfillment Pipeline
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <div className="rounded-control border border-line bg-alt p-3">
-                <span className="text-[11px] font-semibold text-muted uppercase">Pending</span>
-                <p className="mt-1 font-mono text-[20px] font-bold text-accent m-0">{summary.ordersByStatus.PENDING}</p>
-              </div>
-              <div className="rounded-control border border-line bg-alt p-3">
-                <span className="text-[11px] font-semibold text-muted uppercase">Processing</span>
-                <p className="mt-1 font-mono text-[20px] font-bold text-[#D9AE4E] m-0">{summary.ordersByStatus.PROCESSING}</p>
-              </div>
-              <div className="rounded-control border border-line bg-alt p-3">
-                <span className="text-[11px] font-semibold text-muted uppercase">Shipped</span>
-                <p className="mt-1 font-mono text-[20px] font-bold text-secondary m-0">{summary.ordersByStatus.SHIPPED}</p>
-              </div>
-              <div className="rounded-control border border-line bg-alt p-3">
-                <span className="text-[11px] font-semibold text-muted uppercase">Delivered</span>
-                <p className="mt-1 font-mono text-[20px] font-bold text-[#17683f] m-0">{summary.ordersByStatus.DELIVERED}</p>
-              </div>
-              <div className="rounded-control border border-line bg-alt p-3">
-                <span className="text-[11px] font-semibold text-muted uppercase">Cancelled</span>
-                <p className="mt-1 font-mono text-[20px] font-bold text-muted m-0">{summary.ordersByStatus.CANCELLED}</p>
-              </div>
-              <div className="rounded-control border border-line bg-alt p-3">
-                <span className="text-[11px] font-semibold text-muted uppercase">Refunded</span>
-                <p className="mt-1 font-mono text-[20px] font-bold text-danger m-0">{summary.ordersByStatus.REFUNDED}</p>
-              </div>
+              {[
+                { label: 'Pending', key: 'PENDING', color: 'text-accent' },
+                { label: 'Processing', key: 'PROCESSING', color: 'text-[#D9AE4E]' },
+                { label: 'Shipped', key: 'SHIPPED', color: 'text-secondary' },
+                { label: 'Delivered', key: 'DELIVERED', color: 'text-[#17683f]' },
+                { label: 'Cancelled', key: 'CANCELLED', color: 'text-muted' },
+                { label: 'Refunded', key: 'REFUNDED', color: 'text-danger' },
+              ].map(({ label, key, color }) => (
+                <Link key={key} to={`/orders?status=${key}`} className="rounded-control border border-line bg-alt p-3 hover:border-accent/50 transition-colors block">
+                  <span className="text-[11px] font-semibold text-muted uppercase">{label}</span>
+                  <p className={`mt-1 font-mono text-[20px] font-bold m-0 ${color}`}>{summary.ordersByStatus[key]}</p>
+                </Link>
+              ))}
             </div>
           </div>
         </>
