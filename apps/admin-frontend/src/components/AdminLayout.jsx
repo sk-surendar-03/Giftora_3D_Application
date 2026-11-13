@@ -297,7 +297,7 @@ export default function AdminLayout() {
         </header>
 
         {/* Content View */}
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden min-w-0">
           <Outlet />
         </main>
       </div>

@@ -191,17 +191,17 @@ function ShippingManager({ methods, onChange, onAutoSave }) {
           ))}
         </div>
       )}
-      <div className="grid grid-cols-[1fr_auto_60px_80px_auto] items-center gap-1.5 pt-1">
+      <div className="flex flex-wrap items-center gap-1.5 pt-1">
         <input value={draft.name} onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
-          placeholder="Method (e.g. Standard Delivery)" className="rounded-md border border-line px-3 py-1.5 text-xs"
+          placeholder="Method (e.g. Standard Delivery)" className="flex-1 min-w-[120px] rounded-md border border-line px-3 py-1.5 text-xs"
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
-        <span className="text-xs text-muted">₹</span>
+        <span className="text-xs text-muted shrink-0">₹</span>
         <input type="number" min="0" step="0.01" value={draft.price} onChange={(e) => setDraft((p) => ({ ...p, price: e.target.value }))}
-          placeholder="0" className="rounded-md border border-line px-2 py-1.5 text-xs" />
+          placeholder="0" className="w-16 rounded-md border border-line px-2 py-1.5 text-xs" />
         <input value={draft.days} onChange={(e) => setDraft((p) => ({ ...p, days: e.target.value }))}
-          placeholder="3-5 days" className="rounded-md border border-line px-2 py-1.5 text-xs" />
+          placeholder="3-5 days" className="w-20 rounded-md border border-line px-2 py-1.5 text-xs" />
         <button type="button" onClick={add} disabled={!draft.name.trim() || draft.price === '' || autoSaving}
-          className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+          className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0">
           {autoSaving ? '…' : '+ Add'}
         </button>
       </div>
@@ -277,16 +277,158 @@ function PriceListEditor({ items, onChange, onAutoSave, namePlaceholder = 'Name'
           ))}
         </div>
       )}
-      <div className="flex items-center gap-2 pt-1">
+      <div className="flex flex-wrap items-center gap-2 pt-1">
         <input value={draft.name} onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
-          placeholder={namePlaceholder} className="flex-1 rounded-md border border-line px-3 py-1.5 text-xs"
+          placeholder={namePlaceholder} className="flex-1 min-w-[120px] rounded-md border border-line px-3 py-1.5 text-xs"
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
         <span className="text-xs text-muted shrink-0">₹</span>
         <input type="number" min="0" step="0.01" value={draft.price}
           onChange={(e) => setDraft((p) => ({ ...p, price: e.target.value }))}
-          placeholder="0" className="w-20 rounded-md border border-line px-3 py-1.5 text-xs"
+          placeholder="0" className="w-16 rounded-md border border-line px-3 py-1.5 text-xs"
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
         <button type="button" onClick={add} disabled={!draft.name.trim() || draft.price === '' || autoSaving}
+          className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0">
+          {autoSaving ? '…' : '+ Add'}
+        </button>
+      </div>
+      {autoStatus && (
+        <p className={`text-[10px] font-medium ${autoStatus === 'ok' ? 'text-green-500' : 'text-danger'}`}>
+          {autoStatus === 'ok' ? '✓ Saved to database' : '✗ Save failed — try again'}
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ─── Thickness editor — name + price + value + unit ──────────────────────────
+const UNITS = ['mm', 'cm', 'inch']
+
+function ThicknessEditor({ items, onChange, onAutoSave }) {
+  const [draft, setDraft] = useState({ name: '', price: '', value: '', unit: 'mm' })
+  const [editIndex, setEditIndex] = useState(null)
+  const [editDraft, setEditDraft] = useState(null)
+  const [autoSaving, setAutoSaving] = useState(false)
+  const [autoStatus, setAutoStatus] = useState(null)
+
+  async function commit(newItems) {
+    onChange(newItems)
+    if (!onAutoSave) return
+    setAutoSaving(true); setAutoStatus(null)
+    try { await onAutoSave(newItems); setAutoStatus('ok'); setTimeout(() => setAutoStatus(null), 2000) }
+    catch { setAutoStatus('err'); setTimeout(() => setAutoStatus(null), 3000) }
+    setAutoSaving(false)
+  }
+
+  function toMm(value, unit) {
+    if (unit === 'cm') return value * 10
+    if (unit === 'inch') return value * 25.4
+    return value
+  }
+
+  function add() {
+    const name = draft.name.trim()
+    const price = parseFloat(draft.price)
+    const value = parseFloat(draft.value)
+    if (!name || !Number.isFinite(price) || price < 0 || !Number.isFinite(value) || value <= 0) return
+    const mm = toMm(value, draft.unit)
+    commit([...items, { name, priceCents: Math.round(price * 100), mm, displayValue: value, displayUnit: draft.unit }])
+    setDraft({ name: '', price: '', value: '', unit: draft.unit })
+  }
+
+  function remove(i) { commit(items.filter((_, idx) => idx !== i)) }
+
+  function startEdit(i) {
+    const item = items[i]
+    setEditIndex(i)
+    setEditDraft({
+      name: item.name,
+      price: String(item.priceCents / 100),
+      value: String(item.displayValue ?? item.mm ?? ''),
+      unit: item.displayUnit ?? 'mm',
+    })
+  }
+
+  function saveEdit() {
+    const name = editDraft.name.trim()
+    const price = parseFloat(editDraft.price)
+    const value = parseFloat(editDraft.value)
+    if (!name || !Number.isFinite(price) || price < 0 || !Number.isFinite(value) || value <= 0) return
+    const mm = toMm(value, editDraft.unit)
+    commit(items.map((item, i) => i === editIndex
+      ? { name, priceCents: Math.round(price * 100), mm, displayValue: value, displayUnit: editDraft.unit }
+      : item))
+    setEditIndex(null); setEditDraft(null)
+  }
+
+  const unitSelect = (val, unit, setVal, setUnit) => (
+    <div className="flex items-center gap-1">
+      <input type="text" inputMode="decimal" value={val}
+        onChange={(e) => setVal(e.target.value.replace(/[^0-9.]/g, ''))}
+        className="w-14 rounded border border-line px-2 py-1 text-xs" placeholder="e.g. 5" />
+      <select value={unit} onChange={(e) => setUnit(e.target.value)}
+        className="rounded border border-line bg-surface px-1.5 py-1 text-xs text-ink cursor-pointer">
+        {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+      </select>
+    </div>
+  )
+
+  return (
+    <div className="space-y-2">
+      {items.length > 0 && (
+        <div className="space-y-1.5">
+          {items.map((item, i) => (
+            <div key={i} className="flex items-center gap-2 rounded-md border border-line bg-surface/60 px-3 py-1.5">
+              {editIndex === i ? (
+                <>
+                  <input value={editDraft.name} onChange={(e) => setEditDraft((p) => ({ ...p, name: e.target.value }))}
+                    className="flex-1 rounded border border-line px-2 py-1 text-xs" placeholder="Name" autoFocus />
+                  <span className="text-xs text-muted shrink-0">₹</span>
+                  <input type="number" min="0" step="0.01" value={editDraft.price}
+                    onChange={(e) => setEditDraft((p) => ({ ...p, price: e.target.value }))}
+                    className="w-16 rounded border border-line px-2 py-1 text-xs" placeholder="Price" />
+                  {unitSelect(
+                    editDraft.value,
+                    editDraft.unit,
+                    (v) => setEditDraft((p) => ({ ...p, value: v })),
+                    (u) => setEditDraft((p) => ({ ...p, unit: u }))
+                  )}
+                  <button type="button" onClick={saveEdit} className="rounded bg-accent px-2 py-1 text-xs font-semibold text-white cursor-pointer">Save</button>
+                  <button type="button" onClick={() => setEditIndex(null)} className="text-xs text-muted hover:text-ink cursor-pointer">✕</button>
+                </>
+              ) : (
+                <>
+                  <span className="flex-1 text-xs font-medium text-ink">{item.name}</span>
+                  <span className="text-xs text-muted">
+                    {item.displayValue ?? item.mm ?? '—'} {item.displayUnit ?? 'mm'}
+                  </span>
+                  <span className="text-xs font-semibold text-accent">
+                    {item.priceCents === 0 ? 'Included' : `₹${(item.priceCents / 100).toFixed(2).replace(/\.00$/, '')}`}
+                  </span>
+                  <button type="button" onClick={() => startEdit(i)} className="text-xs text-muted hover:text-ink cursor-pointer">✎</button>
+                  <button type="button" onClick={() => remove(i)} className="text-xs text-muted hover:text-danger cursor-pointer">✕</button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="flex items-center gap-2 pt-1 flex-wrap">
+        <input value={draft.name} onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
+          placeholder="Name (e.g. Standard)" className="flex-1 min-w-[100px] rounded-md border border-line px-3 py-1.5 text-xs"
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
+        <span className="text-xs text-muted shrink-0">₹</span>
+        <input type="number" min="0" step="0.01" value={draft.price}
+          onChange={(e) => setDraft((p) => ({ ...p, price: e.target.value }))}
+          placeholder="Price" className="w-16 rounded-md border border-line px-3 py-1.5 text-xs"
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
+        {unitSelect(
+          draft.value,
+          draft.unit,
+          (v) => setDraft((p) => ({ ...p, value: v })),
+          (u) => setDraft((p) => ({ ...p, unit: u }))
+        )}
+        <button type="button" onClick={add}
+          disabled={!draft.name.trim() || draft.price === '' || draft.value === '' || autoSaving}
           className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
           {autoSaving ? '…' : '+ Add'}
         </button>
@@ -497,9 +639,8 @@ export default function CustomizationSettings() {
             {/* Thicknesses */}
             <Card title="Base Thickness Options" description="Thickness choices in the customizer. Each option adds to the total price."
               onSave={saveThicknesses} saving={savingThicknesses} saveStatus={thicknessesStatus}>
-              <PriceListEditor items={thicknesses} onChange={setThicknesses}
-                onAutoSave={(newThicknesses) => updateCustomizerThicknesses(newThicknesses).then((s) => setThicknesses(s))}
-                namePlaceholder="Thickness (e.g. Standard, Premium)" />
+              <ThicknessEditor items={thicknesses} onChange={setThicknesses}
+                onAutoSave={(newThicknesses) => updateCustomizerThicknesses(newThicknesses).then((s) => setThicknesses(s))} />
             </Card>
 
             {/* Shipping */}
