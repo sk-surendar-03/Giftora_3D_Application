@@ -5,13 +5,13 @@ export default function Hero() {
   const customiseLink = '/customise'
 
   return (
-    <section className="relative overflow-hidden border-b border-line">
+    {/* Desktop: image sets height naturally. Mobile: fixed min-height with object-cover */}
+    <section className="relative overflow-hidden border-b border-line max-[760px]:min-h-[500px]">
 
-      {/* Full image — natural aspect ratio, zero cropping */}
       <img
         src="/hero-products.png"
         alt="Jasvel 3D Prints — personalised spiritual gifts and figurines"
-        className="block w-full h-auto"
+        className="block w-full h-auto max-[760px]:absolute max-[760px]:inset-0 max-[760px]:h-full max-[760px]:object-cover max-[760px]:object-[center_30%]"
       />
 
       {/* Base dark layer */}
@@ -20,11 +20,19 @@ export default function Hero() {
         style={{ background: 'rgba(0,0,0,0.45)' }}
       />
 
-      {/* Left-heavy gradient for text legibility */}
+      {/* Desktop: left-heavy gradient */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none max-[760px]:hidden"
         style={{
           background: 'linear-gradient(105deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.80) 25%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.2) 65%, transparent 100%)'
+        }}
+      />
+
+      {/* Mobile: top-to-bottom gradient so text at top is readable */}
+      <div
+        className="absolute inset-0 pointer-events-none min-[761px]:hidden"
+        style={{
+          background: 'linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.6) 55%, rgba(0,0,0,0.75) 100%)'
         }}
       />
 
@@ -35,7 +43,7 @@ export default function Hero() {
       />
 
       {/* Text overlay */}
-      <div className="absolute inset-0 flex items-center">
+      <div className="absolute inset-0 flex items-center max-[760px]:items-start max-[760px]:pt-8">
         <div className="w-full mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-4">
           <div className="max-w-[520px] max-[760px]:max-w-full">
 
