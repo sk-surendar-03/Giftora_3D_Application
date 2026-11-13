@@ -20,11 +20,19 @@ export default function Hero() {
         style={{ background: 'rgba(0,0,0,0.42)' }}
       />
 
-      {/* Left-heavy gradient — dark left for text, fades to clear on right */}
+      {/* Desktop gradient — left heavy, fades right */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none max-[760px]:hidden"
         style={{
           background: 'linear-gradient(105deg, rgba(0,0,0,0.90) 0%, rgba(0,0,0,0.80) 20%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.15) 60%, transparent 100%)'
+        }}
+      />
+
+      {/* Mobile gradient — stronger dark on left 65% so text is crystal clear */}
+      <div
+        className="absolute inset-0 pointer-events-none min-[761px]:hidden"
+        style={{
+          background: 'linear-gradient(100deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.90) 35%, rgba(0,0,0,0.65) 55%, rgba(0,0,0,0.1) 75%, transparent 100%)'
         }}
       />
 
@@ -53,9 +61,9 @@ export default function Hero() {
             <h1
               className="font-display font-bold leading-[1.05] tracking-[-0.02em] mb-3"
               style={{
-                fontSize: 'clamp(20px, 4.5vw, 62px)',
+                fontSize: 'clamp(24px, 4.5vw, 62px)',
                 color: '#ffffff',
-                textShadow: '0 0 60px rgba(217,174,78,0.5), 0 2px 24px rgba(0,0,0,0.95), 0 1px 4px rgba(0,0,0,1)',
+                textShadow: '0 0 60px rgba(217,174,78,0.6), 0 2px 30px rgba(0,0,0,1), 0 1px 6px rgba(0,0,0,1), -1px -1px 0 rgba(0,0,0,0.8), 1px 1px 0 rgba(0,0,0,0.8)',
               }}
             >
               Gifts that carry<br />their name.
