@@ -34,7 +34,7 @@ export default function Hero() {
       />
 
       {/* Text overlay — centered on desktop, top-aligned on mobile */}
-      <div className="absolute inset-0 flex items-center max-[760px]:items-start max-[760px]:pt-3">
+      <div className="absolute inset-0 flex items-center max-[760px]:items-start max-[760px]:pt-5">
         <div className="w-full mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-4">
           <div className="max-w-[520px] max-[760px]:max-w-[58%]">
 
@@ -74,7 +74,7 @@ export default function Hero() {
             </p>
 
             {/* Buttons — always one row, equal size */}
-            <div className="flex flex-row items-center gap-2 mb-2 min-[761px]:gap-3 min-[761px]:mb-5">
+            <div className="flex flex-row items-center gap-2 max-[760px]:mb-0 min-[761px]:gap-3 min-[761px]:mb-5">
               <Link to={customiseLink} className="flex-1 min-[761px]:flex-none">
                 <Button variant="hero" size="lg" className="w-full whitespace-nowrap max-[760px]:!text-[10px] max-[760px]:!py-0 max-[760px]:!px-2 max-[760px]:!h-7 max-[760px]:!leading-7">
                   <span>Start personalising</span>
