@@ -25,7 +25,7 @@ const INVENTORY_TRACKING_AVAILABLE = false
 
 export async function getDashboardSummary(range = null) {
   const where = range ? { createdAt: { gte: range.from, lt: range.to } } : {}
-  const customerWhere = range ? { role: 'CUSTOMER', createdAt: { gte: range.from, lt: range.to } } : { role: 'CUSTOMER' }
+  const customerWhere = { role: 'CUSTOMER' }
 
   const [totalCustomers, totalOrders, statusCounts, revenueAgg, totalProducts] = await Promise.all([
     prisma.user.count({ where: customerWhere }),

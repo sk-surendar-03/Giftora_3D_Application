@@ -13,7 +13,7 @@ function formatPrice(cents) {
 }
 
 function Dashboard() {
-  const [filter, setFilter] = useState('today')
+  const [filter, setFilter] = useState('30d')
   const [summary, setSummary] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
