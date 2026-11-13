@@ -9,13 +9,13 @@ export default function Hero() {
      * Desktop: image at natural aspect ratio sets section height, text overlaid left
      * Mobile:  section gets min-height, image object-cover fills it, text stacks top
      */
-    <section className="relative overflow-hidden border-b border-line max-[760px]:min-h-[520px]">
+    <section className="relative overflow-hidden border-b border-line min-[761px]:min-h-[520px]">
 
-      {/* Image — natural ratio on desktop, object-cover fill on mobile */}
+      {/* Image — natural ratio on mobile, object-cover fill on desktop */}
       <img
         src="/hero-products.png"
         alt="Jasvel 3D Prints — personalised spiritual gifts and figurines"
-        className="block w-full h-auto max-[760px]:absolute max-[760px]:inset-0 max-[760px]:h-full max-[760px]:object-cover max-[760px]:object-center"
+        className="block w-full h-auto min-[761px]:absolute min-[761px]:inset-0 min-[761px]:h-full min-[761px]:object-cover min-[761px]:object-center"
       />
 
       {/* Base dark layer */}
@@ -24,15 +24,15 @@ export default function Hero() {
         style={{ background: 'rgba(0,0,0,0.45)' }}
       />
 
-      {/* Desktop: left-heavy gradient. Mobile: top-heavy gradient */}
+      {/* Mobile: left-heavy gradient. Desktop: top-heavy gradient */}
       <div
-        className="absolute inset-0 pointer-events-none hidden min-[761px]:block"
+        className="absolute inset-0 pointer-events-none hidden max-[760px]:block"
         style={{
           background: 'linear-gradient(105deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.80) 25%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.2) 65%, transparent 100%)'
         }}
       />
       <div
-        className="absolute inset-0 pointer-events-none min-[761px]:hidden"
+        className="absolute inset-0 pointer-events-none max-[760px]:hidden"
         style={{
           background: 'linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.60) 50%, rgba(0,0,0,0.80) 100%)'
         }}
@@ -45,17 +45,17 @@ export default function Hero() {
       />
 
       {/* Text overlay */}
-      <div className="absolute inset-0 flex items-center max-[760px]:items-start max-[760px]:pt-10">
+      <div className="absolute inset-0 flex items-center min-[761px]:items-start min-[761px]:pt-10">
         <div className="w-full mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-4">
           <div
-            className="max-w-[520px] max-[760px]:max-w-full rounded-2xl px-7 py-6 max-[760px]:px-4 max-[760px]:py-5"
+            className="max-w-[520px] min-[761px]:max-w-full rounded-2xl px-7 py-6 min-[761px]:px-4 min-[761px]:py-5"
             style={{
               background: 'rgba(0,0,0,0.38)',
               backdropFilter: 'blur(3px)',
             }}
           >
 
-            <div className="flex items-center gap-2.5 mb-4 max-[760px]:mb-3">
+            <div className="flex items-center gap-2.5 mb-4 min-[761px]:mb-3">
               <span className="w-7 h-[2px] shrink-0" style={{ background: '#D9AE4E' }} />
               <span
                 className="text-[11px] font-bold uppercase tracking-[0.2em]"
@@ -66,7 +66,7 @@ export default function Hero() {
             </div>
 
             <h1
-              className="font-display font-bold leading-[1.08] tracking-[-0.02em] mb-5 max-[760px]:mb-3"
+              className="font-display font-bold leading-[1.08] tracking-[-0.02em] mb-5 min-[761px]:mb-3"
               style={{
                 fontSize: 'clamp(26px, 6vw, 62px)',
                 color: '#ffffff',
@@ -87,8 +87,8 @@ export default function Hero() {
               Design a keepsake in 3D, preview it from every angle, and we will make it just for them.
             </p>
 
-            <div className="flex flex-wrap items-center gap-3 mb-6 max-[760px]:mb-4">
-              <Link to={customiseLink} className="max-[760px]:flex-1">
+            <div className="flex flex-wrap items-center gap-3 mb-6 min-[761px]:mb-4">
+              <Link to={customiseLink} className="min-[761px]:flex-1">
                 <Button variant="hero" size="lg" className="w-full whitespace-nowrap">
                   <span>Start personalising</span>
                   <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -96,7 +96,7 @@ export default function Hero() {
                   </svg>
                 </Button>
               </Link>
-              <Link to="/products" className="max-[760px]:flex-1">
+              <Link to="/products" className="min-[761px]:flex-1">
                 <Button variant="hero2" size="lg" className="w-full whitespace-nowrap"
                   style={{ borderColor: 'rgba(217,174,78,0.5)', color: '#f0e0b4' }}>
                   Shop all gifts
@@ -105,7 +105,7 @@ export default function Hero() {
             </div>
 
             <div
-              className="flex flex-wrap items-center gap-5 font-medium max-[760px]:gap-x-4 max-[760px]:gap-y-2"
+              className="flex flex-wrap items-center gap-5 font-medium min-[761px]:gap-x-4 min-[761px]:gap-y-2"
               style={{
                 fontSize: 'clamp(11px, 1.5vw, 13px)',
                 color: 'rgba(255,240,200,0.9)',
@@ -138,7 +138,7 @@ export default function Hero() {
 
       {/* Preview in 3D badge — desktop only, bottom right */}
       <div
-        className="hidden min-[761px]:flex absolute bottom-6 right-8 items-center gap-3 rounded-card px-4 py-3"
+        className="hidden max-[760px]:flex absolute bottom-6 right-8 items-center gap-3 rounded-card px-4 py-3"
         style={{
           background: 'rgba(10,10,10,0.75)',
           border: '1px solid rgba(217,174,78,0.35)',
