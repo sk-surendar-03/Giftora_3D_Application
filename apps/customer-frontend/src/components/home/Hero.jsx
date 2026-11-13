@@ -5,7 +5,6 @@ export default function Hero() {
   const customiseLink = '/customise'
 
   return (
-    {/* Desktop: image sets height naturally. Mobile: fixed min-height with object-cover */}
     <section className="relative overflow-hidden border-b border-line max-[760px]:min-h-[500px]">
 
       <img
