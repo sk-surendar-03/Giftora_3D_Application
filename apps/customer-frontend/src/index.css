@@ -31,7 +31,10 @@
   --radius-card: 8px;
   --radius-control: 4px;
 
-  --shadow-card: none;
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.6);
+  --shadow-card-hover: 0 8px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(217,174,78,0.18);
+  --shadow-gold-glow: 0 0 24px rgba(217,174,78,0.25), 0 4px 24px rgba(0,0,0,0.6);
+  --transition-smooth: all 0.3s cubic-bezier(0.4,0,0.2,1);
 }
 
 :root {
@@ -106,4 +109,93 @@ h4,
 :focus-visible {
   outline: 3px solid color-mix(in srgb, #D9AE4E 35%, transparent);
   outline-offset: 2px;
+}
+
+/* ── Global smooth transitions ─────────────────────────────── */
+a, button { transition: var(--transition-smooth); }
+
+/* ── Product card hover lift + gold glow ───────────────────── */
+.prod {
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+.prod:hover {
+  transform: translateY(-4px);
+}
+.prod .prod-img {
+  transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s ease;
+}
+.prod:hover .prod-img {
+  box-shadow: var(--shadow-gold-glow);
+}
+
+/* ── Card border gold glow on hover ────────────────────────── */
+.prod > div > div:first-child {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.prod:hover > div > div:first-child {
+  border-color: rgba(217,174,78,0.35);
+  box-shadow: 0 0 0 1px rgba(217,174,78,0.1), 0 8px 32px rgba(0,0,0,0.5);
+}
+
+/* ── Shimmer animation for skeleton loaders / accents ──────── */
+@keyframes shimmer {
+  0% { background-position: -400px 0 }
+  100% { background-position: 400px 0 }
+}
+
+/* ── Gold pulse glow ────────────────────────────────────────── */
+@keyframes gold-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(217,174,78,0.2); }
+  50% { box-shadow: 0 0 24px rgba(217,174,78,0.5); }
+}
+
+/* ── Fade-up entrance ───────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 0.5s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+/* ── Nav link underline slide ───────────────────────────────── */
+.nav-link {
+  position: relative;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #D9AE4E;
+  border-radius: 1px;
+  transition: width 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 100%;
+}
+
+/* ── Gold border glow on input focus ───────────────────────── */
+.input-obsidian:focus {
+  border-color: #D9AE4E;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #D9AE4E 25%, transparent), 0 0 12px rgba(217,174,78,0.15);
+}
+
+/* ── Section divider accent ─────────────────────────────────── */
+.section-title-accent {
+  position: relative;
+  display: inline-block;
+}
+.section-title-accent::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(to right, #D9AE4E, transparent);
+  border-radius: 1px;
 }
