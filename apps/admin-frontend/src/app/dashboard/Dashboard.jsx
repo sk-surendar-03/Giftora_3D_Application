@@ -13,7 +13,7 @@ function formatPrice(cents) {
 }
 
 function Dashboard() {
-  const [filter, setFilter] = useState('30d')
+  const [filter, setFilter] = useState('today')
   const [summary, setSummary] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -93,7 +93,6 @@ function Dashboard() {
               label="Total Revenue"
               value={formatPrice(summary.totalRevenueCents)}
               hint={periodLabel}
-              delta="+12%"
               icon={
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                   <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -104,7 +103,6 @@ function Dashboard() {
               label="Total Orders"
               value={summary.totalOrders}
               hint={periodLabel}
-              delta="+8%"
               icon={
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                   <path d="M5 8h14l-1 12H6L5 8Z" />
