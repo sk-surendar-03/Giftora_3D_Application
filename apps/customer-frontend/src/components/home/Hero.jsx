@@ -37,13 +37,7 @@ export default function Hero() {
       {/* Text overlay */}
       <div className="absolute inset-0 flex items-center">
         <div className="w-full mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-4">
-          <div
-            className="max-w-[520px] max-[760px]:max-w-full rounded-2xl px-7 py-6 max-[760px]:px-4 max-[760px]:py-4"
-            style={{
-              background: 'rgba(0,0,0,0.38)',
-              backdropFilter: 'blur(3px)',
-            }}
-          >
+          <div className="max-w-[520px] max-[760px]:max-w-full">
 
             <div className="flex items-center gap-2.5 mb-4 max-[760px]:mb-3">
               <span className="w-7 h-[2px] shrink-0" style={{ background: '#D9AE4E' }} />
