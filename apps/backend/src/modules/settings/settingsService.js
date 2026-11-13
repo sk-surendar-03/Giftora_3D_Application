@@ -90,7 +90,17 @@ export async function getCustomizerThicknesses() {
 }
 
 export async function updateCustomizerThicknesses({ thicknesses }) {
-  const safe = Array.isArray(thicknesses) ? thicknesses.filter((t) => t && typeof t.name === 'string' && Number.isInteger(t.priceCents) && t.priceCents >= 0) : []
+  const safe = Array.isArray(thicknesses)
+    ? thicknesses
+        .filter((t) => t && typeof t.name === 'string' && Number.isInteger(t.priceCents) && t.priceCents >= 0)
+        .map((t) => ({
+          name: t.name,
+          priceCents: t.priceCents,
+          ...(typeof t.mm === 'number' && t.mm > 0 ? { mm: t.mm } : {}),
+          ...(typeof t.displayValue === 'number' && t.displayValue > 0 ? { displayValue: t.displayValue } : {}),
+          ...(typeof t.displayUnit === 'string' ? { displayUnit: t.displayUnit } : {}),
+        }))
+    : []
   await prisma.setting.upsert({
     where: { key: THICKNESSES_KEY },
     create: { key: THICKNESSES_KEY, value: { thicknesses: safe } },
