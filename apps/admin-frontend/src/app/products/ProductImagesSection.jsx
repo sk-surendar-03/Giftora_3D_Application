@@ -496,7 +496,7 @@ export default function ProductImagesSection({ images = [], onChange, materials 
             <span className="text-accent font-semibold">Cover image is first</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {items.map((item, index) => {
               const isPrimary = index === 0
               const isUploading = item.status === 'uploading'
@@ -512,7 +512,7 @@ export default function ProductImagesSection({ images = [], onChange, materials 
                   onDragStart={(e) => onCardDragStart(e, index)}
                   onDragOver={(e) => onCardDragOver(e, index)}
                   onDrop={(e) => onCardDrop(e, index)}
-                  className={`relative flex flex-col rounded-lg border bg-surface p-2.5 shadow-xs transition-all self-start ${
+                  className={`relative flex flex-col rounded-lg border bg-surface p-2.5 shadow-xs transition-all ${
                     isPrimary ? 'border-accent ring-1 ring-accent' : isError ? 'border-red-400 bg-red-50/20' : 'border-line hover:border-muted'
                   }`}
                 >
@@ -603,7 +603,7 @@ export default function ProductImagesSection({ images = [], onChange, materials 
                   </div>
 
                   {/* Actions Toolbar */}
-                  <div className="mt-2 flex items-center justify-between border-t border-line/60 pt-2 gap-1">
+                  <div className="mt-auto pt-2 flex items-center justify-between border-t border-line/60 gap-1">
                     <div className="flex items-center gap-1">
                       {!isPrimary && !isUploading && (
                         <button type="button" onClick={() => handleMakePrimary(index)} className="rounded px-1.5 py-1 text-[11px] font-semibold text-muted hover:text-accent hover:bg-soft transition-colors cursor-pointer" title="Set as primary cover image">
