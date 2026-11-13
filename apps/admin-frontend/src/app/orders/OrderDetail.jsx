@@ -60,6 +60,21 @@ function formatDate(isoString) {
   return new Date(isoString).toLocaleString()
 }
 
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1').replace('/api/v1', '')
+
+function resolveImage(src) {
+  if (!src) return null
+  if (src.startsWith('http')) return src
+  return `${API_BASE}${src}`
+}
+
+function formatCustomizationValue(value) {
+  if (typeof value === 'object' && value !== null) {
+    return value.label ?? value.name ?? JSON.stringify(value)
+  }
+  return String(value)
+}
+
 function formatBytes(bytes) {
   if (!bytes) return '0 B'
   const k = 1024
@@ -271,8 +286,8 @@ export default function OrderDetail() {
                       <div className="h-20 w-20 shrink-0 overflow-hidden rounded-control border border-line bg-soft flex items-center justify-center">
                         {isCustom ? (
                           <AdminDesignPreview orderId={order.id} itemId={item.id} hasPreview={design.hasPreview} alt={item.productName} />
-                        ) : item.productImage ? (
-                          <img src={item.productImage} alt={item.productName} className="h-full w-full object-cover" />
+                        ) : resolveImage(item.productImage) ? (
+                          <img src={resolveImage(item.productImage)} alt={item.productName} className="h-full w-full object-cover" />
                         ) : (
                           <span className="text-xs text-muted">3D</span>
                         )}
@@ -389,9 +404,7 @@ export default function OrderDetail() {
                           value ? (
                             <div key={key} className="flex gap-1.5">
                               <dt className="capitalize font-medium text-muted">{key}:</dt>
-                              <dd className="text-ink font-medium">
-                                {typeof value === 'object' ? (value.label ?? JSON.stringify(value)) : String(value)}
-                              </dd>
+                              <dd className="text-ink font-medium">{formatCustomizationValue(value)}</dd>
                             </div>
                           ) : null,
                         )}
