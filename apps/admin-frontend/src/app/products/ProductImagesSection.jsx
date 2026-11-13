@@ -512,7 +512,7 @@ export default function ProductImagesSection({ images = [], onChange, materials 
                   onDragStart={(e) => onCardDragStart(e, index)}
                   onDragOver={(e) => onCardDragOver(e, index)}
                   onDrop={(e) => onCardDrop(e, index)}
-                  className={`relative flex flex-col rounded-lg border bg-surface p-2.5 shadow-xs transition-all ${
+                  className={`relative flex flex-col rounded-lg border bg-surface p-2.5 shadow-xs transition-all overflow-hidden ${
                     isPrimary ? 'border-accent ring-1 ring-accent' : isError ? 'border-red-400 bg-red-50/20' : 'border-line hover:border-muted'
                   }`}
                 >
@@ -603,25 +603,25 @@ export default function ProductImagesSection({ images = [], onChange, materials 
                   </div>
 
                   {/* Actions Toolbar */}
-                  <div className="mt-auto pt-2 flex items-center justify-between border-t border-line/60 gap-1">
-                    <div className="flex items-center gap-1">
+                  <div className="mt-auto pt-2 flex items-center justify-between border-t border-line/60 gap-1 min-w-0">
+                    <div className="flex items-center gap-0.5 min-w-0 shrink">
                       {!isPrimary && !isUploading && (
-                        <button type="button" onClick={() => handleMakePrimary(index)} className="rounded px-1.5 py-1 text-[11px] font-semibold text-muted hover:text-accent hover:bg-soft transition-colors cursor-pointer" title="Set as primary cover image">
-                          Make Cover
+                        <button type="button" onClick={() => handleMakePrimary(index)} className="rounded px-1 py-1 text-[10px] font-semibold text-muted hover:text-accent hover:bg-soft transition-colors cursor-pointer whitespace-nowrap" title="Set as primary cover image">
+                          Cover
                         </button>
                       )}
                       {!isUploading && (
-                        <button type="button" onClick={() => handleReplace(index)} className="rounded px-1.5 py-1 text-[11px] font-semibold text-muted hover:text-ink hover:bg-soft transition-colors cursor-pointer" title="Replace this image">
+                        <button type="button" onClick={() => handleReplace(index)} className="rounded px-1 py-1 text-[10px] font-semibold text-muted hover:text-ink hover:bg-soft transition-colors cursor-pointer whitespace-nowrap" title="Replace this image">
                           Replace
                         </button>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      <button type="button" disabled={index === 0 || isUploading} onClick={() => handleMove(index, index - 1)} className="rounded p-1 text-muted hover:text-ink hover:bg-soft disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer" title="Move left">◀</button>
-                      <button type="button" disabled={index === items.length - 1 || isUploading} onClick={() => handleMove(index, index + 1)} className="rounded p-1 text-muted hover:text-ink hover:bg-soft disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer" title="Move right">▶</button>
-                      <button type="button" onClick={() => handleRemove(item.id)} className="rounded p-1 text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer" title="Remove image">
-                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <button type="button" disabled={index === 0 || isUploading} onClick={() => handleMove(index, index - 1)} className="rounded p-0.5 text-muted hover:text-ink hover:bg-soft disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer" title="Move left">◀</button>
+                      <button type="button" disabled={index === items.length - 1 || isUploading} onClick={() => handleMove(index, index + 1)} className="rounded p-0.5 text-muted hover:text-ink hover:bg-soft disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer" title="Move right">▶</button>
+                      <button type="button" onClick={() => handleRemove(item.id)} className="rounded p-0.5 text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer" title="Remove image">
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                           <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
                         </svg>
                       </button>
