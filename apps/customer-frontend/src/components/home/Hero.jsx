@@ -38,8 +38,8 @@ export default function Hero() {
         <div className="w-full mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-4">
           <div className="max-w-[520px] max-[760px]:max-w-[58%]">
 
-            {/* Eyebrow */}
-            <div className="flex items-center gap-2 mb-3 max-[760px]:mb-2">
+            {/* Eyebrow — hidden on mobile to save space */}
+            <div className="hidden min-[761px]:flex items-center gap-2 mb-3">
               <span className="w-6 h-[2px] shrink-0" style={{ background: '#D9AE4E' }} />
               <span
                 className="font-bold uppercase tracking-[0.18em]"
@@ -73,18 +73,18 @@ export default function Hero() {
               Design a keepsake in 3D, preview it from every angle, and we will make it just for them.
             </p>
 
-            {/* Buttons — always one row */}
-            <div className="flex flex-row items-center gap-2 mb-3 min-[761px]:gap-3 min-[761px]:mb-5">
-              <Link to={customiseLink} className="shrink-0">
-                <Button variant="hero" size="lg" className="whitespace-nowrap max-[760px]:!text-[11px] max-[760px]:!py-1.5 max-[760px]:!px-3">
+            {/* Buttons — always one row, equal size */}
+            <div className="flex flex-row items-center gap-2 mb-2 min-[761px]:gap-3 min-[761px]:mb-5">
+              <Link to={customiseLink} className="flex-1 min-[761px]:flex-none">
+                <Button variant="hero" size="lg" className="w-full whitespace-nowrap max-[760px]:!text-[10px] max-[760px]:!py-1 max-[760px]:!px-2.5">
                   <span>Start personalising</span>
-                  <svg className="w-[13px] h-[13px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                  <svg className="w-[11px] h-[11px] max-[760px]:block hidden min-[761px]:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                     <path d="M5 12h14M13 6l6 6-6 6" />
                   </svg>
                 </Button>
               </Link>
-              <Link to="/products" className="shrink-0">
-                <Button variant="hero2" size="lg" className="whitespace-nowrap max-[760px]:!text-[11px] max-[760px]:!py-1.5 max-[760px]:!px-3"
+              <Link to="/products" className="flex-1 min-[761px]:flex-none">
+                <Button variant="hero2" size="lg" className="w-full whitespace-nowrap max-[760px]:!text-[10px] max-[760px]:!py-1 max-[760px]:!px-2.5"
                   style={{ borderColor: 'rgba(217,174,78,0.5)', color: '#f0e0b4' }}>
                   Shop all gifts
                 </Button>
