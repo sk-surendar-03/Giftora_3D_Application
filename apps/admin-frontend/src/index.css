@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-fade-in { animation: fade-in 0.18s ease-out both; }
+
 @theme {
   --font-display: "Space Grotesk", system-ui, "Segoe UI", sans-serif;
   --font-sans: "Inter", system-ui, "Segoe UI", sans-serif;

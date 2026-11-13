@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Banner from '../../components/Banner.jsx'
+import { useToast } from '../../components/Toast.jsx'
 import AdminDesignPreview from '../../components/AdminDesignPreview.jsx'
 import { fetchOrder, updateOrderStatus, fetchOrderItemStlBlob, fetchOrderItem3mfBlob } from '../../features/orders/ordersApi.js'
 import { CARRIER_PRESETS, computeTrackingUrl } from '../../utils/carrierTracking.js'
@@ -102,6 +103,7 @@ function describeAdminDesign(params) {
 
 export default function OrderDetail() {
   const { id } = useParams()
+  const toast = useToast()
   const [order, setOrder] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -171,9 +173,10 @@ export default function OrderDetail() {
       setTrackingNumber(updated.trackingNumber || '')
       setTrackingUrl(updated.trackingUrl || '')
       setCustomUrlEdited(Boolean(updated.trackingUrl))
-      setSuccessMessage('Fulfillment details saved successfully.'); window.dispatchEvent(new CustomEvent('giftora:orders-updated'))
+      setSuccessMessage('Fulfillment details saved successfully.'); window.dispatchEvent(new CustomEvent('giftora:orders-updated')); toast?.('Fulfillment details saved successfully.', 'success')
     } catch (err) {
-      setError(extractError(err))
+      const msg = extractError(err)
+      setError(msg); toast?.(msg, 'error')
     } finally {
       setUpdating(false)
     }

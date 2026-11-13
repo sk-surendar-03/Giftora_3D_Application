@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Banner from '../../components/Banner.jsx'
+import { useToast } from '../../components/Toast.jsx'
 import { fetchAnnouncement, updateAnnouncement } from '../../features/settings/settingsApi.js'
 
 function extractError(err) {
@@ -126,6 +127,7 @@ function AdminDetailsCard({ currentUser, onUserUpdated }) {
 
 // ─── Main Settings Page ───────────────────────────────────────────────────────
 export default function Settings() {
+  const toast = useToast()
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
 
@@ -156,9 +158,9 @@ export default function Settings() {
       const updated = await updateAnnouncement({ text: announcementText, enabled: announcementEnabled })
       setAnnouncementText(updated.text)
       setAnnouncementEnabled(updated.enabled)
-      setAnnouncementSuccess('Announcement bar settings saved successfully.')
+      setAnnouncementSuccess('Announcement bar settings saved successfully.'); toast?.('Announcement saved successfully.', 'success')
     } catch (err) {
-      setAnnouncementError(extractError(err))
+      const msg = extractError(err); setAnnouncementError(msg); toast?.(msg, 'error')
     } finally {
       setSavingAnnouncement(false)
     }

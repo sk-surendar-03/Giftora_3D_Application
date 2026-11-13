@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './features/auth/AuthContext.jsx'
+import { ToastProvider } from './components/Toast.jsx'
 import ProtectedRoute from './features/auth/ProtectedRoute.jsx'
 import AdminLayout from './components/AdminLayout.jsx'
 import Login from './app/login/Login.jsx'
@@ -19,6 +20,7 @@ import CustomizationSettings from './app/customization/CustomizationSettings.jsx
 function App() {
   return (
     <AuthProvider>
+      <ToastProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route
@@ -43,6 +45,7 @@ function App() {
           <Route path="/customization" element={<CustomizationSettings />} />
         </Route>
       </Routes>
+      </ToastProvider>
     </AuthProvider>
   )
 }
