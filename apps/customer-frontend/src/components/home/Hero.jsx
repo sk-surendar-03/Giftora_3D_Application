@@ -76,24 +76,21 @@ export default function Hero() {
             {/* Buttons — always one row, equal size */}
             <div className="flex flex-row items-center gap-2 mb-2 min-[761px]:gap-3 min-[761px]:mb-5">
               <Link to={customiseLink} className="flex-1 min-[761px]:flex-none">
-                <Button variant="hero" size="lg" className="w-full whitespace-nowrap max-[760px]:!text-[10px] max-[760px]:!py-1 max-[760px]:!px-2.5">
+                <Button variant="hero" size="lg" className="w-full whitespace-nowrap max-[760px]:!text-[10px] max-[760px]:!py-0 max-[760px]:!px-2 max-[760px]:!h-7 max-[760px]:!leading-7">
                   <span>Start personalising</span>
-                  <svg className="w-[11px] h-[11px] max-[760px]:block hidden min-[761px]:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                    <path d="M5 12h14M13 6l6 6-6 6" />
-                  </svg>
                 </Button>
               </Link>
               <Link to="/products" className="flex-1 min-[761px]:flex-none">
-                <Button variant="hero2" size="lg" className="w-full whitespace-nowrap max-[760px]:!text-[10px] max-[760px]:!py-1 max-[760px]:!px-2.5"
+                <Button variant="hero2" size="lg" className="w-full whitespace-nowrap max-[760px]:!text-[10px] max-[760px]:!py-0 max-[760px]:!px-2 max-[760px]:!h-7 max-[760px]:!leading-7"
                   style={{ borderColor: 'rgba(217,174,78,0.5)', color: '#f0e0b4' }}>
                   Shop all gifts
                 </Button>
               </Link>
             </div>
 
-            {/* Trust badges */}
+            {/* Trust badges — desktop only */}
             <div
-              className="flex flex-wrap items-center gap-3 font-medium max-[760px]:gap-x-3 max-[760px]:gap-y-1"
+              className="hidden min-[761px]:flex flex-wrap items-center gap-3 font-medium"
               style={{
                 fontSize: 'clamp(9px, 1.2vw, 13px)',
                 color: 'rgba(255,240,200,0.9)',
