@@ -5,13 +5,13 @@ export default function Hero() {
   const customiseLink = '/customise'
 
   return (
-    <section className="relative overflow-hidden border-b border-line">
+    <section className="relative overflow-hidden border-b border-line max-[760px]:min-h-[480px]">
 
-      {/* Full image at natural aspect ratio — same on all screen sizes, zero cropping */}
+      {/* Full image — natural ratio on desktop. Mobile: absolute fill so min-height works */}
       <img
         src="/hero-products.png"
         alt="Jasvel 3D Prints — personalised spiritual gifts and figurines"
-        className="block w-full h-auto"
+        className="block w-full h-auto max-[760px]:absolute max-[760px]:inset-0 max-[760px]:h-full max-[760px]:w-full max-[760px]:object-cover max-[760px]:object-[55%_center]"
       />
 
       {/* Base dark layer */}
@@ -20,7 +20,7 @@ export default function Hero() {
         style={{ background: 'rgba(0,0,0,0.42)' }}
       />
 
-      {/* Desktop gradient — left heavy, fades right */}
+      {/* Desktop gradient */}
       <div
         className="absolute inset-0 pointer-events-none max-[760px]:hidden"
         style={{
@@ -28,11 +28,11 @@ export default function Hero() {
         }}
       />
 
-      {/* Mobile gradient — stronger dark on left 65% so text is crystal clear */}
+      {/* Mobile gradient — strong dark left so full text is readable */}
       <div
         className="absolute inset-0 pointer-events-none min-[761px]:hidden"
         style={{
-          background: 'linear-gradient(100deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.90) 35%, rgba(0,0,0,0.65) 55%, rgba(0,0,0,0.1) 75%, transparent 100%)'
+          background: 'linear-gradient(100deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0.5) 60%, transparent 85%)'
         }}
       />
 
@@ -42,38 +42,36 @@ export default function Hero() {
         style={{ height: '30%', background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}
       />
 
-      {/* Text — vertically centered, left side */}
+      {/* Text — vertically centered */}
       <div className="absolute inset-0 flex items-center">
         <div className="w-full mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-4">
-          <div className="max-w-[50%] max-[760px]:max-w-[60%]">
+          <div className="max-w-[50%] max-[760px]:max-w-[58%]">
 
-            {/* Eyebrow — hidden on small phones to save height */}
-            <div className="flex items-center gap-2 mb-3 max-[480px]:hidden">
+            <div className="flex items-center gap-2 mb-3 max-[760px]:mb-2">
               <span className="w-6 h-[2px] shrink-0" style={{ background: '#D9AE4E' }} />
               <span
-                className="text-[10px] font-bold uppercase tracking-[0.18em]"
-                style={{ color: '#D9AE4E', textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}
+                className="font-bold uppercase tracking-[0.18em]"
+                style={{ fontSize: 'clamp(8px, 1.8vw, 11px)', color: '#D9AE4E', textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}
               >
                 Your Imagination. Our 3D Creation.
               </span>
             </div>
 
             <h1
-              className="font-display font-bold leading-[1.05] tracking-[-0.02em] mb-3"
+              className="font-display font-bold leading-[1.05] tracking-[-0.02em] mb-3 max-[760px]:mb-2"
               style={{
-                fontSize: 'clamp(24px, 4.5vw, 62px)',
+                fontSize: 'clamp(18px, 4.5vw, 62px)',
                 color: '#ffffff',
-                textShadow: '0 0 60px rgba(217,174,78,0.6), 0 2px 30px rgba(0,0,0,1), 0 1px 6px rgba(0,0,0,1), -1px -1px 0 rgba(0,0,0,0.8), 1px 1px 0 rgba(0,0,0,0.8)',
+                textShadow: '0 0 50px rgba(217,174,78,0.5), 0 2px 20px rgba(0,0,0,1), 0 1px 4px rgba(0,0,0,1)',
               }}
             >
               Gifts that carry<br />their name.
             </h1>
 
-            {/* Body — hidden on mobile to save height */}
             <p
-              className="leading-[1.5] mb-5 max-[760px]:hidden"
+              className="leading-[1.5] mb-4 max-[760px]:mb-3"
               style={{
-                fontSize: 'clamp(14px, 1.4vw, 17px)',
+                fontSize: 'clamp(11px, 1.4vw, 17px)',
                 color: 'rgba(255,240,200,0.95)',
                 textShadow: '0 1px 8px rgba(0,0,0,0.95)',
               }}
@@ -81,49 +79,48 @@ export default function Hero() {
               Design a keepsake in 3D, preview it from every angle, and we will make it just for them.
             </p>
 
-            <div className="flex flex-col gap-2 mb-4 max-[760px]:mb-2 min-[761px]:flex-row min-[761px]:flex-wrap min-[761px]:gap-3">
+            <div className="flex flex-col gap-2 mb-3 min-[761px]:flex-row min-[761px]:flex-wrap min-[761px]:gap-3 min-[761px]:mb-5">
               <Link to={customiseLink}>
-                <Button variant="hero" size="lg" className="w-full whitespace-nowrap max-[760px]:text-sm max-[760px]:py-2">
+                <Button variant="hero" size="lg" className="w-full whitespace-nowrap max-[760px]:!text-[13px] max-[760px]:!py-2 max-[760px]:!px-4">
                   <span>Start personalising</span>
-                  <svg className="w-[16px] h-[16px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                  <svg className="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                     <path d="M5 12h14M13 6l6 6-6 6" />
                   </svg>
                 </Button>
               </Link>
               <Link to="/products">
-                <Button variant="hero2" size="lg" className="w-full whitespace-nowrap max-[760px]:text-sm max-[760px]:py-2"
+                <Button variant="hero2" size="lg" className="w-full whitespace-nowrap max-[760px]:!text-[13px] max-[760px]:!py-2 max-[760px]:!px-4"
                   style={{ borderColor: 'rgba(217,174,78,0.5)', color: '#f0e0b4' }}>
                   Shop all gifts
                 </Button>
               </Link>
             </div>
 
-            {/* Badges — hidden on mobile */}
             <div
-              className="flex flex-wrap items-center gap-4 font-medium max-[760px]:hidden"
+              className="flex flex-wrap items-center gap-3 font-medium max-[760px]:gap-x-3 max-[760px]:gap-y-1"
               style={{
-                fontSize: 'clamp(11px, 1.2vw, 13px)',
+                fontSize: 'clamp(9px, 1.2vw, 13px)',
                 color: 'rgba(255,240,200,0.9)',
                 textShadow: '0 1px 6px rgba(0,0,0,0.95)',
               }}
             >
-              <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ color: '#D9AE4E' }}>
+              <div className="flex items-center gap-1">
+                <svg className="max-[760px]:w-3 max-[760px]:h-3 w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ color: '#D9AE4E' }}>
                   <path d="M3 6h11v10H3zM14 10h4l3 3v3h-7" /><circle cx="7" cy="18" r="2" /><circle cx="17" cy="18" r="2" />
                 </svg>
                 Ships in 3 days
               </div>
-              <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ color: '#D9AE4E' }}>
+              <div className="flex items-center gap-1">
+                <svg className="max-[760px]:w-3 max-[760px]:h-3 w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ color: '#D9AE4E' }}>
                   <path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6l8-3Z" /><path d="m9 12 2 2 4-4" />
                 </svg>
                 Secure checkout
               </div>
-              <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" style={{ color: '#D9AE4E', fill: '#D9AE4E' }}>
+              <div className="flex items-center gap-1">
+                <svg className="max-[760px]:w-3 max-[760px]:h-3 w-4 h-4 shrink-0" viewBox="0 0 24 24" style={{ color: '#D9AE4E', fill: '#D9AE4E' }}>
                   <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z" stroke="none" />
                 </svg>
-                4.8 average rating
+                4.8 rating
               </div>
             </div>
 
