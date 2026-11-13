@@ -88,9 +88,9 @@ export default function Hero() {
               </Link>
             </div>
 
-            {/* Trust badges — desktop only */}
+            {/* Trust badges — all screens, compact on mobile */}
             <div
-              className="hidden min-[761px]:flex flex-wrap items-center gap-3 font-medium"
+              className="flex flex-wrap items-center gap-3 font-medium max-[760px]:gap-x-2 max-[760px]:gap-y-0.5 max-[760px]:mt-1.5"
               style={{
                 fontSize: 'clamp(9px, 1.2vw, 13px)',
                 color: 'rgba(255,240,200,0.9)',
