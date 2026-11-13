@@ -5,13 +5,12 @@ export default function Hero() {
   const customiseLink = '/customise'
 
   return (
-    <section className="relative overflow-hidden border-b border-line max-[760px]:min-h-[460px]">
+    <section className="relative overflow-hidden border-b border-line">
 
-      {/* Desktop: natural ratio. Mobile: absolute fill to cover min-height */}
       <img
         src="/hero-products.png"
         alt="Jasvel 3D Prints — personalised spiritual gifts and figurines"
-        className="block w-full h-auto max-[760px]:absolute max-[760px]:inset-0 max-[760px]:h-full max-[760px]:object-cover max-[760px]:object-[60%_center]"
+        className="block w-full h-auto"
       />
 
       {/* Base dark layer */}
