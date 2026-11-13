@@ -5,13 +5,13 @@ export default function Hero() {
   const customiseLink = '/customise'
 
   return (
-    <section className="relative overflow-hidden border-b border-line max-[760px]:min-h-[480px]">
+    <section className="relative overflow-hidden border-b border-line">
 
-      {/* Full image — natural ratio on desktop. Mobile: absolute fill so min-height works */}
+      {/* Full image — natural aspect ratio on all screens, zero cropping */}
       <img
         src="/hero-products.png"
         alt="Jasvel 3D Prints — personalised spiritual gifts and figurines"
-        className="block w-full h-auto max-[760px]:absolute max-[760px]:inset-0 max-[760px]:h-full max-[760px]:w-full max-[760px]:object-cover max-[760px]:object-[55%_center]"
+        className="block w-full h-auto"
       />
 
       {/* Base dark layer */}
@@ -79,17 +79,17 @@ export default function Hero() {
               Design a keepsake in 3D, preview it from every angle, and we will make it just for them.
             </p>
 
-            <div className="flex flex-col gap-2 mb-3 min-[761px]:flex-row min-[761px]:flex-wrap min-[761px]:gap-3 min-[761px]:mb-5">
+            <div className="flex flex-row flex-wrap gap-2 mb-3 min-[761px]:gap-3 min-[761px]:mb-5">
               <Link to={customiseLink}>
-                <Button variant="hero" size="lg" className="w-full whitespace-nowrap max-[760px]:!text-[13px] max-[760px]:!py-2 max-[760px]:!px-4">
+                <Button variant="hero" size="lg" className="whitespace-nowrap max-[760px]:!text-[11px] max-[760px]:!py-1.5 max-[760px]:!px-3">
                   <span>Start personalising</span>
-                  <svg className="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                  <svg className="w-[13px] h-[13px] max-[760px]:w-[11px] max-[760px]:h-[11px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                     <path d="M5 12h14M13 6l6 6-6 6" />
                   </svg>
                 </Button>
               </Link>
               <Link to="/products">
-                <Button variant="hero2" size="lg" className="w-full whitespace-nowrap max-[760px]:!text-[13px] max-[760px]:!py-2 max-[760px]:!px-4"
+                <Button variant="hero2" size="lg" className="whitespace-nowrap max-[760px]:!text-[11px] max-[760px]:!py-1.5 max-[760px]:!px-3"
                   style={{ borderColor: 'rgba(217,174,78,0.5)', color: '#f0e0b4' }}>
                   Shop all gifts
                 </Button>
