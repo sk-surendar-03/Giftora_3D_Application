@@ -496,7 +496,7 @@ export default function ProductImagesSection({ images = [], onChange, materials 
             <span className="text-accent font-semibold">Cover image is first</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-start">
             {items.map((item, index) => {
               const isPrimary = index === 0
               const isUploading = item.status === 'uploading'
@@ -512,7 +512,7 @@ export default function ProductImagesSection({ images = [], onChange, materials 
                   onDragStart={(e) => onCardDragStart(e, index)}
                   onDragOver={(e) => onCardDragOver(e, index)}
                   onDrop={(e) => onCardDrop(e, index)}
-                  className={`relative flex flex-col rounded-lg border bg-surface p-2.5 shadow-xs transition-all ${
+                  className={`relative flex flex-col rounded-lg border bg-surface p-2.5 shadow-xs transition-all self-start ${
                     isPrimary ? 'border-accent ring-1 ring-accent' : isError ? 'border-red-400 bg-red-50/20' : 'border-line hover:border-muted'
                   }`}
                 >
@@ -532,7 +532,7 @@ export default function ProductImagesSection({ images = [], onChange, materials 
                     )}
 
                     {/* Filter button sits inside image for visual placement */}
-                    {item.url && !isUploading && (materials.length > 0 || Object.keys(colorsByMaterial).length > 0) && (
+                    {item.url && !isUploading && (
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setFilterPopupId(isFilterOpen ? null : item.id) }}
