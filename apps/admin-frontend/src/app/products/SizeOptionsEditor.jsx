@@ -47,26 +47,26 @@ export default function SizeOptionsEditor({ value = [], onChange, onDirectSave }
       {value.length > 0 && (
         <div className="space-y-2">
           {value.map((item, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-md border border-line bg-surface px-3 py-2">
+            <div key={i} className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface px-3 py-2">
               {editIndex === i ? (
                 <>
                   <input
                     value={editDraft.name}
                     onChange={(e) => setEditDraft((p) => ({ ...p, name: e.target.value }))}
-                    className="flex-1 rounded border border-line px-2 py-1 text-xs"
+                    className="flex-1 min-w-[100px] rounded border border-line px-2 py-1 text-xs"
                     placeholder="Size name"
                     autoFocus
                   />
-                  <span className="text-xs text-muted">+₹</span>
+                  <span className="text-xs text-muted shrink-0">+₹</span>
                   <input
                     type="number" min="0" step="0.01"
                     value={editDraft.additional}
                     onChange={(e) => setEditDraft((p) => ({ ...p, additional: e.target.value }))}
-                    className="w-24 rounded border border-line px-2 py-1 text-xs"
+                    className="w-20 rounded border border-line px-2 py-1 text-xs"
                     placeholder="Extra"
                   />
-                  <button type="button" onClick={saveEdit} className="rounded bg-accent px-2 py-1 text-xs font-semibold text-white cursor-pointer">Save</button>
-                  <button type="button" onClick={() => setEditIndex(null)} className="text-xs text-muted hover:text-ink cursor-pointer">✕</button>
+                  <button type="button" onClick={saveEdit} className="rounded bg-accent px-2 py-1 text-xs font-semibold text-white cursor-pointer shrink-0">Save</button>
+                  <button type="button" onClick={() => setEditIndex(null)} className="text-xs text-muted hover:text-ink cursor-pointer shrink-0">✕</button>
                 </>
               ) : (
                 <>
@@ -83,12 +83,12 @@ export default function SizeOptionsEditor({ value = [], onChange, onDirectSave }
         </div>
       )}
 
-      <div className="flex items-center gap-2 pt-1">
+      <div className="flex flex-wrap items-center gap-2 pt-1">
         <input
           value={draft.name}
           onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
           placeholder="Size name (e.g. Small 4cm)"
-          className="flex-1 rounded-md border border-line px-3 py-1.5 text-xs"
+          className="flex-1 min-w-[120px] rounded-md border border-line px-3 py-1.5 text-xs"
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }}
         />
         <span className="text-xs text-muted shrink-0">+₹</span>
@@ -97,13 +97,13 @@ export default function SizeOptionsEditor({ value = [], onChange, onDirectSave }
           value={draft.additional}
           onChange={(e) => setDraft((p) => ({ ...p, additional: e.target.value }))}
           placeholder="0"
-          className="w-24 rounded-md border border-line px-3 py-1.5 text-xs"
+          className="w-20 rounded-md border border-line px-3 py-1.5 text-xs"
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }}
         />
         <button
           type="button" onClick={add}
           disabled={!draft.name.trim() || draft.additional === ''}
-          className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
         >
           + Add
         </button>

@@ -216,9 +216,9 @@ export default function ProductForm() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold text-ink">{isEditing ? 'Edit product' : 'New product'}</h1>
-        <Link to="/products" className="text-sm text-muted hover:underline">
+        <Link to="/products" className="text-sm text-muted hover:underline whitespace-nowrap">
           ← Back to products
         </Link>
       </div>
@@ -264,14 +264,14 @@ export default function ProductForm() {
                 />
               </label>
 
-              <div className="grid grid-cols-2 gap-4">
-                <label className="block text-sm font-medium text-ink">
+              <div className="flex flex-wrap gap-4">
+                <label className="block text-sm font-medium text-ink flex-1 min-w-[120px]">
                   Selling Price (₹)
                   <input type="number" min="0" step="0.01" value={form.price}
                     onChange={(e) => update('price', e.target.value)}
                     className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm" placeholder="e.g. 399" />
                 </label>
-                <label className="block text-sm font-medium text-ink">
+                <label className="block text-sm font-medium text-ink flex-1 min-w-[120px]">
                   Original Price (₹) <span className="text-xs text-muted">(strikethrough)</span>
                   <input type="number" min="0" step="0.01" value={form.originalPrice}
                     onChange={(e) => update('originalPrice', e.target.value)}
@@ -357,13 +357,13 @@ export default function ProductForm() {
               />
             </div>
 
-            <div className="rounded-lg border border-line bg-surface p-6 flex items-center justify-between gap-4">
+            <div className="rounded-lg border border-line bg-surface p-6 flex flex-wrap items-center justify-between gap-4">
               <label className="flex items-center gap-2 text-sm font-medium text-ink">
                 <input type="checkbox" checked={form.isActive} onChange={(e) => update('isActive', e.target.checked)} />
                 Active (visible to customers)
               </label>
               <button type="submit" disabled={submitting}
-                className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
+                className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap">
                 {submitting ? 'Saving…' : isEditing ? 'Save changes' : 'Create product'}
               </button>
             </div>
