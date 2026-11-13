@@ -172,7 +172,8 @@ export default function Categories() {
           No categories yet. Add one above.
         </div>
       ) : (
-        <table className="mt-6 w-full overflow-hidden rounded-lg border border-line bg-surface text-sm">
+        <div className="mt-6 overflow-x-auto rounded-lg border border-line">
+        <table className="w-full bg-surface text-sm">
           <thead className="bg-bg text-left text-xs font-medium tracking-wide text-muted uppercase">
             <tr>
               <th className="px-4 py-2">Name</th>
@@ -243,6 +244,7 @@ export default function Categories() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       {!isLoading && categories.length > 0 && (

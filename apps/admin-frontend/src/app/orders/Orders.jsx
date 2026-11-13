@@ -117,7 +117,7 @@ export default function Orders() {
             setSearch(e.target.value)
             setPage(1)
           }}
-          className="h-9 w-64 rounded-control border border-line bg-surface px-3 text-xs text-ink placeholder:text-muted outline-none focus:border-accent"
+          className="h-9 w-full sm:w-64 rounded-control border border-line bg-surface px-3 text-xs text-ink placeholder:text-muted outline-none focus:border-accent"
         />
         <select
           value={status}
@@ -175,72 +175,105 @@ export default function Orders() {
           No orders match these filters.
         </div>
       ) : (
-        <table className="mt-4 w-full overflow-hidden rounded-lg border border-line bg-surface text-sm">
-          <thead className="bg-bg text-left text-xs font-medium tracking-wide text-muted uppercase">
-            <tr>
-              <th className="px-4 py-2">Order</th>
-              <th className="px-4 py-2">Type</th>
-              <th className="px-4 py-2">Customer</th>
-              <th className="px-4 py-2">Date (Newest First)</th>
-              <th className="px-4 py-2">Total</th>
-              <th className="px-4 py-2">Status</th>
-            </tr>
-          </thead>
-          <tbody>
+        <>
+          {/* Mobile cards */}
+          <div className="mt-4 flex flex-col gap-3 sm:hidden">
             {orders.map((order) => {
               const hasCustom = order.items.some((i) => i.itemType === 'CUSTOM_DESIGN')
               const hasCatalog = order.items.some((i) => i.itemType === 'PRODUCT')
               return (
-                <tr key={order.id} className="border-t border-line hover:bg-alt/30 transition-colors">
-                  <td className="px-4 py-2">
-                    <Link to={`/orders/${order.id}`} className="font-semibold text-accent hover:underline font-mono">
+                <div key={order.id} className="rounded-lg border border-line bg-surface p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <Link to={`/orders/${order.id}`} className="font-semibold text-accent hover:underline font-mono text-sm">
                       {order.orderNumber}
                     </Link>
-                    <div className="text-xs text-muted mt-0.5">
-                      {order.items.length} item{order.items.length === 1 ? '' : 's'}
-                    </div>
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex flex-wrap gap-1.5">
-                      {hasCustom && (
-                        <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
-                          <svg className="w-3 h-3 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" />
-                          </svg>
-                          Custom Design
-                        </span>
-                      )}
-                      {hasCatalog && (
-                        <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium bg-soft text-muted border border-line">
-                          Catalog
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-2 text-muted">
-                    <div className="font-medium text-ink">{order.user.name}</div>
-                    <div className="text-xs text-muted">{order.user.email}</div>
-                  </td>
-                  <td className="px-4 py-2 text-muted whitespace-nowrap text-xs font-mono">
-                    {formatDate(order.createdAt)}
-                  </td>
-                  <td className="px-4 py-2 font-semibold text-ink whitespace-nowrap font-mono">
-                    {formatPrice(order.totalCents)}
-                  </td>
-                  <td className="px-4 py-2">
-                    <span
-                      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        STATUS_TONE[order.status] ?? 'bg-soft text-muted border border-line'
-                      }`}
-                    >
+                    <span className={`shrink-0 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_TONE[order.status] ?? 'bg-soft text-muted border border-line'}`}>
                       {order.status}
                     </span>
-                  </td>
-                </tr>
+                  </div>
+                  <div className="text-sm font-medium text-ink">{order.user.name}</div>
+                  <div className="text-xs text-muted">{order.user.email}</div>
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <div className="flex flex-wrap gap-1.5">
+                      {hasCustom && (
+                        <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">Custom Design</span>
+                      )}
+                      {hasCatalog && (
+                        <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium bg-soft text-muted border border-line">Catalog</span>
+                      )}
+                    </div>
+                    <span className="font-semibold text-ink font-mono text-sm">{formatPrice(order.totalCents)}</span>
+                  </div>
+                  <div className="text-xs text-muted font-mono">{formatDate(order.createdAt)} · {order.items.length} item{order.items.length === 1 ? '' : 's'}</div>
+                </div>
               )
             })}
-          </tbody>
-        </table>
+          </div>
+
+          {/* Desktop table */}
+          <table className="mt-4 hidden w-full overflow-hidden rounded-lg border border-line bg-surface text-sm sm:table">
+            <thead className="bg-bg text-left text-xs font-medium tracking-wide text-muted uppercase">
+              <tr>
+                <th className="px-4 py-2">Order</th>
+                <th className="px-4 py-2">Type</th>
+                <th className="px-4 py-2">Customer</th>
+                <th className="px-4 py-2">Date (Newest First)</th>
+                <th className="px-4 py-2">Total</th>
+                <th className="px-4 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => {
+                const hasCustom = order.items.some((i) => i.itemType === 'CUSTOM_DESIGN')
+                const hasCatalog = order.items.some((i) => i.itemType === 'PRODUCT')
+                return (
+                  <tr key={order.id} className="border-t border-line hover:bg-alt/30 transition-colors">
+                    <td className="px-4 py-2">
+                      <Link to={`/orders/${order.id}`} className="font-semibold text-accent hover:underline font-mono">
+                        {order.orderNumber}
+                      </Link>
+                      <div className="text-xs text-muted mt-0.5">
+                        {order.items.length} item{order.items.length === 1 ? '' : 's'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-wrap gap-1.5">
+                        {hasCustom && (
+                          <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
+                            <svg className="w-3 h-3 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" />
+                            </svg>
+                            Custom Design
+                          </span>
+                        )}
+                        {hasCatalog && (
+                          <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium bg-soft text-muted border border-line">
+                            Catalog
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 text-muted">
+                      <div className="font-medium text-ink">{order.user.name}</div>
+                      <div className="text-xs text-muted">{order.user.email}</div>
+                    </td>
+                    <td className="px-4 py-2 text-muted whitespace-nowrap text-xs font-mono">
+                      {formatDate(order.createdAt)}
+                    </td>
+                    <td className="px-4 py-2 font-semibold text-ink whitespace-nowrap font-mono">
+                      {formatPrice(order.totalCents)}
+                    </td>
+                    <td className="px-4 py-2">
+                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_TONE[order.status] ?? 'bg-soft text-muted border border-line'}`}>
+                        {order.status}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </>
       )}
 
       {!isLoading && orders.length > 0 && (

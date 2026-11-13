@@ -113,63 +113,63 @@ export default function Products() {
           No products yet. Create one to get started.
         </div>
       ) : (
-        <table className="w-full overflow-hidden rounded-lg border border-line bg-surface text-sm">
-          <thead className="bg-bg text-left text-xs font-medium tracking-wide text-muted uppercase">
-            <tr>
-              <th className="px-4 py-2">Name</th>
-              <th className="px-4 py-2">Category</th>
-              <th className="px-4 py-2">Price</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <>
+          {/* Mobile cards */}
+          <div className="flex flex-col gap-3 sm:hidden">
             {products.map((product) => (
-              <tr key={product.id} className="border-t border-line hover:bg-alt/30 transition-colors">
-                <td className="px-4 py-2 text-ink font-medium">{product.name}</td>
-                <td className="px-4 py-2 text-muted">{product.category?.name ?? '—'}</td>
-                <td className="px-4 py-2 text-muted font-mono">{formatPrice(product.priceCents)}</td>
-                <td className="px-4 py-2">
-                  <span
-                    className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      product.isActive ? 'bg-green-100 text-green-700' : 'bg-soft text-muted'
-                    }`}
-                  >
+              <div key={product.id} className="rounded-lg border border-line bg-surface p-4 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-ink text-sm">{product.name}</p>
+                    <p className="text-xs text-muted mt-0.5">{product.category?.name ?? '—'} · {formatPrice(product.priceCents)}</p>
+                  </div>
+                  <span className={`shrink-0 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${product.isActive ? 'bg-green-100 text-green-700' : 'bg-soft text-muted'}`}>
                     {product.isActive ? 'Active' : 'Inactive'}
                   </span>
-                </td>
-                <td className="px-4 py-2 text-right whitespace-nowrap">
-                  <button
-                    type="button"
-                    onClick={() => setViewingProduct(product)}
-                    className="mr-3 text-accent hover:underline font-medium cursor-pointer"
-                  >
-                    View
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busyId === product.id}
-                    onClick={() => toggleActive(product)}
-                    className="mr-3 text-ink hover:underline disabled:opacity-50 cursor-pointer"
-                  >
-                    {product.isActive ? 'Deactivate' : 'Activate'}
-                  </button>
-                  <Link to={`/products/${product.id}/edit`} className="mr-3 text-ink hover:underline">
-                    Edit
-                  </Link>
-                  <button
-                    type="button"
-                    disabled={busyId === product.id}
-                    onClick={() => handleDelete(product)}
-                    className="text-red-500 hover:underline disabled:opacity-50 cursor-pointer"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
+                </div>
+                <div className="flex flex-wrap gap-3 pt-1 text-xs">
+                  <button type="button" onClick={() => setViewingProduct(product)} className="text-accent hover:underline font-medium cursor-pointer">View</button>
+                  <button type="button" disabled={busyId === product.id} onClick={() => toggleActive(product)} className="text-ink hover:underline disabled:opacity-50 cursor-pointer">{product.isActive ? 'Deactivate' : 'Activate'}</button>
+                  <Link to={`/products/${product.id}/edit`} className="text-ink hover:underline">Edit</Link>
+                  <button type="button" disabled={busyId === product.id} onClick={() => handleDelete(product)} className="text-red-500 hover:underline disabled:opacity-50 cursor-pointer">Delete</button>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+
+          {/* Desktop table */}
+          <table className="hidden w-full overflow-hidden rounded-lg border border-line bg-surface text-sm sm:table">
+            <thead className="bg-bg text-left text-xs font-medium tracking-wide text-muted uppercase">
+              <tr>
+                <th className="px-4 py-2">Name</th>
+                <th className="px-4 py-2">Category</th>
+                <th className="px-4 py-2">Price</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr key={product.id} className="border-t border-line hover:bg-alt/30 transition-colors">
+                  <td className="px-4 py-2 text-ink font-medium">{product.name}</td>
+                  <td className="px-4 py-2 text-muted">{product.category?.name ?? '—'}</td>
+                  <td className="px-4 py-2 text-muted font-mono">{formatPrice(product.priceCents)}</td>
+                  <td className="px-4 py-2">
+                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${product.isActive ? 'bg-green-100 text-green-700' : 'bg-soft text-muted'}`}>
+                      {product.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2 text-right whitespace-nowrap">
+                    <button type="button" onClick={() => setViewingProduct(product)} className="mr-3 text-accent hover:underline font-medium cursor-pointer">View</button>
+                    <button type="button" disabled={busyId === product.id} onClick={() => toggleActive(product)} className="mr-3 text-ink hover:underline disabled:opacity-50 cursor-pointer">{product.isActive ? 'Deactivate' : 'Activate'}</button>
+                    <Link to={`/products/${product.id}/edit`} className="mr-3 text-ink hover:underline">Edit</Link>
+                    <button type="button" disabled={busyId === product.id} onClick={() => handleDelete(product)} className="text-red-500 hover:underline disabled:opacity-50 cursor-pointer">Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
 
       {!isLoading && products.length > 0 && (

@@ -418,7 +418,7 @@ export default function OrderDetail() {
             </div>
 
             {/* Totals Summary */}
-            <div className="mt-6 ml-auto max-w-xs space-y-2 border-t border-line pt-4">
+            <div className="mt-6 w-full sm:ml-auto sm:max-w-xs space-y-2 border-t border-line pt-4">
               <div className="flex justify-between text-sm text-muted">
                 <span>Subtotal</span>
                 <span className="text-ink">{formatPrice(order.subtotalCents)}</span>

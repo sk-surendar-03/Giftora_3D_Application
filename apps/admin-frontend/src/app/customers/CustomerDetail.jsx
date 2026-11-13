@@ -89,7 +89,8 @@ export default function CustomerDetail() {
             {customer.orders.length === 0 ? (
               <p className="mt-3 text-sm text-muted">No orders yet.</p>
             ) : (
-              <table className="mt-3 w-full text-sm">
+              <div className="mt-3 overflow-x-auto">
+              <table className="w-full text-sm">
                 <thead className="text-left text-xs text-muted uppercase">
                   <tr>
                     <th className="py-1.5">Order</th>
@@ -101,18 +102,19 @@ export default function CustomerDetail() {
                 <tbody>
                   {customer.orders.map((order) => (
                     <tr key={order.id} className="border-t border-line">
-                      <td className="py-2">
-                        <Link to={`/orders/${order.id}`} className="font-medium text-ink hover:underline">
+                      <td className="py-2 pr-4">
+                        <Link to={`/orders/${order.id}`} className="font-medium text-ink hover:underline whitespace-nowrap">
                           {order.orderNumber}
                         </Link>
                       </td>
-                      <td className="py-2 text-muted">{formatDate(order.createdAt)}</td>
-                      <td className="py-2 text-muted">{order.status}</td>
-                      <td className="py-2 text-ink">{formatPrice(order.totalCents)}</td>
+                      <td className="py-2 pr-4 text-muted whitespace-nowrap">{formatDate(order.createdAt)}</td>
+                      <td className="py-2 pr-4 text-muted whitespace-nowrap">{order.status}</td>
+                      <td className="py-2 text-ink whitespace-nowrap">{formatPrice(order.totalCents)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
 
