@@ -1,11 +1,13 @@
-const variants = {
-  primary: 'bg-accent text-on-accent hover:bg-accent-dark hover:shadow-[0_0_20px_rgba(217,174,78,0.4)] active:scale-[0.97]',
-  accent:  'bg-accent text-on-accent hover:bg-accent-dark hover:shadow-[0_0_20px_rgba(217,174,78,0.4)] active:scale-[0.97]',
-  secondary: 'bg-surface text-ink border border-line hover:border-accent hover:text-accent hover:shadow-[0_0_16px_rgba(217,174,78,0.15)] active:scale-[0.97]',
-  ghost: 'bg-transparent text-accent hover:bg-soft hover:shadow-[0_0_12px_rgba(217,174,78,0.1)] active:scale-[0.97]',
-  danger: 'bg-danger text-white hover:bg-danger/90 hover:shadow-[0_4px_16px_rgba(179,50,31,0.4)] active:scale-[0.97]',
-  hero: 'btn-glow bg-accent text-on-accent hover:bg-accent-dark hover:scale-[1.03] active:scale-[0.98]',
-  hero2: 'bg-transparent text-ink border border-white/30 hover:border-accent hover:text-accent hover:scale-[1.03] active:scale-[0.98]',
+import { useState } from 'react'
+
+const baseVariant = {
+  primary:   { base: 'bg-accent text-on-accent',                       hoverBg: '#A9823A', shadow: '0 0 20px rgba(217,174,78,0.4)' },
+  accent:    { base: 'bg-accent text-on-accent',                       hoverBg: '#A9823A', shadow: '0 0 20px rgba(217,174,78,0.4)' },
+  secondary: { base: 'bg-surface text-ink border border-line',         hoverBg: '',       shadow: '0 0 16px rgba(217,174,78,0.15)' },
+  ghost:     { base: 'bg-transparent text-accent',                     hoverBg: '#161616', shadow: '0 0 12px rgba(217,174,78,0.1)' },
+  danger:    { base: 'bg-danger text-white',                           hoverBg: '',       shadow: '0 4px 16px rgba(179,50,31,0.4)' },
+  hero:      { base: 'bg-accent text-on-accent',                       hoverBg: '#A9823A', shadow: '0 0 28px rgba(217,174,78,0.55), 0 4px 16px rgba(0,0,0,0.4)' },
+  hero2:     { base: 'bg-transparent text-ink border border-white/30', hoverBg: '',       shadow: '0 0 16px rgba(217,174,78,0.2)' },
 }
 
 const sizes = {
@@ -18,12 +20,31 @@ export default function Button({
   variant = 'primary',
   size = 'md',
   className = '',
+  style = {},
   children,
   ...props
 }) {
+  const [hovered, setHovered] = useState(false)
+  const [pressed, setPressed] = useState(false)
+  const v = baseVariant[variant] || baseVariant.primary
+
+  const hoverStyle = hovered ? {
+    boxShadow: v.shadow,
+    transform: pressed ? 'scale(0.97)' : (variant === 'hero' || variant === 'hero2') ? 'scale(1.03)' : 'scale(1.01)',
+  } : {}
+
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-control font-semibold font-sans tracking-tight transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-45 disabled:pointer-events-none cursor-pointer ${variants[variant] || variants.primary} ${sizes[size] || sizes.md} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-control font-semibold font-sans tracking-tight disabled:cursor-not-allowed disabled:opacity-45 disabled:pointer-events-none cursor-pointer ${v.base} ${sizes[size] || sizes.md} ${className}`}
+      style={{
+        transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+        ...hoverStyle,
+        ...style,
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setPressed(false) }}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
       {...props}
     >
       {children}

@@ -7,6 +7,7 @@ import { resolveImageUrl } from '../../utils/imageUrl.js'
 export default function ProductCard({ product, index = 0 }) {
   const { isWishlisted, toggleWishlist } = useWishlist()
   const [isToggling, setIsToggling] = useState(false)
+  const [hovered, setHovered] = useState(false)
   const isSaved = isWishlisted(product.id)
 
   const priceDisplay = typeof product.price === 'number' ? `₹${product.price}` : product.price
@@ -51,16 +52,35 @@ export default function ProductCard({ product, index = 0 }) {
   })()
 
   return (
-    <article className="prod flex flex-col justify-between">
+    <article
+      className="flex flex-col justify-between"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        transform: hovered ? 'translateY(-6px)' : 'translateY(0)',
+        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+      }}
+    >
       {/* Top Image Tile (.ph) with 8px radius, relative, 1:1 aspect ratio */}
       <div>
-        <div className={`prod-tile relative aspect-square w-full rounded-card border border-line overflow-hidden ${tintClass || 'bg-soft'}`}>
+        <div
+          className={`relative aspect-square w-full rounded-card overflow-hidden ${tintClass || 'bg-soft'}`}
+          style={{
+            border: hovered ? '1px solid rgba(217,174,78,0.45)' : '1px solid #262626',
+            boxShadow: hovered ? '0 0 0 1px rgba(217,174,78,0.1), 0 16px 48px rgba(0,0,0,0.6)' : 'none',
+            transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+          }}
+        >
           <Link to={`/products/${product.slug}`} className="block h-full w-full">
             {product.image ? (
               <img
                 src={resolveImageUrl(product.image)}
                 alt={product.name}
-                className="prod-img h-full w-full object-cover"
+                className="h-full w-full object-cover"
+                style={{
+                  transform: hovered ? 'scale(1.08)' : 'scale(1)',
+                  transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1)',
+                }}
               />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center text-muted gap-2">
@@ -72,8 +92,15 @@ export default function ProductCard({ product, index = 0 }) {
             )}
           </Link>
 
-          {/* Gold shimmer overlay — controlled by .prod:hover .prod-shimmer in CSS */}
-          <div className="prod-shimmer absolute inset-0 pointer-events-none" />
+          {/* Gold shimmer overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'linear-gradient(135deg, rgba(217,174,78,0.1) 0%, transparent 60%)',
+              opacity: hovered ? 1 : 0,
+              transition: 'opacity 0.3s ease',
+            }}
+          />
 
           {/* Badge at top left */}
           {(product.badge || product.material) && (
