@@ -266,6 +266,7 @@ model Order {
   shippingCarrier String?
   trackingNumber  String?
   trackingUrl     String?     @db.Text
+  customerNote    String?     @db.Text
   subtotalCents   Int
   shippingCents   Int         @default(0)
   totalCents      Int

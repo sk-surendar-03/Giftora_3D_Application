@@ -107,7 +107,7 @@ export default function Cart() {
               const isCustom = item.itemType === 'CUSTOM_DESIGN'
               return (
               <div key={item.id} className="grid grid-cols-[80px_1fr] sm:grid-cols-[104px_1fr_auto] gap-5 py-5 first:pt-0 last:pb-0">
-                <div className="h-24 w-24 sm:h-[104px] sm:w-[104px] shrink-0 overflow-hidden rounded-control bg-soft border border-line flex items-center justify-center">
+                <div className="h-20 w-20 sm:h-[104px] sm:w-[104px] shrink-0 overflow-hidden rounded-control bg-soft border border-line flex items-center justify-center">
                   {isCustom ? (
                     <DesignPreviewImage designId={item.design.id} hasPreview={item.design.hasPreview} alt={item.design.title} />
                   ) : item.product.images?.[0] ? (
@@ -209,7 +209,7 @@ export default function Cart() {
           </div>
 
           {/* Sticky Summary Card */}
-          <div className="rounded-card border border-line bg-surface p-7 sticky top-24">
+          <div className="rounded-card border border-line bg-surface p-7 min-[1041px]:sticky min-[1041px]:top-24">
             <h3 className="font-sans text-[19px] font-bold text-ink pb-4 border-b border-line m-0">
               Order Summary
             </h3>

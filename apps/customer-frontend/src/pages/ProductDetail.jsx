@@ -152,7 +152,7 @@ function ProductDetailView({ slug }) {
       <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-10">
         
         {/* Breadcrumb Navigation */}
-        <nav className="mb-8 flex items-center gap-2 text-[13px] text-muted">
+        <nav className="mb-8 flex flex-wrap items-center gap-2 text-[13px] text-muted">
           <Link to="/" className="hover:text-ink transition-colors">Home</Link>
           <span className="text-muted/60">/</span>
           <Link to="/products" className="hover:text-ink transition-colors">Shop all</Link>

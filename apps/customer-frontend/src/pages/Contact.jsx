@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Button from '../components/ui/Button'
 import { submitContactInquiry } from '../features/contact/contactApi.js'
 
-const PHONE_RE = /^[0-9+\-() ]{6,20}$/
+const PHONE_RE = /^[0-9]{10}$/
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function Contact() {
@@ -39,7 +39,7 @@ export default function Contact() {
     if (!form.phone.trim()) {
       errs.phone = 'Phone number is required.'
     } else if (!PHONE_RE.test(form.phone.trim())) {
-      errs.phone = 'Please enter a valid phone number (at least 6 digits).'
+      errs.phone = 'Phone must be exactly 10 digits (numbers only).'
     }
 
     if (!form.subject.trim()) errs.subject = 'Subject is required.'
@@ -170,9 +170,11 @@ export default function Contact() {
                     <input
                       id="c-phone"
                       type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
                       value={form.phone}
-                      onChange={(e) => update('phone', e.target.value)}
-                      placeholder="+91 98765 43210"
+                      onChange={(e) => update('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      placeholder="10-digit mobile number"
                       className={`h-11 w-full rounded-control border px-3.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 ${
                         errors.phone
                           ? 'border-danger focus:border-danger focus:ring-danger/20'

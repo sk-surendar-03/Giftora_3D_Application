@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAddresses } from '../features/addresses/useAddresses.js'
 import Button from '../components/ui/Button'
 
-const PHONE_RE = /^[0-9+\-() ]{6,20}$/
-const POSTAL_RE = /^[A-Za-z0-9\- ]{3,12}$/
+const PHONE_RE = /^[0-9]{10}$/
+const POSTAL_RE = /^[0-9]{6}$/
 
 const EMPTY_FORM = {
   fullName: '',
@@ -50,7 +50,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
     if (!form.phone.trim()) {
       errs.phone = 'Phone number is required.'
     } else if (!PHONE_RE.test(form.phone.trim())) {
-      errs.phone = 'Valid phone number required (6-20 digits/symbols).'
+      errs.phone = 'Phone must be exactly 10 digits (numbers only).'
     }
 
     if (!form.line1.trim()) errs.line1 = 'Address line 1 is required.'
@@ -60,7 +60,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
     if (!form.postalCode.trim()) {
       errs.postalCode = 'Postal code is required.'
     } else if (!POSTAL_RE.test(form.postalCode.trim())) {
-      errs.postalCode = 'Valid postal/ZIP code required.'
+      errs.postalCode = 'Postal code must be exactly 6 digits.'
     }
 
     if (!form.country.trim()) errs.country = 'Country is required.'
@@ -106,9 +106,11 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
         <input
           id="addr-phone"
           type="tel"
+          inputMode="numeric"
+          maxLength={10}
           value={form.phone}
-          onChange={(e) => update('phone', e.target.value)}
-          placeholder="+91 98765 43210"
+          onChange={(e) => update('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+          placeholder="10-digit mobile number"
           className={`mt-1.5 block w-full rounded-control border px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 ${
             errors.phone
               ? 'border-danger focus:border-danger focus:ring-danger/20'
@@ -124,8 +126,10 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
         </label>
         <input
           id="addr-postal"
+          inputMode="numeric"
+          maxLength={6}
           value={form.postalCode}
-          onChange={(e) => update('postalCode', e.target.value)}
+          onChange={(e) => update('postalCode', e.target.value.replace(/\D/g, '').slice(0, 6))}
           placeholder="e.g. 560001"
           className={`mt-1.5 block w-full rounded-control border px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 ${
             errors.postalCode
@@ -257,6 +261,9 @@ export default function Addresses() {
   } = useAddresses()
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const fromCheckout = location.state?.from === '/checkout'
 
   if (!isAuthenticated) {
     return (
@@ -289,6 +296,7 @@ export default function Addresses() {
   async function handleAdd(form) {
     await addAddress(form)
     setShowAddForm(false)
+    if (fromCheckout) navigate('/checkout')
   }
 
   async function handleEdit(id, form) {
@@ -303,6 +311,14 @@ export default function Addresses() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      {fromCheckout && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-card border border-accent/40 bg-soft px-4 py-3">
+          <span className="text-sm text-muted">Add an address, then continue to checkout.</span>
+          <Link to="/checkout">
+            <Button variant="primary" size="sm" className="whitespace-nowrap">Continue to Checkout</Button>
+          </Link>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-ink">Your Addresses</h1>

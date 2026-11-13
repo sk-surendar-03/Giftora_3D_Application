@@ -263,7 +263,6 @@ export default function OrderDetail() {
 
       <Banner tone="error">{error}</Banner>
       <Banner tone="error">{downloadError}</Banner>
-      <Banner tone="success">{successMessage}</Banner>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left 2 Columns: Items, Manufacturing Specifications & Delivery */}
@@ -453,6 +452,16 @@ export default function OrderDetail() {
               </p>
             </div>
           </div>
+
+          {/* Customer Note */}
+          {order.customerNote && (
+            <div className="rounded-card border border-amber-400/40 bg-amber-50 dark:bg-amber-900/10 p-6">
+              <h2 className="font-display text-sm font-bold tracking-wider text-amber-700 dark:text-amber-400 uppercase mb-2">
+                Customer Note
+              </h2>
+              <p className="text-sm text-ink leading-relaxed whitespace-pre-wrap">{order.customerNote}</p>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Customer & Status Controls */}

@@ -1,7 +1,7 @@
 import api from '../../services/api'
 
-export async function createOrder(addressId, idempotencyKey) {
-  const { data } = await api.post('/orders', { addressId, idempotencyKey })
+export async function createOrder(addressId, idempotencyKey, customerNote) {
+  const { data } = await api.post('/orders', { addressId, idempotencyKey, customerNote: customerNote || null })
   return data.order
 }
 

@@ -18,6 +18,7 @@ export default function Checkout() {
   const navigate = useNavigate()
   const { addresses, isLoading: addressesLoading, loadError: addressesError } = useAddresses()
   const [selectedAddressId, setSelectedAddressId] = useState(null)
+  const [customerNote, setCustomerNote] = useState('')
   const [confirmState, setConfirmState] = useState({ submitting: false, error: null })
   const [idempotencyKey] = useState(() => crypto.randomUUID())
 
@@ -83,7 +84,7 @@ export default function Checkout() {
   async function handlePlaceOrder() {
     setConfirmState({ submitting: true, error: null })
     try {
-      const order = await createOrder(selectedAddressId, idempotencyKey)
+      const order = await createOrder(selectedAddressId, idempotencyKey, customerNote)
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('giftora:cart-updated', { detail: { id: null, items: [], subtotalCents: 0, totalCents: 0 } }))
       }
@@ -236,7 +237,24 @@ export default function Checkout() {
           </div>
 
           {/* Right Column: Review & Confirmation */}
-          <div className="rounded-card border border-line bg-surface p-7 sticky top-24">
+          <div className="space-y-5">
+            {/* Order Note */}
+            <section className="rounded-card border border-line bg-surface p-6">
+              <h3 className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent m-0 mb-3">
+                4. Order Note <span className="text-muted font-normal normal-case tracking-normal text-[11px]">(optional)</span>
+              </h3>
+              <textarea
+                rows={3}
+                maxLength={1000}
+                value={customerNote}
+                onChange={(e) => setCustomerNote(e.target.value)}
+                placeholder="Any special instructions? e.g. I also need this in blue, or can you add a heart shape on the left side…"
+                className="w-full rounded-control border border-line bg-alt px-3.5 py-2.5 text-[13.5px] text-ink placeholder:text-muted focus:border-accent focus:outline-none resize-none"
+              />
+              <p className="mt-1 text-[11.5px] text-muted text-right">{customerNote.length}/1000</p>
+            </section>
+
+            <div className="rounded-card border border-line bg-surface p-7 min-[1041px]:sticky min-[1041px]:top-24">
             <h3 className="font-sans text-[19px] font-bold text-ink pb-4 border-b border-line m-0">
               Order Review
             </h3>
@@ -326,6 +344,7 @@ export default function Checkout() {
                 )}
               </>
             )}
+            </div>
           </div>
 
         </div>

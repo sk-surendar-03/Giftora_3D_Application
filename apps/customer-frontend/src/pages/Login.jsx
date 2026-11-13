@@ -23,9 +23,14 @@ export default function Login() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
+
+    if (!email.trim()) { setError('Email address is required.'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Please enter a valid email address.'); return }
+    if (!password) { setError('Password is required.'); return }
+
     setSubmitting(true)
     try {
-      await login(email, password)
+      await login(email.trim(), password)
       navigate(redirectTo, { replace: true })
     } catch (err) {
       setError(err.response?.data?.error ?? 'Login failed. Please try again.')
@@ -36,7 +41,7 @@ export default function Login() {
 
   return (
     <div className="bg-bg text-ink min-h-[75vh] flex items-center justify-center py-16 px-4">
-      <div className="w-full max-w-[420px] rounded-card border border-line bg-surface p-8">
+      <div className="w-full max-w-[420px] rounded-card border border-line bg-surface p-5 sm:p-8">
         <div className="text-center mb-6">
           <img
             src="/jas-logo.png"

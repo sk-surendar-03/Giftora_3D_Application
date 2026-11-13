@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../features/auth/useAuth.js'
 import Button from '../components/ui/Button'
 
-const PHONE_RE = /^[0-9+\-() ]{6,20}$/
+const PHONE_RE = /^[0-9]{10}$/
 
 export default function Register() {
   const { register } = useAuth()
@@ -19,26 +19,12 @@ export default function Register() {
     e.preventDefault()
     setError(null)
 
-    if (!name.trim()) {
-      setError('Full name is required.')
-      return
-    }
-    if (!email.trim()) {
-      setError('Email address is required.')
-      return
-    }
-    if (!phone.trim()) {
-      setError('Phone number is required.')
-      return
-    }
-    if (!PHONE_RE.test(phone.trim())) {
-      setError('Please enter a valid phone number (at least 6 digits).')
-      return
-    }
-    if (!password || password.length < 8) {
-      setError('Password must be at least 8 characters.')
-      return
-    }
+    if (!name.trim()) { setError('Full name is required.'); return }
+    if (!email.trim()) { setError('Email address is required.'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Please enter a valid email address.'); return }
+    if (!phone.trim()) { setError('Phone number is required.'); return }
+    if (!PHONE_RE.test(phone.trim())) { setError('Phone number must be exactly 10 digits (numbers only).'); return }
+    if (!password || password.length < 8) { setError('Password must be at least 8 characters.'); return }
 
     setSubmitting(true)
     try {
@@ -53,7 +39,7 @@ export default function Register() {
 
   return (
     <div className="bg-bg text-ink min-h-[75vh] flex items-center justify-center py-16 px-4">
-      <div className="w-full max-w-[420px] rounded-card border border-line bg-surface p-8 shadow-sm">
+      <div className="w-full max-w-[420px] rounded-card border border-line bg-surface p-5 sm:p-8 shadow-sm">
         <div className="text-center mb-6">
           <img
             src="/jas-logo.png"
@@ -102,13 +88,15 @@ export default function Register() {
             <input
               id="reg-phone"
               type="tel"
+              inputMode="numeric"
               required
+              maxLength={10}
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91 98765 43210"
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              placeholder="10-digit mobile number"
               className="h-11 w-full rounded-control border border-line bg-surface px-3.5 text-[14.5px] text-ink placeholder:text-muted focus:border-accent focus:outline-none"
             />
-            <span className="mt-1 block text-[11.5px] text-muted">Used for courier delivery updates and order fulfillment.</span>
+            <span className="mt-1 block text-[11.5px] text-muted">10-digit mobile number. Used for delivery updates.</span>
           </div>
 
           <div>

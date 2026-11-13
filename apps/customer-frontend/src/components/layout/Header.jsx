@@ -40,6 +40,11 @@ function ProfileDropdown({ user, updateUser, onLogout }) {
   async function handleSave(e) {
     e.preventDefault()
     setError(null)
+
+    if (!name.trim()) { setError('Full name is required.'); return }
+    if (!phone.trim()) { setError('Phone number is required.'); return }
+    if (!/^[0-9]{10}$/.test(phone.trim())) { setError('Phone must be exactly 10 digits (numbers only).'); return }
+
     setSaving(true)
     try {
       const { data } = await api.patch('/auth/me', { name: name.trim(), phone: phone.trim() })
@@ -68,7 +73,7 @@ function ProfileDropdown({ user, updateUser, onLogout }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[50px] w-80 rounded-xl border border-border bg-surface shadow-xl z-50 overflow-hidden">
+        <div className="absolute right-0 top-[50px] w-[min(320px,calc(100vw-36px))] rounded-xl border border-border bg-surface shadow-xl z-50 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-alt">
             <div>
@@ -94,10 +99,15 @@ function ProfileDropdown({ user, updateUser, onLogout }) {
                   placeholder="Your name" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-muted mb-1">Phone</label>
-                <input value={phone} onChange={e => setPhone(e.target.value)}
+                <label className="block text-xs font-medium text-muted mb-1">Phone (10 digits)</label>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
+                  value={phone}
+                  onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                   className="w-full rounded-lg border border-border bg-alt px-3 py-2 text-sm text-ink outline-none focus:border-accent"
-                  placeholder="+91 98765 43210" />
+                  placeholder="10-digit mobile number" />
               </div>
               <button type="submit" disabled={saving}
                 className="w-full rounded-lg bg-accent py-2 text-sm font-semibold text-on-accent hover:bg-accent-dark disabled:opacity-50 cursor-pointer">
@@ -207,7 +217,7 @@ export default function Header() {
                 e.target.style.display = 'none'
               }}
             />
-            <span className="font-display text-[22px] max-[760px]:text-[19px] font-semibold tracking-[-0.02em] text-ink whitespace-nowrap">
+            <span className="font-display text-[22px] max-[760px]:text-[19px] max-[480px]:text-[15px] font-semibold tracking-[-0.02em] text-ink whitespace-nowrap">
               JAS 3D PRINTING
             </span>
           </Link>
@@ -234,7 +244,7 @@ export default function Header() {
         </nav>
 
         {/* Right: Tools & Actions */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 max-[480px]:gap-1">
           {/* Search pill on desktop */}
           <form
             onSubmit={handleSearchSubmit}
@@ -268,14 +278,14 @@ export default function Header() {
 
           {/* Account Icon Button / Profile Dropdown */}
           {isAuthenticated ? (
-            <div className="hidden min-[761px]:flex items-center">
+            <div className="flex items-center">
               <ProfileDropdown user={user} updateUser={updateUser} onLogout={handleLogout} />
             </div>
           ) : (
             <Link
               to="/login"
               title="Sign In"
-              className="hidden min-[761px]:flex h-[42px] w-[42px] items-center justify-center rounded-full text-ink hover:bg-soft"
+              className="flex h-[42px] w-[42px] items-center justify-center rounded-full text-ink hover:bg-soft"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <circle cx="12" cy="8" r="4" />

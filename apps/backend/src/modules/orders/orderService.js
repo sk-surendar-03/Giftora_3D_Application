@@ -37,7 +37,7 @@ function addressSnapshotFrom(address) {
   }
 }
 
-export async function createOrder(userId, { addressId, idempotencyKey }) {
+export async function createOrder(userId, { addressId, idempotencyKey, customerNote }) {
   if (idempotencyKey) {
     const existing = await prisma.order.findUnique({ where: { idempotencyKey }, include: ORDER_INCLUDE })
     if (existing) {
@@ -105,6 +105,7 @@ export async function createOrder(userId, { addressId, idempotencyKey }) {
             userId,
             addressId: address.id,
             shippingAddress: addressSnapshotFrom(address),
+            customerNote: customerNote ?? null,
             subtotalCents,
             shippingCents,
             totalCents,

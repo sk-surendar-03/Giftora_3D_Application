@@ -143,10 +143,44 @@ function CustomiserWorkspace({ options }) {
   const selectedSizeOption = adminSizes.find((s) => s.name === effectiveSize)
   const sizePriceCents = selectedSizeOption?.priceCents ?? 0
 
-  // Admin-configured thicknesses (with prices); fall back to hardcoded
+  // Admin-configured thicknesses (with prices); fall back to hardcoded THICKNESS_OPTIONS
   const adminThicknesses = customizerSettings.thicknesses
-  const selectedThicknessOption = adminThicknesses.find((t) => t.name === thickness)
-  const thicknessPriceCents = selectedThicknessOption?.priceCents ?? 0
+
+  // Build picker options: admin list (fully dynamic) or hardcoded fallback
+  // Key is used as the thickness state value; geometry mm falls back to standard (2.4mm)
+  // Resolve mm for the 3D geometry: match by name against hardcoded options, else default
+  const hardcodedThicknessValues = Object.values(THICKNESS_OPTIONS)
+  const hardcodedKeys = Object.keys(THICKNESS_OPTIONS)
+
+  // Build picker options: admin list (fully dynamic) or hardcoded fallback
+  // mm value mapped by position from THICKNESS_OPTIONS geometry values
+  const thicknessPickerOptions = adminThicknesses.length > 0
+    ? adminThicknesses.map((t, i) => ({
+        key: t.name,
+        label: t.name,
+        priceCents: t.priceCents ?? 0,
+        mm: t.mm ?? hardcodedThicknessValues[i]?.baseThicknessMm ?? 2.4,
+        displayValue: t.displayValue ?? t.mm ?? hardcodedThicknessValues[i]?.baseThicknessMm ?? 2.4,
+        displayUnit: t.displayUnit ?? 'mm',
+      }))
+    : null // null = ThicknessPicker uses its own hardcoded THICKNESS_OPTIONS
+  const hardcodedMatch = adminThicknesses.length === 0 ? THICKNESS_OPTIONS[thickness] : null
+  const adminThicknessIndex = adminThicknesses.findIndex((t) => t.name === thickness)
+  const adminThicknessEntry = adminThicknesses[adminThicknessIndex]
+  const baseThicknessMm = hardcodedMatch
+    ? hardcodedMatch.baseThicknessMm
+    : adminThicknessIndex >= 0
+      ? (adminThicknessEntry?.mm ?? hardcodedThicknessValues[adminThicknessIndex]?.baseThicknessMm ?? 2.4)
+      : 2.4
+
+  const thicknessPriceCents = adminThicknesses.find((t) => t.name === thickness)?.priceCents ?? 0
+
+  // Auto-select first admin thickness when admin list loads and current value is a hardcoded key
+  useEffect(() => {
+    if (adminThicknesses.length > 0 && hardcodedKeys.includes(thickness)) {
+      setThickness(adminThicknesses[0].name)
+    }
+  }, [adminThicknesses.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const sizeDefaults = useMemo(() => shapeDefaultsForSize(effectiveSize), [effectiveSize])
 
@@ -182,10 +216,10 @@ function CustomiserWorkspace({ options }) {
       templateId: templateOption.id,
       styleId: templateDefinition.styles.length ? styleId : DEFAULT_PARAMS.styleId,
       textSizeMm: sizeDefaults.textSizeMm,
-      baseThicknessMm: THICKNESS_OPTIONS[thickness].baseThicknessMm,
+      baseThicknessMm,
       keyringPosition: templateDefinition.supportsKeyring ? keyringPosition : undefined,
     }
-  }, [cleanText, cleanSubtitle, effectiveFontId, templateOption.id, styleId, templateDefinition, sizeDefaults, keyringPosition, thickness])
+  }, [cleanText, cleanSubtitle, effectiveFontId, templateOption.id, styleId, templateDefinition, sizeDefaults, keyringPosition, baseThicknessMm])
 
   // What gets recorded on the server for this design.
   const design = useMemo(
@@ -258,7 +292,7 @@ function CustomiserWorkspace({ options }) {
     setTemplateId(DEFAULT_TEMPLATE_ID)
     setStyleChoice(DEFAULT_PARAMS.styleId)
     setKeyringPosition(options.defaultKeyringPosition)
-    setThickness('standard')
+    setThickness(adminThicknesses[0]?.name ?? 'standard')
     setAllowDisconnected(false)
     clearDraft()
   }
@@ -408,46 +442,56 @@ function CustomiserWorkspace({ options }) {
               />
             </section>
 
-            {/* Step 5: Thickness — only shown when admin has configured options */}
-            {adminThicknesses.length > 0 && (
-              <section className="py-4">
-                <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">Base thickness</span>
-                <div className="space-y-2">
-                  {adminThicknesses.map((t) => {
-                    const isSelected = thickness === t.name
-                    return (
-                      <button key={t.name} type="button" onClick={() => setThickness(t.name)}
-                        className={`w-full flex items-center justify-between rounded-lg border px-4 py-2.5 text-left transition-colors ${isSelected ? 'border-accent bg-accent/10' : 'border-line bg-surface hover:border-accent/50'}`}>
-                        <span className="text-sm font-medium text-ink">{t.name}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </section>
-            )}
+            {/* Step 5: Thickness & Dimensions */}
+            <section className="py-4">
+              <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">Base thickness</span>
+              <ThicknessPicker value={thickness} onChange={setThickness} options={thicknessPickerOptions} />
+            </section>
 
             {/* Step 6: Size & Quantity */}
             <section className="py-4">
               <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">Size & Quantity</span>
               <div className="space-y-3">
-                {adminSizes.length > 0 ? (
-                  <div>
-                    <span className="block text-xs text-muted mb-1.5">Overall Size</span>
-                    <div className="space-y-2">
-                      {adminSizes.map((s) => {
-                        const isSelected = effectiveSize === s.name
-                        return (
-                          <button key={s.name} type="button" onClick={() => setSizeChoice(s.name)}
-                            className={`w-full flex items-center justify-between rounded-lg border px-4 py-2.5 text-left transition-colors ${isSelected ? 'border-accent bg-accent/10' : 'border-line bg-surface hover:border-accent/50'}`}>
-                            <span className="text-sm font-medium text-ink">{s.name}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
+                {/* Style A size pills — name + price from admin, falls back to plain names */}
+                <div>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="font-sans text-[13px] font-bold tracking-[0.04em] text-ink">Overall Size</span>
+                    <span className="font-sans text-[13px] text-muted">{effectiveSize}</span>
                   </div>
-                ) : (
-                  <OptionPicker label="Overall Size" options={templateOption.sizes} value={effectiveSize} onChange={setSizeChoice} />
-                )}
+                  <div className="flex flex-wrap gap-2.5">
+                    {effectiveSizeOptions.map((sizeName) => {
+                      const isSelected = effectiveSize === sizeName
+                      const adminSize = adminSizes.find((s) => s.name === sizeName)
+                      const priceLabel = adminSize
+                        ? adminSize.priceCents > 0
+                          ? `₹${(adminSize.priceCents / 100).toFixed(2).replace(/\.00$/, '')}`
+                          : 'Included'
+                        : null
+                      return (
+                        <button
+                          key={sizeName}
+                          type="button"
+                          onClick={() => setSizeChoice(sizeName)}
+                          aria-pressed={isSelected}
+                          className={`flex flex-col items-start px-[18px] py-2.5 rounded-control border text-left transition-colors cursor-pointer ${
+                            isSelected
+                              ? 'border-accent bg-soft text-accent ring-1 ring-accent'
+                              : 'border-line bg-surface text-ink hover:border-accent/40'
+                          }`}
+                        >
+                          <span className={`font-sans text-[14px] font-medium ${isSelected ? 'text-accent' : 'text-ink'}`}>
+                            {sizeName}
+                          </span>
+                          {priceLabel && (
+                            <span className={`font-sans text-[11px] font-semibold mt-0.5 ${isSelected ? 'text-accent' : 'text-muted'}`}>
+                              {priceLabel}
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
                 <QuantitySelector value={quantity} onChange={setQuantity} />
               </div>
             </section>
@@ -501,7 +545,7 @@ function CustomiserWorkspace({ options }) {
               </h1>
               <p className="mt-1 font-sans text-[13px] text-muted">Real-time 3D solid model preview</p>
             </div>
-            <div className="hidden sm:block">
+            <div>
               <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${
                 engine.status === 'ready' ? 'bg-[#e3f4ea] text-[#17683f]' : 'bg-soft text-accent'
               }`}>

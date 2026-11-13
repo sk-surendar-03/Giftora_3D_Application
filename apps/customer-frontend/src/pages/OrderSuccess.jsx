@@ -154,7 +154,7 @@ export default function OrderSuccess() {
           <OrderItemsList items={order.items} />
 
           {/* Cost breakdown */}
-          <div className="mt-6 ml-auto max-w-xs space-y-2.5 rounded-card border border-line bg-surface p-5 text-[14px]">
+          <div className="mt-6 w-full sm:ml-auto sm:max-w-xs space-y-2.5 rounded-card border border-line bg-surface p-5 text-[14px]">
             <div className="flex justify-between text-muted">
               <span>Subtotal</span>
               <span className="text-ink font-semibold">{formatPrice(order.subtotalCents)}</span>
