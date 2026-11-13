@@ -15,30 +15,42 @@ export default function Hero() {
         style={{ display: 'block' }}
       />
 
-      {/* Dark overlay — left heavy for text, fades right */}
+      {/* Base dark overlay across whole image */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'rgba(0,0,0,0.45)' }}
+      />
+
+      {/* Left-heavy overlay for text legibility */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'linear-gradient(100deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.65) 30%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.05) 75%, transparent 100%)'
+          background: 'linear-gradient(105deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.80) 25%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.2) 65%, transparent 100%)'
         }}
       />
 
       {/* Bottom vignette */}
       <div
         className="absolute inset-x-0 bottom-0 pointer-events-none"
-        style={{ height: '30%', background: 'linear-gradient(to top, rgba(0,0,0,0.5), transparent)' }}
+        style={{ height: '35%', background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}
       />
 
       {/* Text overlay — absolutely positioned over the image */}
       <div className="absolute inset-0 flex items-center">
         <div className="w-full mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-5">
-          <div className="max-w-[500px] max-[760px]:max-w-full">
+          <div
+            className="max-w-[520px] max-[760px]:max-w-full rounded-2xl px-7 py-6 max-[760px]:px-4 max-[760px]:py-4"
+            style={{
+              background: 'rgba(0,0,0,0.35)',
+              backdropFilter: 'blur(2px)',
+            }}
+          >
 
             <div className="flex items-center gap-2.5 mb-4">
               <span className="w-7 h-[2px]" style={{ background: '#D9AE4E' }} />
               <span
                 className="text-[11px] font-bold uppercase tracking-[0.2em]"
-                style={{ color: '#D9AE4E' }}
+                style={{ color: '#D9AE4E', textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}
               >
                 Your Imagination. Our 3D Creation.
               </span>
@@ -49,7 +61,7 @@ export default function Hero() {
               style={{
                 fontSize: 'clamp(28px, 5vw, 62px)',
                 color: '#ffffff',
-                textShadow: '0 0 40px rgba(217,174,78,0.4), 0 2px 20px rgba(0,0,0,0.8)',
+                textShadow: '0 0 60px rgba(217,174,78,0.5), 0 2px 24px rgba(0,0,0,0.95), 0 1px 4px rgba(0,0,0,1)',
               }}
             >
               Gifts that carry<br />their name.
@@ -57,7 +69,7 @@ export default function Hero() {
 
             <p
               className="text-[15px] min-[761px]:text-[17px] leading-[1.6] mb-8 max-[760px]:mb-5 max-w-[42ch]"
-              style={{ color: 'rgba(240,224,180,0.88)' }}
+              style={{ color: 'rgba(255,240,200,0.95)', textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}
             >
               Design a keepsake in 3D, preview it from every angle, and we will make it just for them.
             </p>
@@ -80,7 +92,7 @@ export default function Hero() {
             </div>
 
             <div className="flex flex-wrap items-center gap-6 text-[13px] font-medium max-[760px]:gap-x-4 max-[760px]:gap-y-2 max-[760px]:text-[12px]"
-              style={{ color: 'rgba(220,200,150,0.8)' }}>
+              style={{ color: 'rgba(255,240,200,0.9)', textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
               <div className="flex items-center gap-2">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ color: '#D9AE4E' }}>
                   <path d="M3 6h11v10H3zM14 10h4l3 3v3h-7" /><circle cx="7" cy="18" r="2" /><circle cx="17" cy="18" r="2" />
@@ -101,7 +113,7 @@ export default function Hero() {
               </div>
             </div>
 
-          </div>
+          </div>  {/* text card */}
         </div>
       </div>
 
