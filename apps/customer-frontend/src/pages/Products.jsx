@@ -59,7 +59,7 @@ export default function Products() {
 
   return (
     <div className="bg-bg text-ink min-h-[80vh]">
-      <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-12">
+      <div className="mx-auto max-w-[1400px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-12">
         {/* Page Header */}
         <div className="mb-8 pb-5 border-b border-line">
           <span className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent block">

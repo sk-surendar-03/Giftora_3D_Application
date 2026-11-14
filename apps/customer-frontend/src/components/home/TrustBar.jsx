@@ -32,7 +32,7 @@ const items = [
 export default function TrustBar() {
   return (
     <section className="border-b border-line bg-surface py-6">
-      <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
+      <div className="mx-auto max-w-[1400px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
         <div className="grid grid-cols-1 min-[761px]:grid-cols-2 min-[1041px]:grid-cols-4 gap-5">
           {items.map((item) => (
             <div key={item.title} className="flex items-center gap-3.5">

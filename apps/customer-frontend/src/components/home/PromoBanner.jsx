@@ -4,7 +4,7 @@ import Button from '../ui/Button'
 export default function PromoBanner() {
   return (
     <section className="py-21 max-[1040px]:py-16 max-[760px]:py-12 bg-bg">
-      <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
+      <div className="mx-auto max-w-[1400px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
         <div className="rounded-[16px] border border-line bg-band overflow-hidden grid grid-cols-1 min-[761px]:grid-cols-2 min-[1041px]:grid-cols-[1fr_1.05fr]">
           
           {/* Left Text Block */}

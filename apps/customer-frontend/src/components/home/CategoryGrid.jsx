@@ -29,7 +29,7 @@ const categories = [
 
 export default function CategoryGrid() {
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+    <section className="mx-auto max-w-[1400px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-16">
       <div className="mb-8 max-w-xl">
         <h2 className="text-2xl font-semibold text-ink sm:text-3xl">Shop by category</h2>
         <p className="mt-2 text-sm text-muted sm:text-base">

@@ -149,7 +149,7 @@ function ProductDetailView({ slug }) {
 
   return (
     <div className="bg-bg text-ink pb-20">
-      <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-10">
+      <div className="mx-auto max-w-[1400px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-10">
         
         {/* Breadcrumb Navigation */}
         <nav className="mb-8 flex flex-wrap items-center gap-2 text-[13px] text-muted">

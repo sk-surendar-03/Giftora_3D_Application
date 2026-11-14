@@ -7,7 +7,7 @@ export default function ProductSection({ eyebrow, title, subtitle, products, cla
 
   return (
     <section className={`py-21 max-[1040px]:py-16 max-[760px]:py-12 ${className}`}>
-      <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
+      <div className="mx-auto max-w-[1400px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
         
         {/* Section Head */}
         <div className="flex flex-col min-[761px]:flex-row justify-between items-start min-[761px]:items-end gap-5 mb-8.5 max-[760px]:mb-6">
