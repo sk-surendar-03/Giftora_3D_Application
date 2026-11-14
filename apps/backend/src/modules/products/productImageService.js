@@ -10,31 +10,48 @@ const MIME_MAP = {
   webp: 'image/webp',
 }
 
+async function toWebP(buffer) {
+  try {
+    const sharp = (await import('sharp')).default
+    return await sharp(buffer)
+      .resize({ width: 1200, withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toBuffer()
+  } catch {
+    // sharp not installed — return original buffer unchanged
+    return buffer
+  }
+}
+
 /**
  * Validates and stores a product image into the persistent storage driver.
+ * Converts JPEG/PNG to WebP (max 1200px wide, quality 82) before saving.
  * Returns public metadata including the served API URL.
  */
 export async function storeProductImage(rawFilename, buffer) {
-  const { filename, format, ext } = parseImageFilename(rawFilename)
+  const { filename, format } = parseImageFilename(rawFilename)
   validateImageContent(format, buffer)
 
-  const hash = createHash('sha256').update(buffer).digest('hex').slice(0, 24)
+  const outputBuffer = format !== 'webp' ? await toWebP(buffer) : buffer
+  const outputExt = '.webp'
+
+  const hash = createHash('sha256').update(outputBuffer).digest('hex').slice(0, 24)
   const cleanBase = filename
     .replace(/\.[^.]+$/, '')
     .replace(/[^A-Za-z0-9._-]/g, '_')
     .slice(0, 50)
-  const storageFilename = `${hash}-${cleanBase}${ext}`
+  const storageFilename = `${hash}-${cleanBase}${outputExt}`
   const key = `product-images/${storageFilename}`
 
   const storage = getStorage()
-  await storage.put(key, buffer, { immutable: true })
+  await storage.put(key, outputBuffer, { immutable: true })
 
   return {
     key,
     url: `/api/v1/products/images/${storageFilename}`,
     filename,
-    format,
-    sizeBytes: buffer.length,
+    format: 'webp',
+    sizeBytes: outputBuffer.length,
   }
 }
 
