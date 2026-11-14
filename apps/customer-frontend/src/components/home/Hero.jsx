@@ -33,9 +33,9 @@ export default function Hero() {
         style={{ height: '28%', background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}
       />
 
-      {/* Text overlay — centered on desktop, top-aligned on mobile */}
+      {/* Text overlay — left-aligned with proportional padding, top-aligned on mobile */}
       <div className="absolute inset-0 flex items-center max-[760px]:items-start max-[760px]:pt-5">
-        <div className="w-full mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-4">
+        <div className="w-full pl-[clamp(16px,6vw,96px)] pr-6 max-[760px]:pl-4 max-[760px]:pr-4">
           <div className="max-w-[520px] max-[760px]:max-w-[58%]">
 
             {/* Eyebrow — hidden on mobile to save space */}
