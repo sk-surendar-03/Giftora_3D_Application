@@ -64,7 +64,7 @@ export default function OrderDetails() {
   if (state.error) {
     return (
       <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center">
-        <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-6">
+        <div className="mx-auto max-w-[500px] px-[18px] py-24 text-center">
           <h1 className="font-display text-[32px] font-semibold text-ink">Order not found</h1>
           <p className="mt-3 font-sans text-[15px] text-muted">
             We couldn't find that order, or it doesn't belong to your account.{' '}

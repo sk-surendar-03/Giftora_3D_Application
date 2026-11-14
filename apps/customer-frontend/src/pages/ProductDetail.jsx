@@ -252,14 +252,14 @@ function ProductDetailView({ slug }) {
                 <span>Product Price: </span>
                 <span className="font-semibold text-ink">₹{(displayPrice ?? product.price).toFixed(2).replace(/\.00$/, '')}</span>
               </div>
-              <span className="text-line hidden sm:inline">•</span>
+              <span className="text-line hidden min-[761px]:inline">•</span>
               <div>
                 <span>Shipping: </span>
                 <span className={`font-semibold ${isFreeShipping ? 'text-[#17683f]' : 'text-ink'}`}>
                   {isFreeShipping ? 'Free' : `₹${effectiveShippingPrice}`}
                 </span>
               </div>
-              <span className="text-line hidden sm:inline">•</span>
+              <span className="text-line hidden min-[761px]:inline">•</span>
               <div>
                 <span>Total: </span>
                 <span className="font-bold text-accent text-[14.5px]">

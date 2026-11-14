@@ -36,7 +36,7 @@ export default function Checkout() {
   if (!isAuthenticated) {
     return (
       <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center">
-        <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-6">
+        <div className="mx-auto max-w-[500px] px-[18px] py-24 text-center">
           <h1 className="font-display text-[32px] font-semibold text-ink">Checkout</h1>
           <p className="mt-3 font-sans text-[15px] text-muted">Sign in to complete your order.</p>
           <div className="mt-6">
@@ -66,7 +66,7 @@ export default function Checkout() {
   if (addresses.length === 0) {
     return (
       <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center">
-        <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-6">
+        <div className="mx-auto max-w-[500px] px-[18px] py-24 text-center">
           <h1 className="font-display text-[32px] font-semibold text-ink">Checkout</h1>
           <p className="mt-3 font-sans text-[15px] text-muted">Add a delivery address to continue with your order.</p>
           <div className="mt-6">
@@ -99,7 +99,7 @@ export default function Checkout() {
       <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-10">
         
         {/* Header & Stepper */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-line mb-8">
+        <div className="flex flex-col min-[761px]:flex-row min-[761px]:items-end justify-between gap-4 pb-6 border-b border-line mb-8">
           <div>
             <span className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent block">
               Step 2 of 2

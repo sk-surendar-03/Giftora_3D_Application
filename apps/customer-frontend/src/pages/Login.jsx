@@ -41,7 +41,7 @@ export default function Login() {
 
   return (
     <div className="bg-bg text-ink min-h-[75vh] flex items-center justify-center py-16 px-4">
-      <div className="w-full max-w-[420px] rounded-card border border-line bg-surface p-5 sm:p-8">
+      <div className="w-full max-w-[420px] rounded-card border border-line bg-surface p-5 min-[761px]:p-8">
         <div className="text-center mb-6">
           <img
             src="/jas-logo.png"

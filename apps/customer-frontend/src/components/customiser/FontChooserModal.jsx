@@ -62,7 +62,7 @@ export default function FontChooserModal({ open, onClose, fonts, value, onChange
         </div>
 
         {/* Font grid */}
-        <div className="grid flex-1 grid-cols-2 gap-3 overflow-y-auto p-5 sm:grid-cols-3">
+        <div className="grid flex-1 grid-cols-2 gap-3 overflow-y-auto p-5 min-[761px]:grid-cols-3">
           {visibleFonts.map((font) => (
             <button
               key={font.id}

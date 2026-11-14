@@ -17,7 +17,7 @@ export default function Cart() {
   if (!isAuthenticated) {
     return (
       <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center">
-        <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-6">
+        <div className="mx-auto max-w-[500px] px-[18px] py-24 text-center">
           <span className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-soft text-accent mb-4">
             <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
               <circle cx="12" cy="8" r="4" />
@@ -53,7 +53,7 @@ export default function Cart() {
   if (cart.items.length === 0) {
     return (
       <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center">
-        <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-6">
+        <div className="mx-auto max-w-[500px] px-[18px] py-24 text-center">
           <span className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-soft text-muted mb-4">
             <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
               <path d="M5 8h14l-1 12H6L5 8Z" />
@@ -106,8 +106,8 @@ export default function Cart() {
               // A line is either a catalog product or a standalone custom design.
               const isCustom = item.itemType === 'CUSTOM_DESIGN'
               return (
-              <div key={item.id} className="grid grid-cols-[80px_1fr] sm:grid-cols-[104px_1fr_auto] gap-5 py-5 first:pt-0 last:pb-0">
-                <div className="h-20 w-20 sm:h-[104px] sm:w-[104px] shrink-0 overflow-hidden rounded-control bg-soft border border-line flex items-center justify-center">
+              <div key={item.id} className="grid grid-cols-[80px_1fr] min-[761px]:grid-cols-[104px_1fr_auto] gap-5 py-5 first:pt-0 last:pb-0">
+                <div className="h-20 w-20 min-[761px]:h-[104px] min-[761px]:w-[104px] shrink-0 overflow-hidden rounded-control bg-soft border border-line flex items-center justify-center">
                   {isCustom ? (
                     <DesignPreviewImage designId={item.design.id} hasPreview={item.design.hasPreview} alt={item.design.title} />
                   ) : item.product.images?.[0] ? (
@@ -194,8 +194,8 @@ export default function Cart() {
                   </div>
                 </div>
 
-                <div className="text-right sm:self-center col-span-2 sm:col-span-1 pt-2 sm:pt-0 border-t sm:border-0 border-line/50 flex sm:flex-col justify-between items-center sm:items-end">
-                  <span className="sm:hidden text-xs text-muted">Price:</span>
+                <div className="text-right min-[761px]:self-center col-span-2 min-[761px]:col-span-1 pt-2 min-[761px]:pt-0 border-t min-[761px]:border-0 border-line/50 flex min-[761px]:flex-col justify-between items-center min-[761px]:items-end">
+                  <span className="min-[761px]:hidden text-xs text-muted">Price:</span>
                   <div className="font-sans text-[17px] font-bold text-ink">
                     {formatPrice(item.lineTotalCents)}
                   </div>

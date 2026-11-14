@@ -97,7 +97,7 @@ export default function Contact() {
 
         <div className="grid grid-cols-1 min-[900px]:grid-cols-[1.5fr_1fr] gap-12 items-start">
           {/* Left Column: Contact Form or Success Confirmation */}
-          <div className="rounded-card border border-line bg-surface p-7 sm:p-9 shadow-sm">
+          <div className="rounded-card border border-line bg-surface p-7 min-[761px]:p-9 shadow-sm">
             {submitted ? (
               <div className="text-center py-8 space-y-4">
                 <div className="h-16 w-16 mx-auto rounded-full bg-[#e3f4ea] text-[#17683f] flex items-center justify-center text-3xl font-bold">
@@ -143,7 +143,7 @@ export default function Contact() {
                   {errors.name && <p className="mt-1 text-xs text-danger font-medium">{errors.name}</p>}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 min-[761px]:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[13px] font-semibold text-ink mb-1.5" htmlFor="c-email">
                       Email Address <span className="text-danger">*</span>

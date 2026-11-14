@@ -74,7 +74,7 @@ export default function OrderSuccess() {
   if (state.error) {
     return (
       <div className="bg-bg text-ink min-h-[70vh] flex items-center justify-center">
-        <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-6">
+        <div className="mx-auto max-w-[500px] px-[18px] py-24 text-center">
           <h1 className="font-display text-[32px] font-semibold text-ink">Order not found</h1>
           <p className="mt-3 font-sans text-[15px] text-muted">
             We couldn't find that order. If you just placed it, check{' '}
@@ -99,7 +99,7 @@ export default function OrderSuccess() {
     <div className="bg-bg text-ink min-h-[80vh] pb-20">
       <div className="mx-auto max-w-[800px] px-10 max-[760px]:px-[18px] py-12">
         {/* Celebration Success Hero Banner */}
-        <div className="text-center rounded-card border border-accent/40 bg-surface/90 backdrop-blur-sm p-8 sm:p-10 mb-10 shadow-sm relative overflow-hidden">
+        <div className="text-center rounded-card border border-accent/40 bg-surface/90 backdrop-blur-sm p-8 min-[761px]:p-10 mb-10 shadow-sm relative overflow-hidden">
           {/* Subtle decorative top gradient line */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent" />
 
@@ -154,7 +154,7 @@ export default function OrderSuccess() {
           <OrderItemsList items={order.items} />
 
           {/* Cost breakdown */}
-          <div className="mt-6 w-full sm:ml-auto sm:max-w-xs space-y-2.5 rounded-card border border-line bg-surface p-5 text-[14px]">
+          <div className="mt-6 w-full min-[761px]:ml-auto min-[761px]:max-w-xs space-y-2.5 rounded-card border border-line bg-surface p-5 text-[14px]">
             <div className="flex justify-between text-muted">
               <span>Subtotal</span>
               <span className="text-ink font-semibold">{formatPrice(order.subtotalCents)}</span>

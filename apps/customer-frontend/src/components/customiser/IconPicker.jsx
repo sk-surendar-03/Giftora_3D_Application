@@ -113,7 +113,7 @@ export default function IconPicker({ onPick, onOpen, disabled = false, disabledR
             {icons.length === 0 ? (
               <p className="py-6 text-center text-[12px] text-muted">No icons match “{query}”.</p>
             ) : (
-              <ul className="grid grid-cols-4 gap-1.5 sm:grid-cols-5" role="list">
+              <ul className="grid grid-cols-4 gap-1.5 min-[761px]:grid-cols-5" role="list">
                 {icons.map((icon) => (
                   <li key={icon.id}>
                     <button

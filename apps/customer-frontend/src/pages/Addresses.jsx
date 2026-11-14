@@ -79,9 +79,9 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="grid grid-cols-1 gap-4 rounded-card border border-line bg-surface p-5 sm:grid-cols-2 shadow-sm"
+      className="grid grid-cols-1 gap-4 rounded-card border border-line bg-surface p-5 min-[761px]:grid-cols-2 shadow-sm"
     >
-      <div className="sm:col-span-2">
+      <div className="min-[761px]:col-span-2">
         <label className="block text-sm font-semibold text-ink" htmlFor="addr-name">
           Full Name <span className="text-danger">*</span>
         </label>
@@ -140,7 +140,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
         {errors.postalCode && <p className="mt-1 text-xs text-danger font-medium">{errors.postalCode}</p>}
       </div>
 
-      <div className="sm:col-span-2">
+      <div className="min-[761px]:col-span-2">
         <label className="block text-sm font-semibold text-ink" htmlFor="addr-line1">
           Address Line 1 <span className="text-danger">*</span>
         </label>
@@ -158,7 +158,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
         {errors.line1 && <p className="mt-1 text-xs text-danger font-medium">{errors.line1}</p>}
       </div>
 
-      <div className="sm:col-span-2">
+      <div className="min-[761px]:col-span-2">
         <label className="block text-sm font-semibold text-ink" htmlFor="addr-line2">
           Address Line 2 <span className="text-muted font-normal text-xs">(optional)</span>
         </label>
@@ -207,7 +207,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
         {errors.state && <p className="mt-1 text-xs text-danger font-medium">{errors.state}</p>}
       </div>
 
-      <div className="sm:col-span-2">
+      <div className="min-[761px]:col-span-2">
         <label className="block text-sm font-semibold text-ink" htmlFor="addr-country">
           Country <span className="text-danger">*</span>
         </label>
@@ -225,7 +225,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
         {errors.country && <p className="mt-1 text-xs text-danger font-medium">{errors.country}</p>}
       </div>
 
-      <label className="flex items-center gap-2 text-sm font-medium text-ink sm:col-span-2 select-none cursor-pointer">
+      <label className="flex items-center gap-2 text-sm font-medium text-ink min-[761px]:col-span-2 select-none cursor-pointer">
         <input
           type="checkbox"
           checked={form.isDefault}
@@ -235,7 +235,7 @@ function AddressForm({ initial, onSubmit, onCancel, submitting }) {
         Set as default address for shipping
       </label>
 
-      <div className="flex gap-3 sm:col-span-2 pt-2">
+      <div className="flex gap-3 min-[761px]:col-span-2 pt-2">
         <Button type="submit" variant="primary" disabled={submitting}>
           {submitting ? 'Saving…' : 'Save address'}
         </Button>
@@ -267,7 +267,7 @@ export default function Addresses() {
 
   if (!isAuthenticated) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-24 text-center sm:px-6">
+      <div className="mx-auto max-w-[500px] px-[18px] py-24 text-center">
         <h1 className="text-2xl font-semibold text-ink">Your Addresses</h1>
         <p className="mt-3 text-sm text-muted">Sign in to manage your delivery addresses.</p>
         <Link to="/login" state={{ from: '/addresses' }} className="mt-6 inline-block">
@@ -279,7 +279,7 @@ export default function Addresses() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-24 text-center text-sm text-muted sm:px-6">
+      <div className="mx-auto max-w-3xl px-[18px] py-24 text-center text-sm text-muted">
         Loading your addresses…
       </div>
     )
@@ -287,7 +287,7 @@ export default function Addresses() {
 
   if (loadError) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-24 text-center text-sm text-danger sm:px-6">
+      <div className="mx-auto max-w-[500px] px-[18px] py-24 text-center text-sm text-danger">
         Something went wrong loading your addresses. Please try again.
       </div>
     )
@@ -310,7 +310,7 @@ export default function Addresses() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-3xl px-[18px] py-12 min-[761px]:px-6">
       {fromCheckout && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-card border border-accent/40 bg-soft px-4 py-3">
           <span className="text-sm text-muted">Add an address, then continue to checkout.</span>

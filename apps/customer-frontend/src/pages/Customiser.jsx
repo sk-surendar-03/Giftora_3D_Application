@@ -312,7 +312,7 @@ function CustomiserWorkspace({ options }) {
   }))
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
+    <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-5">
       {/* Top action bar */}
       <div className="mb-4 flex items-center justify-between">
         <Link
@@ -334,10 +334,10 @@ function CustomiserWorkspace({ options }) {
       </div>
 
       {/* Main Reference 2-Column Workspace */}
-      <div className="grid min-w-0 gap-6 lg:grid-cols-[440px_minmax(0,1fr)] xl:grid-cols-[460px_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <div className="grid min-w-0 gap-6 min-[1041px]:grid-cols-[440px_minmax(0,1fr)] min-[1200px]:grid-cols-[460px_minmax(0,1fr)] min-[1041px]:items-start min-[1041px]:gap-8">
 
         {/* LEFT COLUMN: Controls Panel */}
-        <aside className="min-w-0 space-y-5 order-2 lg:order-1">
+        <aside className="min-w-0 space-y-5 order-2 min-[1041px]:order-1">
           {/* Core Customization Container */}
           <div className="divide-y divide-line rounded-card border border-line bg-surface px-5">
             {/* Step 1: Name / Text */}
@@ -536,7 +536,7 @@ function CustomiserWorkspace({ options }) {
         </aside>
 
         {/* RIGHT COLUMN: 3D Preview + Live Print Facts (Sticky on Desktop) */}
-        <main className="min-w-0 space-y-5 order-1 lg:order-2 lg:sticky lg:top-5">
+        <main className="min-w-0 space-y-5 order-1 min-[1041px]:order-2 min-[1041px]:sticky min-[1041px]:top-5">
           {/* Header Title with live status */}
           <div className="flex items-center justify-between pb-2 border-b border-line">
             <div>

@@ -19,7 +19,7 @@ export default function PrintFactsCard({ report, dimensions }) {
         </span>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-3 min-[761px]:grid-cols-4">
         <div>
           <span className="block text-[11px] text-muted">Model size</span>
           <strong className="text-[13px] font-semibold text-ink font-mono">
