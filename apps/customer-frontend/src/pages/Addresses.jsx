@@ -310,7 +310,7 @@ export default function Addresses() {
   }
 
   return (
-    <div className="mx-auto max-w-[1400px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-12">
+    <div className="mx-auto max-w-[1800px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-12">
       {fromCheckout && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-card border border-accent/40 bg-soft px-4 py-3">
           <span className="text-sm text-muted">Add an address, then continue to checkout.</span>

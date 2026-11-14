@@ -16,13 +16,13 @@ export default function Home() {
       <TrustBar />
 
       {isLoading && (
-        <section className="mx-auto max-w-[1400px] px-10 py-16">
+        <section className="mx-auto max-w-[1800px] px-10 py-16">
           <ProductGridSkeleton count={4} />
         </section>
       )}
 
       {!isLoading && error && (
-        <section className="mx-auto max-w-[1400px] px-10 py-16 text-center text-[15px] text-muted">
+        <section className="mx-auto max-w-[1800px] px-10 py-16 text-center text-[15px] text-muted">
           Couldn't load products right now. Please refresh the page.
         </section>
       )}

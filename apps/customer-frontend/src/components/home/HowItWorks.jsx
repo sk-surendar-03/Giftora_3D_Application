@@ -19,7 +19,7 @@ const steps = [
 export default function HowItWorks() {
   return (
     <section className="bg-alt py-21 max-[1040px]:py-16 max-[760px]:py-12 border-y border-line">
-      <div className="mx-auto max-w-[1400px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
+      <div className="mx-auto max-w-[1800px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
         
         {/* Section Header */}
         <div className="mb-9 max-[760px]:mb-6">

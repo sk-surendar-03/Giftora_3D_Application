@@ -312,7 +312,7 @@ function CustomiserWorkspace({ options }) {
   }))
 
   return (
-    <div className="mx-auto max-w-[1400px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-5">
+    <div className="mx-auto max-w-[1800px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-5">
       {/* Top action bar */}
       <div className="mb-4 flex items-center justify-between">
         <Link

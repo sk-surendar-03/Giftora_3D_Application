@@ -96,7 +96,7 @@ export default function Checkout() {
 
   return (
     <div className="bg-bg text-ink min-h-[80vh] pb-20">
-      <div className="mx-auto max-w-[1400px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-10">
+      <div className="mx-auto max-w-[1800px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-10">
         
         {/* Header & Stepper */}
         <div className="flex flex-col min-[761px]:flex-row min-[761px]:items-end justify-between gap-4 pb-6 border-b border-line mb-8">

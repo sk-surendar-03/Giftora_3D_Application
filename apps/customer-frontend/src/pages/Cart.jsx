@@ -83,7 +83,7 @@ export default function Cart() {
 
   return (
     <div className="bg-bg text-ink min-h-[80vh] pb-20">
-      <div className="mx-auto max-w-[1400px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-10">
+      <div className="mx-auto max-w-[1800px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-10">
         <div className="pb-6 border-b border-line mb-8">
           <span className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent block">
             Review Order

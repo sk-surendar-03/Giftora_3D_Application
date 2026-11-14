@@ -181,7 +181,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface text-ink">
-      <div className="mx-auto flex h-[76px] max-[760px]:h-[64px] max-w-[1400px] items-center justify-between gap-8 max-[1040px]:gap-4 px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
+      <div className="mx-auto flex h-[76px] max-[760px]:h-[64px] max-w-[1800px] items-center justify-between gap-8 max-[1040px]:gap-4 px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
         
         {/* Left: Hamburger for mobile + Logo */}
         <div className="flex items-center gap-3">
