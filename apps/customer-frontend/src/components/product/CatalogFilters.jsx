@@ -79,7 +79,7 @@ export default function CatalogFilters({
       />
 
       {hasActiveFilters && (
-        <Button variant="secondary" size="sm" className="w-full sm:hidden" onClick={onClearAll}>
+        <Button variant="secondary" size="sm" className="w-full min-[761px]:hidden" onClick={onClearAll}>
           Reset all filters
         </Button>
       )}

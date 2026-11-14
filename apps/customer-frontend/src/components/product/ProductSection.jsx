@@ -39,7 +39,7 @@ export default function ProductSection({ eyebrow, title, subtitle, products, cla
 
         {/* Product Cards Grid: .prods { grid-template-columns: repeat(4, 1fr); gap: 24px; }
             <=1040px: repeat(2, 1fr); <=760px: gap: 14px; */}
-        <div className="grid grid-cols-2 min-[1041px]:grid-cols-4 gap-6 max-[760px]:gap-3.5">
+        <div className="grid grid-cols-2 min-[900px]:grid-cols-4 gap-6 max-[760px]:gap-3.5">
           {displayProducts.map((product, idx) => (
             <ProductCard key={product.id} product={product} index={idx} />
           ))}

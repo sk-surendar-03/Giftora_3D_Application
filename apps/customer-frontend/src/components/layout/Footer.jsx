@@ -66,10 +66,10 @@ export default function Footer() {
         </div>
 
         {/* Bottom row */}
-        <div className="mt-11 pt-5.5 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-muted">
-          <div className="text-center sm:text-left space-y-1">
+        <div className="mt-11 pt-5.5 border-t border-line flex flex-col min-[761px]:flex-row items-center justify-between gap-4 text-[13px] text-muted">
+          <div className="text-center min-[761px]:text-left space-y-1">
             <p>&copy; 2026 JAS 3D PRINTING. All rights reserved.</p>
-            <p className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
+            <p className="flex flex-wrap items-center justify-center min-[761px]:justify-start gap-1.5">
               <span>Website developed by</span>
               <a
                 href="https://tricubedigitalsolutions.com/"

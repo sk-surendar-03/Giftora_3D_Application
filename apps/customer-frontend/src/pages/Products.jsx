@@ -76,8 +76,8 @@ export default function Products() {
         </div>
 
         {/* Search & Sort Controls */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="w-full sm:max-w-md">
+        <div className="mb-6 flex flex-col gap-4 min-[761px]:flex-row min-[761px]:items-center min-[761px]:justify-between">
+          <div className="w-full min-[761px]:max-w-md">
             <Input
               aria-label="Search products"
               type="search"
@@ -86,8 +86,8 @@ export default function Products() {
               onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
             />
           </div>
-          <div className="flex items-center justify-between gap-3 sm:justify-end">
-            <Button variant="secondary" size="sm" className="sm:hidden" onClick={() => setMobileFiltersOpen(true)}>
+          <div className="flex items-center justify-between gap-3 min-[761px]:justify-end">
+            <Button variant="secondary" size="sm" className="min-[761px]:hidden" onClick={() => setMobileFiltersOpen(true)}>
               Filters
             </Button>
             <SortMenu value={sortBy} onChange={setSortBy} />
@@ -121,7 +121,7 @@ export default function Products() {
             ) : filteredProducts.length === 0 ? (
               <EmptyState onReset={resetFilters} />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 min-[1041px]:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 min-[761px]:grid-cols-2 min-[1041px]:grid-cols-3 gap-6">
                 {filteredProducts.map((product, index) => (
                   <ProductCard key={product.id} product={product} index={index} />
                 ))}
