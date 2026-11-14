@@ -10,7 +10,7 @@ export default function Hero() {
       <img
         src="/hero-products.png"
         alt="Jasvel 3D Prints — personalised spiritual gifts and figurines"
-        className="block w-full h-auto"
+        className="block w-full h-auto min-[761px]:max-h-[680px] min-[761px]:object-cover min-[761px]:object-center"
       />
 
       {/* Base dark layer */}
@@ -53,7 +53,7 @@ export default function Hero() {
             <h1
               className="font-display font-bold leading-[1.05] tracking-[-0.02em] mb-3 max-[760px]:mb-2"
               style={{
-                fontSize: 'clamp(20px, 4.8vw, 62px)',
+                fontSize: 'clamp(20px, 3.8vw, 62px)',
                 color: '#ffffff',
                 textShadow: '0 0 50px rgba(217,174,78,0.5), 0 2px 20px rgba(0,0,0,1), 0 1px 4px rgba(0,0,0,1)',
               }}
