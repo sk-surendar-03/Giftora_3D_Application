@@ -159,7 +159,10 @@ function ProductDetailView({ slug }) {
   }
 
   const hasOriginalPrice = typeof product.originalPrice === 'number' && product.originalPrice > (displayPrice ?? product.price)
-  const hasDiscount = typeof product.discountPercent === 'number' && product.discountPercent > 0
+  const liveDiscountPercent = hasOriginalPrice && typeof displayPrice === 'number'
+    ? Math.round(((product.originalPrice - displayPrice) / product.originalPrice) * 100)
+    : null
+  const hasDiscount = typeof liveDiscountPercent === 'number' && liveDiscountPercent > 0
   const hasRating = typeof product.rating === 'number' && product.rating > 0
 
   return (
@@ -247,7 +250,7 @@ function ProductDetailView({ slug }) {
               )}
               {hasDiscount && (
                 <span className="font-sans text-[14px] font-semibold text-[#17683f] bg-[#e3f4ea] px-2.5 py-0.5 rounded-full">
-                  {product.discountPercent}% off
+                  {liveDiscountPercent}% off
                 </span>
               )}
               {isFreeShipping ? (
