@@ -294,15 +294,33 @@ export default function ProductForm() {
               </label>
 
               <div className="flex flex-wrap gap-4">
-                <label className="block text-sm font-medium text-ink flex-1 min-w-[120px]">
-                  Selling Price (₹)
-                  {form.materialOptions.length > 0 && (
-                    <span className="ml-1.5 text-[11px] font-normal text-accent">(auto-synced from first material + size)</span>
-                  )}
-                  <input type="number" min="0" step="0.01" value={form.price}
-                    onChange={(e) => update('price', e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm" placeholder="e.g. 399" />
-                </label>
+                <div className="flex-1 min-w-[120px]">
+                  <label className="block text-sm font-medium text-ink">
+                    Selling Price (₹)
+                    {form.materialOptions.length > 0 && (
+                      <span className="ml-1.5 text-[11px] font-normal text-accent">(auto-synced)</span>
+                    )}
+                    <input type="number" min="0" step="0.01" value={form.price}
+                      onChange={(e) => update('price', e.target.value)}
+                      className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm" placeholder="e.g. 399" />
+                  </label>
+                  <div className="mt-1.5 flex flex-col gap-0.5">
+                    <p className="flex items-start gap-1 text-[11px] text-muted leading-snug">
+                      <svg className="mt-px h-3 w-3 shrink-0 text-muted/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                      </svg>
+                      Automatically calculated using the first material price + first size additional price. Updates when either price changes.
+                    </p>
+                    {form.materialOptions.length === 0 && (
+                      <p className="flex items-start gap-1 text-[11px] text-muted leading-snug">
+                        <svg className="mt-px h-3 w-3 shrink-0 text-muted/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        If no material is added, you can enter the Selling Price manually.
+                      </p>
+                    )}
+                  </div>
+                </div>
                 <label className="block text-sm font-medium text-ink flex-1 min-w-[120px]">
                   Original Price (₹) <span className="text-xs text-muted">(strikethrough)</span>
                   <input type="number" min="0" step="0.01" value={form.originalPrice}
