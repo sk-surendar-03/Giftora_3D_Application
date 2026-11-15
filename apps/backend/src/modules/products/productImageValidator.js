@@ -1,6 +1,6 @@
 import { HttpError } from '../../utils/httpError.js'
 
-export const MAX_IMAGE_BYTES = Number(process.env.MAX_PRODUCT_IMAGE_BYTES) || 15 * 1024 * 1024 // 15 MB
+export const MAX_IMAGE_BYTES = Number(process.env.MAX_PRODUCT_IMAGE_BYTES) || 3 * 1024 * 1024 // 3 MB
 const MAX_FILENAME_LENGTH = 150
 
 export const ALLOWED_IMAGE_MIME_TYPES = [

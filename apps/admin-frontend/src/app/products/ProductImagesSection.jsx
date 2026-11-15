@@ -269,6 +269,8 @@ export default function ProductImagesSection({ images = [], onChange, materials 
     }
   }
 
+  const MAX_IMAGE_BYTES = 3 * 1024 * 1024 // 3 MB
+
   function handleFiles(files) {
     if (!files || files.length === 0) return
     const validFiles = Array.from(files).filter((file) => {
@@ -278,6 +280,12 @@ export default function ProductImagesSection({ images = [], onChange, materials 
 
     if (validFiles.length === 0) {
       alert('Please select valid JPG, JPEG, PNG, or WEBP image files.')
+      return
+    }
+
+    const oversized = validFiles.filter((f) => f.size > MAX_IMAGE_BYTES)
+    if (oversized.length > 0) {
+      alert('Each product image must be 3 MB or smaller.')
       return
     }
 
@@ -369,6 +377,11 @@ export default function ProductImagesSection({ images = [], onChange, materials 
     const file = e.target.files?.[0]
     const index = replacingIndexRef.current
     if (!file || index === null || index === undefined || !items[index]) return
+
+    if (file.size > MAX_IMAGE_BYTES) {
+      alert('Each product image must be 3 MB or smaller.')
+      return
+    }
 
     const tempId = `replace-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     const previewUrl = URL.createObjectURL(file)
@@ -486,7 +499,7 @@ export default function ProductImagesSection({ images = [], onChange, materials 
         <p className="text-xs font-medium text-ink">
           Drag & drop product photos here, or <span className="text-accent underline font-semibold">browse</span>
         </p>
-        <p className="mt-1 text-[11px] text-muted">Supports JPG, JPEG, PNG, and WEBP (up to 15 MB each)</p>
+        <p className="mt-1 text-[11px] text-muted">Supports JPG, JPEG, PNG, and WEBP (up to 3 MB each)</p>
       </div>
 
       {items.length > 0 && (
