@@ -41,6 +41,22 @@ function ProductDetailView({ slug }) {
     ? product.shippingMethods
     : null
 
+  // Compute defaults synchronously so the initial render shows the correct price immediately
+  const defaultMaterial = useMemo(() => {
+    if (!product) return null
+    return materialOptions ? materialOptions[0].name : product.materials?.[0] ?? null
+  }, [product, materialOptions])
+
+  const defaultSize = useMemo(() => {
+    if (!product) return null
+    return sizeOptions ? sizeOptions[0].name : product.sizes?.[0] ?? null
+  }, [product, sizeOptions])
+
+  const defaultShipping = useMemo(() => {
+    if (!product) return null
+    return shippingMethods ? shippingMethods[0] : null
+  }, [product, shippingMethods])
+
   const [material, setMaterial] = useState(null)
   const [color, setColor] = useState(null)
   const [size, setSize] = useState(null)
@@ -48,19 +64,15 @@ function ProductDetailView({ slug }) {
   const [quantity, setQuantity] = useState(1)
   const [showModel, setShowModel] = useState(false)
 
-  // Set defaults once product loads (useState initial values run before product is available)
+  // Apply defaults once product loads; useMemo above ensures they're ready on first render
   useEffect(() => {
     if (!product) return
-    const matOpts = Array.isArray(product.materialOptions) && product.materialOptions.length > 0 ? product.materialOptions : null
-    const sizeOpts = Array.isArray(product.sizeOptions) && product.sizeOptions.length > 0 ? product.sizeOptions : null
-    const shipMethods = Array.isArray(product.shippingMethods) && product.shippingMethods.length > 0 ? product.shippingMethods : null
-    const defaultMat = matOpts ? matOpts[0].name : product.materials?.[0] ?? null
-    setMaterial((prev) => prev ?? defaultMat)
-    setSize((prev) => prev ?? (sizeOpts ? sizeOpts[0].name : product.sizes?.[0] ?? null))
-    setSelectedShipping((prev) => prev ?? (shipMethods ? shipMethods[0] : null))
-    const initColors = colorsForMaterial(product, defaultMat)
+    setMaterial((prev) => prev ?? defaultMaterial)
+    setSize((prev) => prev ?? defaultSize)
+    setSelectedShipping((prev) => prev ?? defaultShipping)
+    const initColors = colorsForMaterial(product, defaultMaterial)
     setColor((prev) => prev ?? initColors?.[0] ?? null)
-  }, [product])
+  }, [product, defaultMaterial, defaultSize, defaultShipping])
 
   // When material changes, reset color to first available for that material
   useEffect(() => {
@@ -71,8 +83,11 @@ function ProductDetailView({ slug }) {
   }, [material, product])
 
   // Dynamic price from selected material + size options
-  const selectedMaterialOption = materialOptions?.find((m) => m.name === material)
-  const selectedSizeOption = sizeOptions?.find((s) => s.name === size)
+  // Uses defaultMaterial/defaultSize when state hasn't been applied yet (first render)
+  const effectiveMaterial = material ?? defaultMaterial
+  const effectiveSize = size ?? defaultSize
+  const selectedMaterialOption = materialOptions?.find((m) => m.name === effectiveMaterial)
+  const selectedSizeOption = sizeOptions?.find((s) => s.name === effectiveSize)
   const displayPriceCents = selectedMaterialOption
     ? selectedMaterialOption.priceCents + (selectedSizeOption?.additionalCents || 0)
     : null

@@ -10,7 +10,17 @@ export default function ProductCard({ product, index = 0 }) {
   const [hovered, setHovered] = useState(false)
   const isSaved = isWishlisted(product.id)
 
-  const priceDisplay = typeof product.price === 'number' ? `₹${product.price}` : product.price
+  // Compute default material + size for display
+  const defMat = product.materialOptions?.[0] ?? null
+  const defSize = product.sizeOptions?.[0] ?? null
+  const computedPriceCents = defMat
+    ? defMat.priceCents + (defSize?.additionalCents ?? 0)
+    : null
+  const priceDisplay = computedPriceCents !== null
+    ? `₹${(computedPriceCents / 100).toLocaleString('en-IN')}`
+    : typeof product.price === 'number'
+    ? `₹${product.price.toLocaleString('en-IN')}`
+    : product.price
   
   // Design preview tile tint cycling: default (var(--soft)), alt1 (var(--alt)), alt2 (color-mix with acc)
   const tintClasses = ['', 'bg-alt', 'bg-[#1F3046]']
@@ -178,6 +188,14 @@ export default function ProductCard({ product, index = 0 }) {
           </div>
         )}
 
+        {/* Default material + size info */}
+        {defMat && (
+          <div className="mt-1.5 text-[11.5px] text-muted space-y-0.5">
+            <span>Material: {defMat.name}</span>
+            {defSize && <span className="ml-2">· Size: {defSize.name}</span>}
+          </div>
+        )}
+
         {/* Price Row: selling price, and dynamic original price & discount if configured */}
         <div className="flex items-baseline gap-2 mt-1.5 font-sans">
           <b className="text-[18px] font-bold text-ink">{priceDisplay}</b>
@@ -215,11 +233,11 @@ export default function ProductCard({ product, index = 0 }) {
         )}
       </div>
 
-      {/* Button: Personalise */}
+      {/* Button: Buy Now */}
       <div className="mt-3.5">
         <Link to={`/products/${product.slug}`} className="block">
           <Button variant="secondary" size="sm" className="w-full h-[38px] max-[760px]:h-[40px] max-[760px]:text-[13px] max-[760px]:px-2.5">
-            Personalise
+            Buy Now
           </Button>
         </Link>
       </div>

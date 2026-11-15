@@ -9,7 +9,15 @@ export function mapApiProduct(apiProduct) {
   const materials = apiProduct.materials ?? []
   const defaultMaterial = materials[0] ?? apiProduct.material ?? ''
 
-  const price = typeof apiProduct.priceCents === 'number' ? apiProduct.priceCents / 100 : apiProduct.price
+  const matOpts = Array.isArray(apiProduct.materialOptions) && apiProduct.materialOptions.length > 0
+    ? apiProduct.materialOptions
+    : null
+  const sizeOpts = Array.isArray(apiProduct.sizeOptions) && apiProduct.sizeOptions.length > 0
+    ? apiProduct.sizeOptions
+    : null
+  const price = matOpts
+    ? (matOpts[0].priceCents + (sizeOpts?.[0]?.additionalCents ?? 0)) / 100
+    : typeof apiProduct.priceCents === 'number' ? apiProduct.priceCents / 100 : apiProduct.price
   const originalPrice = typeof apiProduct.originalPriceCents === 'number' && apiProduct.originalPriceCents > 0
     ? apiProduct.originalPriceCents / 100
     : null
