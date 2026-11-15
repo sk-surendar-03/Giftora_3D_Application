@@ -66,11 +66,16 @@ export default function ProductForm() {
           }
           setModel(product.model ?? null)
           const shippingCents = product.shippingCents || 0
+          const loadedMatOpts = Array.isArray(product.materialOptions) ? product.materialOptions : []
+          const loadedSizeOpts = Array.isArray(product.sizeOptions) ? product.sizeOptions : []
+          const initPrice = loadedMatOpts.length > 0
+            ? String((loadedMatOpts[0].priceCents + (loadedSizeOpts[0]?.additionalCents ?? 0)) / 100)
+            : String(product.priceCents / 100)
           setForm({
             name: product.name,
             slug: product.slug,
             description: product.description,
-            price: String(product.priceCents / 100),
+            price: initPrice,
             originalPrice: product.originalPriceCents ? String(product.originalPriceCents / 100) : '',
             shippingType: shippingCents > 0 ? 'PAID' : 'FREE',
             shippingPrice: shippingCents > 0 ? String(shippingCents / 100) : '0',
@@ -94,6 +99,30 @@ export default function ProductForm() {
 
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  // Compute selling price from first material + first size (both optional)
+  function computePrice(matOpts, sizeOpts, fallback) {
+    if (!Array.isArray(matOpts) || matOpts.length === 0) return fallback
+    const matCents = matOpts[0].priceCents ?? 0
+    const sizeCents = Array.isArray(sizeOpts) && sizeOpts.length > 0 ? (sizeOpts[0].additionalCents ?? 0) : 0
+    return String((matCents + sizeCents) / 100)
+  }
+
+  function updateMaterialOptions(next) {
+    setForm((prev) => ({
+      ...prev,
+      materialOptions: next,
+      price: computePrice(next, prev.sizeOptions, prev.price),
+    }))
+  }
+
+  function updateSizeOptions(next) {
+    setForm((prev) => ({
+      ...prev,
+      sizeOptions: next,
+      price: computePrice(prev.materialOptions, next, prev.price),
+    }))
   }
 
   function parseListField(value) {
@@ -267,6 +296,9 @@ export default function ProductForm() {
               <div className="flex flex-wrap gap-4">
                 <label className="block text-sm font-medium text-ink flex-1 min-w-[120px]">
                   Selling Price (₹)
+                  {form.materialOptions.length > 0 && (
+                    <span className="ml-1.5 text-[11px] font-normal text-accent">(auto-synced from first material + size)</span>
+                  )}
                   <input type="number" min="0" step="0.01" value={form.price}
                     onChange={(e) => update('price', e.target.value)}
                     className="mt-1 block w-full rounded-md border border-line px-3 py-2 text-sm" placeholder="e.g. 399" />
@@ -309,9 +341,9 @@ export default function ProductForm() {
             <div className="space-y-5 rounded-lg border border-line bg-surface p-6">
               <h2 className="text-sm font-semibold text-muted uppercase tracking-wider border-b border-line pb-2">Options</h2>
 
-              <MaterialOptionsEditor value={form.materialOptions} onChange={(v) => update('materialOptions', v)}
+              <MaterialOptionsEditor value={form.materialOptions} onChange={updateMaterialOptions}
                 onDirectSave={isEditing ? (v) => updateProduct(id, { materialOptions: v }).catch(() => {}) : undefined} />
-              <SizeOptionsEditor value={form.sizeOptions} onChange={(v) => update('sizeOptions', v)}
+              <SizeOptionsEditor value={form.sizeOptions} onChange={updateSizeOptions}
                 onDirectSave={isEditing ? (v) => updateProduct(id, { sizeOptions: v }).catch(() => {}) : undefined} />
               <ShippingMethodsEditor value={form.shippingMethods} onChange={(v) => update('shippingMethods', v)}
                 onDirectSave={isEditing ? (v) => updateProduct(id, { shippingMethods: v }).catch(() => {}) : undefined} />
