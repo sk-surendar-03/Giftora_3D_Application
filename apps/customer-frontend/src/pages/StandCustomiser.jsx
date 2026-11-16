@@ -11,6 +11,7 @@ import { validateDesignConfig } from '../features/standStudio/core/validation'
 import { useAddStandToCart, PHASE_LABELS } from '../features/standDesign/useAddStandToCart.js'
 import { computeStandPriceCents, formatRupees } from '../features/standDesign/standPricing.js'
 import { useAuth } from '../features/auth/useAuth.js'
+import api from '../services/api'
 import Button from '../components/ui/Button'
 import QuantitySelector from '../components/product/QuantitySelector'
 
@@ -27,7 +28,8 @@ export default function StandCustomiser() {
 function StandCustomiserWorkspace() {
   const [design, setDesign] = useState(() => createDefaultDesign('combined', 'minimalist'))
   const [quantity, setQuantity] = useState(1)
-  const [shippingMethod] = useState({ name: 'standard', priceCents: 5000 })
+  const [shippingOptions, setShippingOptions] = useState([])
+  const [shippingMethod, setShippingMethod] = useState(null)
   const [loading, setLoading] = useState(false)
   const [assembly, setAssembly] = useState(null)
   const assemblyRef = useRef(null)
@@ -41,6 +43,19 @@ function StandCustomiserWorkspace() {
     cameraPreset: 'iso', projection: 'perspective', showGrid: true, showBuildPlate: true,
     showDimensions: false, showPhoneMockup: false, showPensMockup: false, explodedAmount: 0,
   })
+
+  useEffect(() => {
+    let cancelled = false
+    api.get('/settings/customizer/shipping').then((res) => {
+      if (cancelled) return
+      const methods = Array.isArray(res.data?.methods) ? res.data.methods : []
+      setShippingOptions(methods)
+      if (methods.length > 0 && !shippingMethod) setShippingMethod(methods[0])
+    }).catch(() => {
+      // Shipping methods are optional; fall back to none.
+    })
+    return () => { cancelled = true }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setLoading(true)
@@ -69,7 +84,8 @@ function StandCustomiserWorkspace() {
 
   const volumeCm3 = assembly?.solidVolumeCm3 ?? 0
   const standPriceCents = computeStandPriceCents(design.category, volumeCm3)
-  const totalCents = standPriceCents * quantity + shippingMethod.priceCents
+  const shippingCents = shippingMethod?.priceCents ?? 0
+  const totalCents = standPriceCents * quantity + shippingCents
 
   const updateDesign = (updater) => setDesign((prev) => {
     const next = typeof updater === 'function' ? updater(prev) : updater
@@ -188,7 +204,26 @@ function StandCustomiserWorkspace() {
                 <dt className="text-muted">Quantity</dt>
                 <dd><QuantitySelector value={quantity} onChange={setQuantity} /></dd>
               </div>
-              <div className="flex justify-between gap-4 text-[13.5px]"><dt className="text-muted">Shipping</dt><dd className="font-medium text-ink">{formatRupees(shippingMethod.priceCents)}</dd></div>
+              <div className="flex justify-between gap-4 text-[13.5px]"><dt className="text-muted">Shipping</dt><dd className="font-medium text-ink">
+                {shippingOptions.length > 0 ? (
+                  <select
+                    value={shippingMethod?.name ?? ''}
+                    onChange={(e) => {
+                      const m = shippingOptions.find((x) => x.name === e.target.value)
+                      if (m) setShippingMethod(m)
+                    }}
+                    className="rounded-control border border-line bg-surface px-2 py-1 text-[13px] text-ink"
+                  >
+                    {shippingOptions.map((m) => (
+                      <option key={m.name} value={m.name}>
+                        {m.name} — {formatRupees(m.priceCents)}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-muted">No shipping methods configured</span>
+                )}
+              </dd></div>
             </dl>
 
             {added && (

@@ -1,6 +1,6 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
-import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses } from '../settings/settingsService.js'
+import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping } from '../settings/settingsService.js'
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { priceForDesign, stlIsAvailable } from '../customizer/designService.js'
 
@@ -16,6 +16,20 @@ export async function getOrCreateCart(userId) {
 
 function sameCustomization(a, b) {
   return JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+}
+
+/**
+ * Resolve a client-supplied shipping method against the server's configured
+ * list. The price ALWAYS comes from the server — any price sent by the client
+ * is ignored. Returns null if no method was requested, the server's method
+ * object otherwise. Throws 400 on an unknown name.
+ */
+async function resolveShippingMethod(clientMethod) {
+  if (!clientMethod || typeof clientMethod.name !== 'string' || !clientMethod.name.trim()) return null
+  const { methods } = await getCustomizerShipping()
+  const serverMethod = methods.find((m) => m.name === clientMethod.name)
+  if (!serverMethod) throw new HttpError(400, `Unknown shipping method: ${clientMethod.name}`)
+  return serverMethod
 }
 
 export async function addItem(userId, { productId, quantity, customization }) {
@@ -50,13 +64,18 @@ export async function addItem(userId, { productId, quantity, customization }) {
     unitPriceCents = product.priceCents
   }
 
+  // Resolve shipping method against server config — never trust client price.
+  const resolvedShipping = await resolveShippingMethod(customization?.shippingMethod)
+  const safeCustomization = customization ? { ...customization } : {}
+  if (resolvedShipping) safeCustomization.shippingMethod = resolvedShipping
+
   return prisma.cartItem.create({
     data: {
       cartId: cart.id,
       itemType: 'PRODUCT',
       productId,
       quantity,
-      customization: customization ?? undefined,
+      customization: Object.keys(safeCustomization).length > 0 ? safeCustomization : undefined,
       unitPriceCents,
     },
     include: { product: true, customDesign: true, standDesign: true },
@@ -91,10 +110,11 @@ export async function addCustomItem(userId, { customDesignId, quantity, shipping
   const unitPriceCents = charPrice + sizePriceCents + thicknessPriceCents
 
   const customizationData = {
-    ...(shippingMethod && typeof shippingMethod.name === 'string' ? { shippingMethod } : {}),
     ...(sizePriceCents > 0 ? { sizePriceCents } : {}),
     ...(thicknessPriceCents > 0 ? { thicknessPriceCents } : {}),
   }
+  const resolvedShipping = await resolveShippingMethod(shippingMethod)
+  if (resolvedShipping) customizationData.shippingMethod = resolvedShipping
 
   return prisma.cartItem.create({
     data: {
@@ -127,9 +147,9 @@ export async function addStandItem(userId, { standDesignId, quantity, shippingMe
     })
   }
 
-  const customizationData = {
-    ...(shippingMethod && typeof shippingMethod.name === 'string' ? { shippingMethod } : {}),
-  }
+  const customizationData = {}
+  const resolvedShipping = await resolveShippingMethod(shippingMethod)
+  if (resolvedShipping) customizationData.shippingMethod = resolvedShipping
 
   return prisma.cartItem.create({
     data: {
