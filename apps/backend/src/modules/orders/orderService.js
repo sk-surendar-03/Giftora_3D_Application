@@ -3,23 +3,25 @@ import { HttpError } from '../../utils/httpError.js'
 import { generateOrderNumber } from './orderNumber.js'
 import { parsePagination, buildMeta } from '../../utils/pagination.js'
 import { stlIsAvailable, toPublicDesign } from '../customizer/designService.js'
+import { stlIsAvailable as standStlIsAvailable, toPublicStandDesign } from '../standDesigner/standDesignService.js'
 import { resolveTrackingUrl } from './carrierTracking.js'
 
-const CART_INCLUDE = { items: { include: { product: true, customDesign: true }, orderBy: { createdAt: 'asc' } } }
-const ORDER_INCLUDE = { items: { include: { customDesign: true } } }
+const CART_INCLUDE = { items: { include: { product: true, customDesign: true, standDesign: true }, orderBy: { createdAt: 'asc' } } }
+const ORDER_INCLUDE = { items: { include: { customDesign: true, standDesign: true } } }
 
 /**
  * Shapes an order for the API: each custom-design line carries a `design`
- * summary (never storage keys). `admin` additionally exposes the stored
- * file's metadata and the exact engine parameters.
+ * summary and each stand line a `stand` summary (never storage keys).
+ * `admin` additionally exposes the stored file's metadata and parameters.
  */
 function serializeOrder(order, { admin = false } = {}) {
   if (!order) return order
   return {
     ...order,
-    items: order.items.map(({ customDesign, ...item }) => ({
+    items: order.items.map(({ customDesign, standDesign, ...item }) => ({
       ...item,
       ...(customDesign !== undefined ? { design: toPublicDesign(customDesign, { admin }) } : {}),
+      ...(standDesign !== undefined ? { stand: toPublicStandDesign(standDesign, { admin }) } : {}),
     })),
   }
 }
@@ -68,13 +70,16 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
         }
 
         // A catalog line is unavailable once its product is deactivated; a
-        // custom design once its STL is no longer stored.
+        // custom design once its STL is no longer stored; a stand design once
+        // its STL is missing too.
         const unavailable = []
         for (const item of cart.items) {
           if (item.itemType === 'CUSTOM_DESIGN') {
             if (!(await stlIsAvailable(item.customDesign))) unavailable.push({ name: item.customDesign.title })
-          } else if (!item.product.isActive) {
-            unavailable.push({ name: item.product.name })
+          } else if (item.itemType === 'STAND_DESIGN') {
+            if (!(await standStlIsAvailable(item.standDesign))) unavailable.push({ name: item.standDesign.title })
+          } else if (!item.product?.isActive) {
+            unavailable.push({ name: item.product?.name ?? 'An item' })
           }
         }
         if (unavailable.length > 0) {
@@ -110,32 +115,47 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
             shippingCents,
             totalCents,
             items: {
-              create: cart.items.map((item) =>
-                item.itemType === 'CUSTOM_DESIGN'
-                  ? {
-                      // Standalone design: no product. The design title is the
-                      // name snapshot and the validated params are snapshotted
-                      // on the line; the STL stays linked via customDesignId.
-                      itemType: 'CUSTOM_DESIGN',
-                      customDesignId: item.customDesignId,
-                      productName: item.customDesign.title,
-                      productSlug: null,
-                      productImage: null,
-                      quantity: item.quantity,
-                      customization: { ...item.customDesign.params, ...(item.customization ?? {}) },
-                      unitPriceCents: item.unitPriceCents,
-                    }
-                  : {
-                      itemType: 'PRODUCT',
-                      productId: item.productId,
-                      productName: item.product.name,
-                      productSlug: item.product.slug,
-                      productImage: item.product.images?.[0] ?? null,
-                      quantity: item.quantity,
-                      customization: item.customization ?? undefined,
-                      unitPriceCents: item.unitPriceCents,
-                    },
-              ),
+              create: cart.items.map((item) => {
+                if (item.itemType === 'CUSTOM_DESIGN') {
+                  return {
+                    // Standalone design: no product. The design title is the
+                    // name snapshot and the validated params are snapshotted
+                    // on the line; the STL stays linked via customDesignId.
+                    itemType: 'CUSTOM_DESIGN',
+                    customDesignId: item.customDesignId,
+                    productName: item.customDesign.title,
+                    productSlug: null,
+                    productImage: null,
+                    quantity: item.quantity,
+                    customization: { ...item.customDesign.params, ...(item.customization ?? {}) },
+                    unitPriceCents: item.unitPriceCents,
+                  }
+                }
+                if (item.itemType === 'STAND_DESIGN') {
+                  return {
+                    // Standalone stand: same shape as a custom design line,
+                    // with the stand's own config snapshotted on the line.
+                    itemType: 'STAND_DESIGN',
+                    standDesignId: item.standDesignId,
+                    productName: item.standDesign.title,
+                    productSlug: null,
+                    productImage: null,
+                    quantity: item.quantity,
+                    customization: { ...item.standDesign.designConfig, ...(item.customization ?? {}) },
+                    unitPriceCents: item.unitPriceCents,
+                  }
+                }
+                return {
+                  itemType: 'PRODUCT',
+                  productId: item.productId,
+                  productName: item.product.name,
+                  productSlug: item.product.slug,
+                  productImage: item.product.images?.[0] ?? null,
+                  quantity: item.quantity,
+                  customization: item.customization ?? undefined,
+                  unitPriceCents: item.unitPriceCents,
+                }
+              }),
             },
           },
           include: ORDER_INCLUDE,
@@ -183,7 +203,7 @@ export async function getOrder(userId, orderId) {
 // status-update responses include the full design record (admin view).
 const USER_SELECT = { select: { id: true, name: true, email: true } }
 const ADMIN_ORDER_LIST_INCLUDE = { items: true, user: USER_SELECT }
-const ADMIN_ORDER_INCLUDE = { items: { include: { customDesign: true } }, user: USER_SELECT }
+const ADMIN_ORDER_INCLUDE = { items: { include: { customDesign: true, standDesign: true } }, user: USER_SELECT }
 
 /**
  * Unlike `listOrders`/`getOrder` above (scoped to the calling customer),
@@ -198,7 +218,8 @@ export async function listOrdersForAdmin({ page, pageSize, search, status, type,
   const where = {
     ...(status ? { status } : {}),
     ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lt: to } : {}) } } : {}),
-    // Orders containing at least one line of the given kind (PRODUCT or CUSTOM_DESIGN).
+    // Orders containing at least one line of the given kind (PRODUCT,
+    // CUSTOM_DESIGN or STAND_DESIGN).
     ...(type ? { items: { some: { itemType: type } } } : {}),
     // No `mode: 'insensitive'` (Postgres-only) — MySQL's default collation
     // is already case-insensitive.

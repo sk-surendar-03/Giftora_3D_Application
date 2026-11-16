@@ -10,7 +10,11 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/api": "https://api.jasvel3dmakers.co.in",
+      "/api": {
+        target: "http://localhost:4000",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   worker: {

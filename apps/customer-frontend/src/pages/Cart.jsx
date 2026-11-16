@@ -4,11 +4,37 @@ import QuantitySelector from '../components/product/QuantitySelector'
 import CustomizationDetails from '../components/product/CustomizationDetails.jsx'
 import DesignDetails from '../components/design/DesignDetails.jsx'
 import DesignPreviewImage from '../components/design/DesignPreviewImage.jsx'
+import StandPreviewImage from '../components/design/StandPreviewImage.jsx'
 import Button from '../components/ui/Button'
 import { resolveImageUrl } from '../utils/imageUrl.js'
 
 function formatPrice(cents) {
   return `₹${(cents / 100).toFixed(2)}`
+}
+
+function StandDetails({ designConfig }) {
+  if (!designConfig) return null
+  const colors = designConfig.appearance?.colors || {}
+  return (
+    <div className="space-y-1">
+      <div className="capitalize">
+        {designConfig.category?.replace('-', ' ')} · {designConfig.appearance?.finish?.replace('-', ' ')}
+      </div>
+      <div className="flex gap-1.5 mt-1">
+        {Object.entries(colors).slice(0, 5).map(([zone, hex]) => (
+          <span
+            key={zone}
+            title={zone}
+            className="inline-block h-3 w-3 rounded-full border border-line"
+            style={{ backgroundColor: hex }}
+          />
+        ))}
+      </div>
+      {designConfig.personalization?.enabled && designConfig.personalization?.text && (
+        <div className="text-[12px]">Text: "{designConfig.personalization.text}"</div>
+      )}
+    </div>
+  )
 }
 
 export default function Cart() {
@@ -73,7 +99,7 @@ export default function Cart() {
   }
 
   const totalShippingCents = cart.items.reduce((sum, item) => {
-    if (item.itemType === 'CUSTOM_DESIGN') {
+    if (item.itemType === 'CUSTOM_DESIGN' || item.itemType === 'STAND_DESIGN') {
       return sum + (item.customization?.shippingMethod?.priceCents ?? 0)
     }
     return sum + (item.customization?.shippingMethod?.priceCents ?? item.product?.shippingCents ?? 0)
@@ -103,107 +129,116 @@ export default function Cart() {
           {/* Cart items list */}
           <div className="rounded-card border border-line bg-surface divide-y divide-line p-6">
             {cart.items.map((item) => {
-              // A line is either a catalog product or a standalone custom design.
               const isCustom = item.itemType === 'CUSTOM_DESIGN'
-              return (
-              <div key={item.id} className="grid grid-cols-[80px_1fr] min-[761px]:grid-cols-[104px_1fr_auto] gap-5 py-5 first:pt-0 last:pb-0">
-                <div className="h-20 w-20 min-[761px]:h-[104px] min-[761px]:w-[104px] shrink-0 overflow-hidden rounded-control bg-soft border border-line flex items-center justify-center">
-                  {isCustom ? (
-                    <DesignPreviewImage designId={item.design.id} hasPreview={item.design.hasPreview} alt={item.design.title} />
-                  ) : item.product.images?.[0] ? (
-                    <img src={resolveImageUrl(item.product.images[0])} alt={item.product.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <svg className="w-8 h-8 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                      <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" />
-                    </svg>
-                  )}
-                </div>
+              const isStand = item.itemType === 'STAND_DESIGN'
 
-                <div className="min-w-0 flex flex-col justify-between">
-                  <div>
-                    {isCustom ? (
-                      <>
-                        <span className="font-sans text-[16px] font-semibold text-ink">{item.design.title}</span>
-                        <span className="ml-2 align-middle rounded-full bg-soft px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-accent">Custom design</span>
-                        <div className="mt-1 text-[13px] text-muted">
-                          <DesignDetails params={item.design.params} />
-                        </div>
-                        <div className="mt-2 text-xs">
-                          {(() => {
-                            const sm = item.customization?.shippingMethod
-                            const shipCents = sm?.priceCents ?? 0
-                            if (shipCents > 0) {
-                              return (
-                                <span className="font-medium text-muted bg-soft px-2 py-0.5 rounded-full border border-line">
-                                  {sm.name}: <span className="font-semibold text-ink">₹{(shipCents / 100).toFixed(2).replace(/\.00$/, '')}</span>
-                                  {sm.estimatedDays && <span className="ml-1 text-muted">{sm.estimatedDays}</span>}
-                                </span>
-                              )
-                            }
-                            return (
-                              <span className="font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
-                                Free Shipping
-                              </span>
-                            )
-                          })()}
-                        </div>
-                      </>
+              return (
+                <div key={item.id} className="grid grid-cols-[80px_1fr] min-[761px]:grid-cols-[104px_1fr_auto] gap-5 py-5 first:pt-0 last:pb-0">
+                  <div className="h-20 w-20 min-[761px]:h-[104px] min-[761px]:w-[104px] shrink-0 overflow-hidden rounded-control bg-soft border border-line flex items-center justify-center">
+                    {isStand ? (
+                      <StandPreviewImage designId={item.standDesign.id} hasPreview={item.standDesign.hasPreview} alt={item.standDesign.title} />
+                    ) : isCustom ? (
+                      <DesignPreviewImage designId={item.design.id} hasPreview={item.design.hasPreview} alt={item.design.title} />
+                    ) : item.product?.images?.[0] ? (
+                      <img src={resolveImageUrl(item.product.images[0])} alt={item.product.name} className="h-full w-full object-cover" />
                     ) : (
-                      <>
-                        <Link to={`/products/${item.product.slug}`} className="font-sans text-[16px] font-semibold text-ink hover:text-accent transition-colors">
-                          {item.product.name}
-                        </Link>
-                        {!item.product.isActive && <p className="mt-0.5 text-xs text-danger">No longer available</p>}
-                        <div className="mt-1 text-[13px] text-muted">
-                          <CustomizationDetails customization={item.customization} />
-                        </div>
-                        <div className="mt-2 text-xs">
-                          {(() => {
-                            const sm = item.customization?.shippingMethod
-                            const shipCents = sm?.priceCents ?? item.product.shippingCents ?? 0
-                            const shipLabel = sm?.name ?? null
-                            if (shipCents > 0) {
-                              return (
-                                <span className="font-medium text-muted bg-soft px-2 py-0.5 rounded-full border border-line">
-                                  {shipLabel ? <>{shipLabel}: </> : 'Shipping: '}
-                                  <span className="font-semibold text-ink">₹{(shipCents / 100).toFixed(2).replace(/\.00$/, '')}</span>
-                                </span>
-                              )
-                            }
-                            return (
-                              <span className="font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
-                                Free Shipping
-                              </span>
-                            )
-                          })()}
-                        </div>
-                      </>
+                      <svg className="w-8 h-8 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                        <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" />
+                      </svg>
                     )}
                   </div>
 
-                  <div className="mt-3 flex items-center gap-4">
-                    <QuantitySelector isCart={true} value={item.quantity} onChange={(qty) => updateQuantity(item.id, qty)} />
-                    <button
-                      type="button"
-                      disabled={mutating}
-                      onClick={() => removeItem(item.id)}
-                      className="text-[13px] text-muted underline hover:text-danger cursor-pointer disabled:opacity-50"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
+                  <div className="min-w-0 flex flex-col justify-between">
+                    <div>
+                      {isStand ? (
+                        <>
+                          <span className="font-sans text-[16px] font-semibold text-ink">{item.standDesign.title}</span>
+                          <span className="ml-2 align-middle rounded-full bg-accent/10 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-accent">3D Stand</span>
+                          <div className="mt-1 text-[13px] text-muted">
+                            <StandDetails designConfig={item.standDesign.designConfig} />
+                          </div>
+                          <div className="mt-2 text-xs">
+                            {(() => {
+                              const sm = item.customization?.shippingMethod
+                              const shipCents = sm?.priceCents ?? 0
+                              if (shipCents > 0) {
+                                return (
+                                  <span className="font-medium text-muted bg-soft px-2 py-0.5 rounded-full border border-line">
+                                    {sm.name}: <span className="font-semibold text-ink">₹{(shipCents / 100).toFixed(2).replace(/\.00$/, '')}</span>
+                                  </span>
+                                )
+                              }
+                              return (
+                                <span className="font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
+                                  Free Shipping
+                                </span>
+                              )
+                            })()}
+                          </div>
+                        </>
+                      ) : isCustom ? (
+                        <>
+                          <span className="font-sans text-[16px] font-semibold text-ink">{item.design.title}</span>
+                          <span className="ml-2 align-middle rounded-full bg-soft px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-accent">Custom design</span>
+                          <div className="mt-1 text-[13px] text-muted">
+                            <DesignDetails params={item.design.params} />
+                          </div>
+                          <div className="mt-2 text-xs">
+                            {(() => {
+                              const sm = item.customization?.shippingMethod
+                              const shipCents = sm?.priceCents ?? 0
+                              if (shipCents > 0) {
+                                return (
+                                  <span className="font-medium text-muted bg-soft px-2 py-0.5 rounded-full border border-line">
+                                    {sm.name}: <span className="font-semibold text-ink">₹{(shipCents / 100).toFixed(2).replace(/\.00$/, '')}</span>
+                                    {sm.estimatedDays && <span className="ml-1 text-muted">{sm.estimatedDays}</span>}
+                                  </span>
+                                )
+                              }
+                              return (
+                                <span className="font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
+                                  Free Shipping
+                                </span>
+                              )
+                            })()}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <Link to={`/products/${item.product.slug}`} className="font-sans text-[16px] font-semibold text-ink hover:text-accent transition-colors">
+                            {item.product.name}
+                          </Link>
+                          {!item.product.isActive && <p className="mt-0.5 text-xs text-danger">No longer available</p>}
+                          <div className="mt-1 text-[13px] text-muted">
+                            <CustomizationDetails customization={item.customization} />
+                          </div>
+                        </>
+                      )}
+                    </div>
 
-                <div className="text-right min-[761px]:self-center col-span-2 min-[761px]:col-span-1 pt-2 min-[761px]:pt-0 border-t min-[761px]:border-0 border-line/50 flex min-[761px]:flex-col justify-between items-center min-[761px]:items-end">
-                  <span className="min-[761px]:hidden text-xs text-muted">Price:</span>
-                  <div className="font-sans text-[17px] font-bold text-ink">
-                    {formatPrice(item.lineTotalCents)}
+                    <div className="mt-3 flex items-center gap-4">
+                      <QuantitySelector isCart={true} value={item.quantity} onChange={(qty) => updateQuantity(item.id, qty)} />
+                      <button
+                        type="button"
+                        disabled={mutating}
+                        onClick={() => removeItem(item.id)}
+                        className="text-[13px] text-muted underline hover:text-danger cursor-pointer disabled:opacity-50"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
-                  <div className="text-[12px] text-muted">
-                    {formatPrice(item.unitPriceCents)} each
+
+                  <div className="text-right min-[761px]:self-center col-span-2 min-[761px]:col-span-1 pt-2 min-[761px]:pt-0 border-t min-[761px]:border-0 border-line/50 flex min-[761px]:flex-col justify-between items-center min-[761px]:items-end">
+                    <span className="min-[761px]:hidden text-xs text-muted">Price:</span>
+                    <div className="font-sans text-[17px] font-bold text-ink">
+                      {formatPrice(item.lineTotalCents)}
+                    </div>
+                    <div className="text-[12px] text-muted">
+                      {formatPrice(item.unitPriceCents)} each
+                    </div>
                   </div>
                 </div>
-              </div>
               )
             })}
           </div>

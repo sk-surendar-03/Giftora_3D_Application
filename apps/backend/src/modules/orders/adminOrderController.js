@@ -2,6 +2,7 @@ import { OrderStatus, OrderItemType } from '@prisma/client'
 import { HttpError } from '../../utils/httpError.js'
 import { listOrdersForAdmin, getOrderForAdmin, updateOrderStatus } from './orderService.js'
 import { getPreviewForOrderItem, getStlForOrderItem, getThreeMfForOrderItem } from '../customizer/designService.js'
+import { getPreviewForStandOrderItem, getStlForStandOrderItem } from '../standDesigner/standDesignService.js'
 
 const VALID_STATUSES = Object.values(OrderStatus)
 const VALID_TYPES = Object.values(OrderItemType)
@@ -73,9 +74,20 @@ export async function updateStatus(req, res) {
 }
 
 // Looked up by BOTH the order id and the item id, so a file can only be
-// downloaded through the order it actually belongs to.
+// downloaded through the order it actually belongs to. Custom-design and
+// stand lines are both supported — the custom-design lookup runs first and
+// falls through to the stand lookup when the line is not a custom design.
+async function resolveItemStl(orderId, itemId) {
+  try {
+    return await getStlForOrderItem(orderId, itemId)
+  } catch (err) {
+    if (err.status === 404) return getStlForStandOrderItem(orderId, itemId)
+    throw err
+  }
+}
+
 export async function downloadItemStl(req, res) {
-  const { buffer, filename } = await getStlForOrderItem(req.params.orderId, req.params.itemId)
+  const { buffer, filename } = await resolveItemStl(req.params.orderId, req.params.itemId)
   res
     .set({
       'Content-Type': 'model/stl',
@@ -99,6 +111,15 @@ export async function downloadItem3mf(req, res) {
 }
 
 export async function itemPreview(req, res) {
-  const buffer = await getPreviewForOrderItem(req.params.orderId, req.params.itemId)
+  let buffer
+  try {
+    buffer = await getPreviewForOrderItem(req.params.orderId, req.params.itemId)
+  } catch (err) {
+    if (err.status === 404) {
+      buffer = await getPreviewForStandOrderItem(req.params.orderId, req.params.itemId)
+    } else {
+      throw err
+    }
+  }
   res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'private, max-age=300', 'X-Content-Type-Options': 'nosniff' }).send(buffer)
 }

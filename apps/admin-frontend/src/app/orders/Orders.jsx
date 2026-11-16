@@ -9,6 +9,7 @@ const TYPE_OPTIONS = [
   { value: 'ALL', label: 'All order types' },
   { value: 'PRODUCT', label: 'Catalog / Product orders' },
   { value: 'CUSTOM_DESIGN', label: 'Custom 3D orders' },
+  { value: 'STAND_DESIGN', label: '3D Stand orders' },
 ]
 
 const STATUS_TONE = {
@@ -181,6 +182,7 @@ export default function Orders() {
             {orders.map((order) => {
               const hasCustom = order.items.some((i) => i.itemType === 'CUSTOM_DESIGN')
               const hasCatalog = order.items.some((i) => i.itemType === 'PRODUCT')
+              const hasStand = order.items.some((i) => i.itemType === 'STAND_DESIGN')
               return (
                 <div key={order.id} className="rounded-lg border border-line bg-surface p-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -200,6 +202,9 @@ export default function Orders() {
                       )}
                       {hasCatalog && (
                         <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium bg-soft text-muted border border-line">Catalog</span>
+                      )}
+                      {hasStand && (
+                        <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">3D Stand</span>
                       )}
                     </div>
                     <span className="font-semibold text-ink font-mono text-sm">{formatPrice(order.totalCents)}</span>
@@ -226,6 +231,7 @@ export default function Orders() {
               {orders.map((order) => {
                 const hasCustom = order.items.some((i) => i.itemType === 'CUSTOM_DESIGN')
                 const hasCatalog = order.items.some((i) => i.itemType === 'PRODUCT')
+                const hasStand = order.items.some((i) => i.itemType === 'STAND_DESIGN')
                 return (
                   <tr key={order.id} className="border-t border-line hover:bg-alt/30 transition-colors">
                     <td className="px-4 py-2">
@@ -249,6 +255,16 @@ export default function Orders() {
                         {hasCatalog && (
                           <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium bg-soft text-muted border border-line">
                             Catalog
+                          </span>
+                        )}
+                        {hasStand && (
+                          <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
+                            <svg className="w-3 h-3 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="2" y="14" width="8" height="8" rx="1" />
+                              <path d="M10 18h4M14 14h6a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-6" />
+                              <path d="M6 14V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8" />
+                            </svg>
+                            3D Stand
                           </span>
                         )}
                       </div>

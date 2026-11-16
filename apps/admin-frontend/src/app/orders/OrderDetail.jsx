@@ -101,6 +101,33 @@ function describeAdminDesign(params) {
   ].filter(Boolean)
 }
 
+const STAND_CATEGORY_LABELS = {
+  'phone-stand': 'Phone Stand',
+  'pen-holder': 'Pen Holder',
+  combined: 'Combined Phone + Pen Stand',
+  'desk-organizer': 'Desk Organizer',
+  'personalized-gift': 'Personalized Gift Stand',
+}
+
+function describeStandDesign(stand) {
+  const config = stand?.designConfig
+  if (!config) return []
+  const appearance = config.appearance ?? {}
+  const personalization = config.personalization ?? {}
+  const print = config.print ?? {}
+  return [
+    { label: 'Category', value: STAND_CATEGORY_LABELS[config.category] ?? config.category },
+    appearance.themeId && { label: 'Theme', value: appearance.themeId },
+    appearance.finish && { label: 'Finish', value: appearance.finish },
+    appearance.colors?.base && { label: 'Base colour', value: appearance.colors.base, hex: appearance.colors.base },
+    personalization.enabled && personalization.text && { label: 'Personalisation', value: personalization.text },
+    personalization.enabled && { label: 'Font', value: personalization.fontStyle },
+    print.filament && { label: 'Filament', value: print.filament },
+    print.layerHeight != null && { label: 'Layer height', value: `${print.layerHeight} mm` },
+    print.infillPercent != null && { label: 'Infill', value: `${print.infillPercent}%` },
+  ].filter(Boolean)
+}
+
 export default function OrderDetail() {
   const { id } = useParams()
   const toast = useToast()
@@ -277,9 +304,12 @@ export default function OrderDetail() {
             <div className="divide-y divide-line">
               {order.items.map((item) => {
                 const isCustom = item.itemType === 'CUSTOM_DESIGN' && item.design
+                const isStand = item.itemType === 'STAND_DESIGN' && item.stand
                 const design = item.design
                 const stlMeta = design?.stl
+                const standStlMeta = item.stand?.stl
                 const designRows = isCustom ? describeAdminDesign(design.params) : []
+                const standRows = isStand ? describeStandDesign(item.stand) : []
 
                 return (
                   <div key={item.id} className="py-5 space-y-4">
@@ -288,6 +318,8 @@ export default function OrderDetail() {
                       <div className="h-20 w-20 shrink-0 overflow-hidden rounded-control border border-line bg-soft flex items-center justify-center">
                         {isCustom ? (
                           <AdminDesignPreview orderId={order.id} itemId={item.id} hasPreview={design.hasPreview} alt={item.productName} />
+                        ) : isStand ? (
+                          <AdminDesignPreview orderId={order.id} itemId={item.id} hasPreview={item.stand.hasPreview} alt={item.productName} />
                         ) : resolveImage(item.productImage) ? (
                           <img src={resolveImage(item.productImage)} alt={item.productName} className="h-full w-full object-cover" />
                         ) : (
@@ -304,6 +336,10 @@ export default function OrderDetail() {
                               {isCustom ? (
                                 <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
                                   Custom 3D
+                                </span>
+                              ) : isStand ? (
+                                <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
+                                  3D Stand
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium bg-soft text-muted border border-line">
@@ -399,8 +435,67 @@ export default function OrderDetail() {
                       </div>
                     )}
 
+                    {/* Stand Design Details Card */}
+                    {isStand && (
+                      <div className="rounded-control border border-line/80 bg-alt/60 p-4 space-y-3.5">
+                        <div className="flex items-center justify-between border-b border-line/60 pb-2.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-accent">
+                            3D Stand Specifications
+                          </span>
+                          {item.stand.hasStl ? (
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadStl(item.id, `${item.productName.replace(/[^a-z0-9_-]/gi, '_')}.stl`)}
+                              disabled={downloadingStlId === item.id}
+                              className="inline-flex items-center gap-1.5 rounded-control bg-accent px-3 py-1.5 text-xs font-bold text-on-accent hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer shadow-sm"
+                            >
+                              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                              </svg>
+                              {downloadingStlId === item.id ? 'Downloading…' : 'Download STL'}
+                            </button>
+                          ) : (
+                            <span className="text-xs text-muted/80 italic">File unavailable</span>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+                          {standRows.map((r) => (
+                            <div key={r.label} className="flex flex-col">
+                              <span className="text-muted">{r.label}</span>
+                              <span className="font-medium text-ink flex items-center gap-1.5 mt-0.5">
+                                {r.hex && (
+                                  <span
+                                    className="h-3 w-3 rounded-full border border-line inline-block shrink-0"
+                                    style={{ backgroundColor: r.hex }}
+                                  />
+                                )}
+                                {r.value}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {standStlMeta && (
+                          <div className="pt-2.5 border-t border-line/50 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[11.5px] text-muted">
+                            <div>
+                              Size: <span className="text-ink font-medium">{formatBytes(standStlMeta.sizeBytes)}</span>
+                            </div>
+                            <div>
+                              Triangles: <span className="text-ink font-medium">{standStlMeta.triangleCount?.toLocaleString()}</span>
+                            </div>
+                            {standStlMeta.bboxMm && (
+                              <div>
+                                Bounds: <span className="text-ink font-medium">{standStlMeta.bboxMm.x} × {standStlMeta.bboxMm.y} × {standStlMeta.bboxMm.z} mm</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Standard Catalog Customization (e.g. engraving) */}
-                    {!isCustom && item.customization && (
+                    {!isCustom && !isStand && item.customization && (
                       <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted bg-alt/40 p-3 rounded-control border border-line">
                         {Object.entries(item.customization).map(([key, value]) =>
                           value ? (

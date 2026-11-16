@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { FEATURES } from '../config/features'
 import { useGeometryEngine } from '../features/customiser/geometry/useGeometryEngine.js'
 import { useResultGeometries } from '../features/customiser/geometry/useResultGeometries.js'
 import { buildPreflightReport } from '../features/customiser/geometry/export/preflight.js'
@@ -320,14 +321,42 @@ function CustomiserWorkspace({ options }) {
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
           Name Keychain
         </span>
+        {FEATURES.standCustomiser && (
+          <Link
+            to="/customise/stand"
+            className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-1.5 text-[13px] font-medium text-muted hover:border-accent hover:text-accent transition-colors"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="14" width="8" height="8" rx="1"/><path d="M10 18h4M14 14h6a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-6"/><path d="M6 14V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8"/></svg>
+            Phone &amp; Pen Stand
+          </Link>
+        )}
+      </div>
+
+      {/* Stand studio discovery card */}
+      {FEATURES.standCustomiser && (
         <Link
           to="/customise/stand"
-          className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-1.5 text-[13px] font-medium text-muted hover:border-accent hover:text-accent transition-colors"
+          className="group mb-5 flex items-center gap-4 rounded-card border border-line bg-surface p-4 transition-colors hover:border-accent"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="14" width="8" height="8" rx="1"/><path d="M10 18h4M14 14h6a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-6"/><path d="M6 14V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8"/></svg>
-          Phone & Pen Stand
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-soft text-accent">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+              <rect x="2" y="14" width="8" height="8" rx="1" />
+              <path d="M10 18h4M14 14h6a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-6" />
+              <path d="M6 14V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8" />
+            </svg>
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-sans text-[15px] font-semibold text-ink group-hover:text-accent">Phone &amp; Pen Stand</span>
+            <span className="mt-0.5 block font-sans text-[12.5px] text-muted">
+              Design a 3D-printable desk stand for your phone and pens — pick a category, personalise it, and order it in one place.
+            </span>
+          </span>
+          <span className="hidden shrink-0 items-center gap-1 font-sans text-[13px] font-semibold text-accent min-[761px]:inline-flex">
+            Open studio
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </span>
         </Link>
-      </div>
+      )}
 
       {/* Top action bar */}
       <div className="mb-4 flex items-center justify-between">

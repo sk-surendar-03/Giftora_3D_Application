@@ -4,8 +4,8 @@ import { useAuth } from '../features/auth/useAuth.js'
 import { useAddresses } from '../features/addresses/useAddresses.js'
 import { useCheckoutReview } from '../features/checkout/useCheckoutReview.js'
 import { createOrder } from '../features/orders/ordersApi.js'
-import CustomizationDetails from '../components/product/CustomizationDetails.jsx'
 import DesignPreviewImage from '../components/design/DesignPreviewImage.jsx'
+import StandPreviewImage from '../components/design/StandPreviewImage.jsx'
 import Button from '../components/ui/Button'
 import { resolveImageUrl } from '../utils/imageUrl.js'
 
@@ -113,7 +113,7 @@ export default function Checkout() {
           </Link>
         </div>
 
-        {/* Stepper indicator matching Industrial Obsidian */}
+        {/* Stepper */}
         <div className="flex items-center gap-3 mb-8 text-[13.5px] font-medium text-muted">
           <div className="flex items-center gap-2 text-ink">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-soft border border-line text-accent text-[12px] font-bold">✓</span>
@@ -128,7 +128,7 @@ export default function Checkout() {
 
         <div className="grid grid-cols-1 min-[1041px]:grid-cols-[1.6fr_1fr] gap-9 items-start">
           
-          {/* Left Column: Addresses & Options */}
+          {/* Left Column */}
           <div className="space-y-6">
             <section className="rounded-card border border-line bg-surface p-6">
               <div className="flex items-center justify-between mb-4">
@@ -178,7 +178,6 @@ export default function Checkout() {
               </div>
             </section>
 
-            {/* Delivery option card */}
             <section className="rounded-card border border-line bg-surface p-6">
               <h3 className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent m-0 mb-4">
                 2. Shipping method
@@ -221,7 +220,6 @@ export default function Checkout() {
               )}
             </section>
 
-            {/* Payment method card */}
             <section className="rounded-card border border-line bg-surface p-6">
               <h3 className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent m-0 mb-4">
                 3. Payment
@@ -236,9 +234,8 @@ export default function Checkout() {
             </section>
           </div>
 
-          {/* Right Column: Review & Confirmation */}
+          {/* Right Column */}
           <div className="space-y-5">
-            {/* Order Note */}
             <section className="rounded-card border border-line bg-surface p-6">
               <h3 className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent m-0 mb-3">
                 4. Order Note <span className="text-muted font-normal normal-case tracking-normal text-[11px]">(optional)</span>
@@ -248,7 +245,7 @@ export default function Checkout() {
                 maxLength={1000}
                 value={customerNote}
                 onChange={(e) => setCustomerNote(e.target.value)}
-                placeholder="Any special instructions? e.g. I also need this in blue, or can you add a heart shape on the left side…"
+                placeholder="Any special instructions?"
                 className="w-full rounded-control border border-line bg-alt px-3.5 py-2.5 text-[13.5px] text-ink placeholder:text-muted focus:border-accent focus:outline-none resize-none"
               />
               <p className="mt-1 text-[11.5px] text-muted text-right">{customerNote.length}/1000</p>
@@ -281,12 +278,17 @@ export default function Checkout() {
                 <div className="divide-y divide-line my-4 max-h-[300px] overflow-y-auto">
                   {review.data.items.map((item) => {
                     const issue = review.data.issues.find((i) => i.itemId === item.id)
+                    const isCustom = item.itemType === 'CUSTOM_DESIGN'
+                    const isStand = item.itemType === 'STAND_DESIGN'
+
                     return (
                       <div key={item.id} className="py-3 flex gap-3 text-[13.5px]">
                         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-control bg-soft border border-line flex items-center justify-center">
-                          {item.itemType === 'CUSTOM_DESIGN' ? (
+                          {isStand ? (
+                            <StandPreviewImage designId={item.standDesign.id} hasPreview={item.standDesign.hasPreview} alt={item.title} />
+                          ) : isCustom ? (
                             <DesignPreviewImage designId={item.design.id} hasPreview={item.design.hasPreview} alt={item.title} />
-                          ) : item.product.images?.[0] ? (
+                          ) : item.product?.images?.[0] ? (
                             <img src={resolveImageUrl(item.product.images[0])} alt={item.product.name} className="h-full w-full object-cover" />
                           ) : (
                             <span className="text-xs text-muted">3D</span>

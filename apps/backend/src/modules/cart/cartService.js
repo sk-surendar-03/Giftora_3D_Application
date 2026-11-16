@@ -4,9 +4,8 @@ import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses } from '
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { priceForDesign, stlIsAvailable } from '../customizer/designService.js'
 
-const CART_INCLUDE = { items: { include: { product: true, customDesign: true }, orderBy: { createdAt: 'asc' } } }
+const CART_INCLUDE = { items: { include: { product: true, customDesign: true, standDesign: true }, orderBy: { createdAt: 'asc' } } }
 
-// Same per-line cap the cart controller enforces on each request.
 const MAX_CUSTOM_QUANTITY = 10
 
 export async function getOrCreateCart(userId) {
@@ -16,9 +15,6 @@ export async function getOrCreateCart(userId) {
 }
 
 function sameCustomization(a, b) {
-  // Both are plain JSON values (or null/undefined) — a stable string
-  // comparison is enough since the frontend always sends the same key
-  // order for a given selection set.
   return JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
 }
 
@@ -32,24 +28,14 @@ export async function addItem(userId, { productId, quantity, customization }) {
   const existingItem = cart.items.find((item) => item.itemType === 'PRODUCT' && item.productId === productId && sameCustomization(item.customization, customization))
 
   if (existingItem) {
-    const updated = await prisma.cartItem.update({
+    return prisma.cartItem.update({
       where: { id: existingItem.id },
       data: { quantity: existingItem.quantity + quantity },
-      include: { product: true, customDesign: true },
+      include: { product: true, customDesign: true, standDesign: true },
     })
-    return updated
   }
 
-  // The admin-configured per-character rate is the ONLY price source for
-  // customizer products — there is no separate base/product price added on
-  // top. Both the main name and the optional subtitle are billed per
-  // character at the same rate (subtitle contributes 0 when empty).
-  // Recomputed here (never trusting a client-sent price) so the live
-  // preview price and the actual cart price always agree, and a later rate
-  // change doesn't retroactively alter what's already in a customer's cart
-  // (see the price-snapshot note below).
   let unitPriceCents
-  // If the product has per-material pricing and a material was selected, use it
   const matOpts = Array.isArray(product.materialOptions) ? product.materialOptions : []
   const sizeOpts = Array.isArray(product.sizeOptions) ? product.sizeOptions : []
   const selMat = matOpts.find((m) => m.name === customization?.material)
@@ -73,19 +59,12 @@ export async function addItem(userId, { productId, quantity, customization }) {
       customization: customization ?? undefined,
       unitPriceCents,
     },
-    include: { product: true, customDesign: true },
+    include: { product: true, customDesign: true, standDesign: true },
   })
 }
 
-/**
- * Adds a standalone custom design (no catalog product) to the cart. The
- * design must belong to this customer and have its STL stored. The price is
- * recomputed here from the design's validated parameters, never taken from
- * the client, and snapshotted on the line like catalog items.
- */
 export async function addCustomItem(userId, { customDesignId, quantity, shippingMethod }) {
   const design = await prisma.customDesign.findUnique({ where: { id: customDesignId } })
-  // Same 404 whether it doesn't exist or belongs to someone else.
   if (!design || design.userId !== userId) throw new HttpError(404, 'Design not found.')
   if (design.status !== 'READY') throw new HttpError(409, 'This design is not ready yet — its STL file has not been uploaded.')
   if (!(await stlIsAvailable(design))) throw new HttpError(409, 'This design\'s file is missing. Please recreate the design.')
@@ -99,7 +78,7 @@ export async function addCustomItem(userId, { customDesignId, quantity, shipping
     return prisma.cartItem.update({
       where: { id: existingItem.id },
       data: { quantity: existingItem.quantity + quantity },
-      include: { product: true, customDesign: true },
+      include: { product: true, customDesign: true, standDesign: true },
     })
   }
 
@@ -126,15 +105,48 @@ export async function addCustomItem(userId, { customDesignId, quantity, shipping
       unitPriceCents,
       ...(Object.keys(customizationData).length > 0 ? { customization: customizationData } : {}),
     },
-    include: { product: true, customDesign: true },
+    include: { product: true, customDesign: true, standDesign: true },
+  })
+}
+
+export async function addStandItem(userId, { standDesignId, quantity, shippingMethod }) {
+  const design = await prisma.standDesign.findUnique({ where: { id: standDesignId } })
+  if (!design || design.userId !== userId) throw new HttpError(404, 'Stand design not found.')
+  if (design.status !== 'READY') throw new HttpError(409, 'This stand design is not ready yet.')
+
+  const cart = await getOrCreateCart(userId)
+  const existingItem = cart.items.find((item) => item.standDesignId === design.id)
+  if (existingItem) {
+    if (existingItem.quantity + quantity > MAX_CUSTOM_QUANTITY) {
+      throw new HttpError(400, `You can order at most ${MAX_CUSTOM_QUANTITY} of the same stand design.`)
+    }
+    return prisma.cartItem.update({
+      where: { id: existingItem.id },
+      data: { quantity: existingItem.quantity + quantity },
+      include: { product: true, customDesign: true, standDesign: true },
+    })
+  }
+
+  const customizationData = {
+    ...(shippingMethod && typeof shippingMethod.name === 'string' ? { shippingMethod } : {}),
+  }
+
+  return prisma.cartItem.create({
+    data: {
+      cartId: cart.id,
+      itemType: 'STAND_DESIGN',
+      standDesignId: design.id,
+      quantity,
+      unitPriceCents: design.unitPriceCents,
+      ...(Object.keys(customizationData).length > 0 ? { customization: customizationData } : {}),
+    },
+    include: { product: true, customDesign: true, standDesign: true },
   })
 }
 
 async function findOwnedItem(userId, itemId) {
   const item = await prisma.cartItem.findUnique({ where: { id: itemId }, include: { cart: true } })
   if (!item || item.cart.userId !== userId) {
-    // Same 404 whether the item doesn't exist or belongs to someone else —
-    // never reveal that a given cart-item id belongs to another account.
     throw new HttpError(404, 'Cart item not found.')
   }
   return item
@@ -142,7 +154,7 @@ async function findOwnedItem(userId, itemId) {
 
 export async function updateItemQuantity(userId, itemId, quantity) {
   await findOwnedItem(userId, itemId)
-  return prisma.cartItem.update({ where: { id: itemId }, data: { quantity }, include: { product: true, customDesign: true } })
+  return prisma.cartItem.update({ where: { id: itemId }, data: { quantity }, include: { product: true, customDesign: true, standDesign: true } })
 }
 
 export async function removeItem(userId, itemId) {

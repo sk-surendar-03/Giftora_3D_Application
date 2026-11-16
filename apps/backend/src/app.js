@@ -17,6 +17,7 @@ import { customizerRouter, customDesignRouter } from './modules/customizer/custo
 import { wishlistRouter } from './modules/wishlist/wishlistRoutes.js'
 import { contactRouter } from './modules/contact/contactRoutes.js'
 import { adminInquiryRouter } from './modules/contact/adminInquiryRoutes.js'
+import { standDesignerRouter, standDesignRouter } from './modules/standDesigner/standDesignRoutes.js'
 
 const app = express()
 
@@ -54,6 +55,8 @@ app.use('/api/v1/settings', settingsRouter)
 app.use('/api/v1/admin/settings', adminSettingsRouter)
 app.use('/api/v1/customizer', customizerRouter)
 app.use('/api/v1/custom-designs', customDesignRouter)
+app.use('/api/v1/stand-designer', standDesignerRouter)
+app.use('/api/v1/stand-designs', standDesignRouter)
 app.use('/api/v1/wishlist', wishlistRouter)
 app.use('/api/v1/contact', contactRouter)
 

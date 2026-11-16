@@ -4,14 +4,8 @@ import { getOrCreateCart } from '../cart/cartService.js'
 import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses } from '../settings/settingsService.js'
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { priceForDesign, stlIsAvailable, toPublicDesign } from '../customizer/designService.js'
+import { stlIsAvailable as standStlIsAvailable, toPublicDesign as toPublicStandDesign } from '../standDesigner/standDesignService.js'
 
-/**
- * Builds a checkout review purely from the current, authoritative state of
- * the cart/products/address — never from anything the client claims about
- * totals. This performs no writes (no order is created here; that's
- * Phase 9), so it's safe to call both to render the checkout page and
- * again right before a future "place order" action re-validates.
- */
 export async function reviewCheckout(userId, addressId) {
   const cart = await getOrCreateCart(userId)
 
@@ -31,22 +25,35 @@ export async function reviewCheckout(userId, addressId) {
   const items = []
   for (const item of cart.items) {
     const isCustom = item.itemType === 'CUSTOM_DESIGN'
+    const isStand = item.itemType === 'STAND_DESIGN'
     const design = item.customDesign
+    const standDesign = item.standDesign
     const product = item.product
 
-    // Catalog lines are available while the product is active; standalone
-    // designs while their STL file exists. Customizer lines have no separate
-    // base price — the per-character rate (possibly changed by an admin since
-    // this item was added) is the only current price source, same as
-    // cartService.js.
-    const available = isCustom ? await stlIsAvailable(design) : product.isActive
-    let currentUnitPriceCents
-    if (isCustom) {
+    let available, currentUnitPriceCents, title, productSnapshot, designSnapshot, standDesignSnapshot
+
+    if (isStand) {
+      // ─── STAND_DESIGN ────────────────────────────────────────────────────
+      available = standDesign ? await standStlIsAvailable(standDesign) : false
+      currentUnitPriceCents = standDesign?.unitPriceCents ?? 0
+      title = standDesign?.title ?? 'Stand design'
+      productSnapshot = null
+      designSnapshot = null
+      standDesignSnapshot = standDesign ? toPublicStandDesign(standDesign) : null
+    } else if (isCustom) {
+      // ─── CUSTOM_DESIGN ───────────────────────────────────────────────────
+      available = await stlIsAvailable(design)
       const charPrice = priceForDesign(design.params, perCharacterPriceCents, baseCharacters, basePriceCents)
       const sizePriceCents = adminSizes.find((s) => s.name === design.params.size)?.priceCents ?? 0
       const thicknessPriceCents = adminThicknesses.find((t) => t.name === design.params.thickness)?.priceCents ?? 0
       currentUnitPriceCents = charPrice + sizePriceCents + thicknessPriceCents
+      title = design.title
+      productSnapshot = null
+      designSnapshot = toPublicDesign(design)
+      standDesignSnapshot = null
     } else {
+      // ─── PRODUCT ─────────────────────────────────────────────────────────
+      available = product?.isActive ?? false
       const matOpts = Array.isArray(product?.materialOptions) ? product.materialOptions : []
       const sizeOpts = Array.isArray(product?.sizeOptions) ? product.sizeOptions : []
       const selMat = matOpts.find((m) => m.name === item.customization?.material)
@@ -59,7 +66,14 @@ export async function reviewCheckout(userId, addressId) {
       } else {
         currentUnitPriceCents = product?.priceCents ?? 0
       }
+      title = product?.name ?? 'Product'
+      productSnapshot = product
+        ? { id: product.id, slug: product.slug, name: product.name, images: product.images, shippingCents: product.shippingCents ?? 0 }
+        : null
+      designSnapshot = null
+      standDesignSnapshot = null
     }
+
     const priceChanged = currentUnitPriceCents !== item.unitPriceCents
     const lineTotalCents = available ? currentUnitPriceCents * item.quantity : 0
     if (available) subtotalCents += lineTotalCents
@@ -68,9 +82,10 @@ export async function reviewCheckout(userId, addressId) {
       id: item.id,
       itemType: item.itemType,
       productId: item.productId,
-      title: isCustom ? design.title : product.name,
-      product: isCustom ? null : { id: product.id, slug: product.slug, name: product.name, images: product.images, shippingCents: product.shippingCents ?? 0 },
-      design: isCustom ? toPublicDesign(design) : null,
+      title,
+      product: productSnapshot,
+      design: designSnapshot,
+      standDesign: standDesignSnapshot,
       quantity: item.quantity,
       customization: item.customization,
       cartUnitPriceCents: item.unitPriceCents,

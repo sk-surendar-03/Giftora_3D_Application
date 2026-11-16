@@ -36,11 +36,12 @@ enum PaymentStatus {
   REFUNDED
 }
 
-// Whether a cart/order line is a catalog product or a standalone,
-// customer-created 3D design (no catalog product involved).
+// Whether a cart/order line is a catalog product, a standalone customer-
+// created keychain design, or a standalone customer-created 3D stand design.
 enum OrderItemType {
   PRODUCT
   CUSTOM_DESIGN
+  STAND_DESIGN
 }
 
 // PENDING until the generated STL has been uploaded, validated and stored.
@@ -56,8 +57,6 @@ model User {
   name         String
   phone        String?
   role         Role     @default(CUSTOMER)
-  // Account activation/deactivation (Phase 13 — Admin Customer Management).
-  // Defaults true so every existing account stays active.
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -66,30 +65,20 @@ model User {
   cart          Cart?
   orders        Order[]
   customDesigns CustomDesign[]
+  standDesigns  StandDesign[]
   wishlistItems WishlistItem[]
 
   @@map("users")
 }
 
-// A standalone customer-created 3D design. Holds everything needed to
-// recreate it (the validated customer choices plus the exact geometry-engine
-// parameters), the server-calculated price, and the reference to the STL the
-// customer's browser generated and the server validated and stored. The STL
-// itself lives in file storage (see src/modules/storage), never in this
-// table. A design that has been ordered is never modified again.
 model CustomDesign {
   id               String       @id @default(cuid())
   userId           String
   user             User         @relation(fields: [userId], references: [id], onDelete: Restrict)
   schemaVersion    Int          @default(1)
   title            String
-  // The customer's validated, canonicalised choices (template, style, text,
-  // font, material, colours, size, thickness, ...).
   params           Json
-  // The exact parameters handed to the geometry engine, derived on the server.
   engineParams     Json
-  // sha256 of the canonical `params` — lets a repeated "add to cart" of the
-  // same design reuse this row instead of creating duplicates.
   paramsHash       String
   unitPriceCents   Int
   status           DesignStatus @default(PENDING)
@@ -114,10 +103,42 @@ model CustomDesign {
   @@map("custom_designs")
 }
 
-// Generic admin-configurable key/value store. Currently holds the
-// customizer's per-character pricing rate (key "customizer_pricing"); a
-// generic table rather than a dedicated one-row table so future admin
-// settings can reuse the same model instead of each needing a migration.
+// A standalone customer-created 3D stand design (Phone Stand, Pen Holder,
+// Combined, Desk Organizer, Personalized Gift). The full DesignConfig JSON
+// lives in `designConfig` because it holds ~40 parameters across phone, pen,
+// combined, personalization, appearance, and print — mirroring into typed
+// columns would be brittle. STL is generated client-side, content-addressed,
+// and SHA-256 verified, same pattern as CustomDesign.
+model StandDesign {
+  id               String       @id @default(cuid())
+  userId           String
+  user             User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  schemaVersion    Int          @default(1)
+  title            String
+  category         String       @db.VarChar(40)
+  designConfig     Json
+  paramsHash       String
+  unitPriceCents   Int
+  status           DesignStatus @default(PENDING)
+  stlKey           String?      @unique
+  stlSha256        String?
+  stlSizeBytes     Int?
+  triangleCount    Int?
+  bboxMm           Json?
+  previewKey       String?
+  previewSizeBytes Int?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@unique([userId, paramsHash])
+  @@index([userId])
+  @@index([status])
+  @@map("stand_designs")
+}
+
 model Setting {
   id        String   @id @default(cuid())
   key       String   @unique
@@ -147,25 +168,14 @@ model Product {
   priceCents        Int
   originalPriceCents Int?
   shippingCents     Int      @default(0)
-  // JSON columns holding array data. MySQL has no native array type (and
-  // Prisma doesn't support scalar lists on MySQL at all — these were
-  // `String[]` under the earlier PostgreSQL schema), so `images`/
-  // `materials`/`sizes` are stored as JSON arrays instead. The JS shape the
-  // rest of the app already works with (plain arrays in/out) is unchanged
-  // — only the underlying column type and the `materials` query filter
-  // (`array_contains` instead of `has`, see productService.js) changed.
   images           Json     @default("[]")
   materials        Json     @default("[]")
   sizes            Json     @default("[]")
   colorsByMaterial Json?
-  // Per-option pricing: when set, overrides the flat priceCents / sizes / shippingCents for display
-  materialOptions  Json?   // [{name, priceCents}]
-  sizeOptions      Json?   // [{name, additionalCents}]
-  shippingMethods  Json?   // [{name, priceCents, estimatedDays?}]
-  imageMaterials   Json?   // { [imageUrl]: [material, ...] }
-  // Optional downloadable-free 3D preview model (STL or 3MF). Only a storage
-  // *key* is kept here; the bytes live in the storage driver (never Base64 in
-  // the DB). All four are NULL when the product has no model.
+  materialOptions  Json?
+  sizeOptions      Json?
+  shippingMethods  Json?
+  imageMaterials   Json?
   modelKey       String?  @db.VarChar(255)
   modelFilename  String?  @db.VarChar(255)
   modelFormat    String?  @db.VarChar(10)
@@ -221,20 +231,14 @@ model CartItem {
   id             String   @id @default(cuid())
   cartId         String
   cart           Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  // PRODUCT: `productId` is set. CUSTOM_DESIGN: `customDesignId` is set and
-  // `productId` is null. Exactly one of the two is always set (enforced by
-  // the application and by a CHECK constraint added in the migration SQL).
   itemType       OrderItemType @default(PRODUCT)
   productId      String?
   product        Product?      @relation(fields: [productId], references: [id], onDelete: Restrict)
   customDesignId String?
   customDesign   CustomDesign? @relation(fields: [customDesignId], references: [id], onDelete: Restrict)
+  standDesignId  String?
+  standDesign    StandDesign?  @relation(fields: [standDesignId], references: [id], onDelete: Restrict)
   quantity       Int      @default(1)
-  // Customization is stored as JSON (text, font, material, colors,
-  // thickness, etc.) — the shape mirrors the real customizer's params, but
-  // isn't schema-validated at the DB layer; the backend API layer (Phase 6)
-  // is responsible for validating it against the real geometry/catalog
-  // rules before it's trusted.
   customization  Json?
   unitPriceCents Int
   createdAt      DateTime @default(now())
@@ -243,24 +247,18 @@ model CartItem {
   @@index([cartId])
   @@index([productId])
   @@index([customDesignId])
+  @@index([standDesignId])
   @@map("cart_items")
 }
 
 model Order {
   id              String      @id @default(cuid())
   orderNumber     String      @unique
-  // Set once by the client per checkout attempt — lets a retried/duplicated
-  // request return the order that already exists instead of creating a
-  // second one (see Phase 9's order creation service).
   idempotencyKey  String?     @unique
   userId          String
   user            User        @relation(fields: [userId], references: [id])
   addressId       String?
   address         Address?    @relation(fields: [addressId], references: [id], onDelete: SetNull)
-  // A snapshot of the address as it was at order time (fullName, phone,
-  // line1, line2, city, state, postalCode, country) — `addressId` above is
-  // only a live reference and would silently go stale if the customer
-  // later edits or deletes that address.
   shippingAddress Json
   status          OrderStatus @default(PENDING)
   shippingCarrier String?
@@ -284,18 +282,13 @@ model OrderItem {
   id             String  @id @default(cuid())
   orderId        String
   order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  // PRODUCT: `productId` is set. CUSTOM_DESIGN: `customDesignId` is set and
-  // `productId` is null (see CartItem).
   itemType       OrderItemType @default(PRODUCT)
   productId      String?
   product        Product?      @relation(fields: [productId], references: [id], onDelete: Restrict)
   customDesignId String?
   customDesign   CustomDesign? @relation(fields: [customDesignId], references: [id], onDelete: Restrict)
-  // Snapshots of the product as it was at order time — same reasoning as
-  // Order.shippingAddress: `productId` is a live reference, but the
-  // product's name/slug/image can change, or the product can be
-  // deactivated/deleted, after the order is placed. For a custom design,
-  // `productName` holds the design title and `productSlug` is null.
+  standDesignId  String?
+  standDesign    StandDesign?  @relation(fields: [standDesignId], references: [id], onDelete: Restrict)
   productName    String
   productSlug    String?
   productImage   String?
@@ -306,6 +299,7 @@ model OrderItem {
   @@index([orderId])
   @@index([productId])
   @@index([customDesignId])
+  @@index([standDesignId])
   @@map("order_items")
 }
 
