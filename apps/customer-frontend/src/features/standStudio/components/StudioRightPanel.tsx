@@ -7,6 +7,8 @@ import { FILAMENT_PROFILES } from '../core/estimation';
 import { buildSafeFilename } from '../geometry/stlExporter';
 import { useAddStandToCart, PHASE_LABELS } from '../../standDesign/useAddStandToCart.js';
 import { computeStandPriceCents, formatRupees } from '../../standDesign/standPricing.js';
+import { fetchStandOptions } from '../../standDesign/standDesignApi.js';
+import api from '../../services/api';
 import { useAuth } from '../../auth/useAuth.js';
 
 interface StudioRightPanelProps {
@@ -33,14 +35,35 @@ export const StudioRightPanel: React.FC<StudioRightPanelProps> = ({
   const navigate = useNavigate();
   const { addToCart, phase, error: cartError, added, busy: cartBusy } = useAddStandToCart();
   const [quantity, setQuantity] = useState(1);
+  const [shippingOptions, setShippingOptions] = useState<{ name: string; priceCents: number }[]>([]);
+  const [shippingMethod, setShippingMethod] = useState<{ name: string; priceCents: number } | null>(null);
+  const [standPricingConfig, setStandPricingConfig] = useState<any>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/settings/customizer/shipping').then((res) => {
+      if (cancelled) return;
+      const methods = Array.isArray(res.data?.methods) ? res.data.methods : [];
+      setShippingOptions(methods);
+      if (methods.length > 0) setShippingMethod(methods[0]);
+    }).catch(() => {});
+    fetchStandOptions().then((opts) => {
+      if (cancelled || !opts) return;
+      setStandPricingConfig({
+        pricePerCm3Cents: opts.pricePerCm3Cents,
+        categories: Object.fromEntries((opts.categories || []).map((c: any) => [c.id, { basePriceCents: c.basePriceCents }])),
+      });
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const { dimensions, bedLimit, fitsBed, issues, validForExport } = validation;
   const activeProfile = FILAMENT_PROFILES[config.print.filament];
 
-  const shippingMethod = { name: 'standard', priceCents: 5000 };
   const volumeCm3 = assembly?.solidVolumeCm3 ?? 0;
-  const standPriceCents = computeStandPriceCents(config.category, volumeCm3);
-  const totalCents = standPriceCents * quantity + shippingMethod.priceCents;
+  const standPriceCents = computeStandPriceCents(config.category, volumeCm3, standPricingConfig);
+  const shippingCents = shippingMethod?.priceCents ?? 0;
+  const totalCents = standPriceCents * quantity + shippingCents;
 
   async function handleAddStandToCart() {
     if (!isAuthenticated) {
@@ -216,9 +239,9 @@ export const StudioRightPanel: React.FC<StudioRightPanelProps> = ({
         </div>
 
         <div className="rounded bg-alt p-2.5 space-y-1 text-[11px]">
-          <div className="flex justify-between text-muted"><span>Base ({config.category})</span><span className="font-mono">{formatRupees(computeStandPriceCents(config.category, 0))}</span></div>
-          <div className="flex justify-between text-muted"><span>Volume ({volumeCm3.toFixed(1)} cm3 x 100p)</span><span className="font-mono">{formatRupees(Math.round(volumeCm3 * 100))}</span></div>
-          <div className="flex justify-between text-muted"><span>Shipping</span><span className="font-mono">{formatRupees(shippingMethod.priceCents)}</span></div>
+          <div className="flex justify-between text-muted"><span>Base ({config.category})</span><span className="font-mono">{formatRupees(computeStandPriceCents(config.category, 0, standPricingConfig))}</span></div>
+          <div className="flex justify-between text-muted"><span>Volume ({volumeCm3.toFixed(1)} cm3 x {standPricingConfig?.pricePerCm3Cents ?? 100}p)</span><span className="font-mono">{formatRupees(Math.round(volumeCm3 * (standPricingConfig?.pricePerCm3Cents ?? 100)))}</span></div>
+          <div className="flex justify-between text-muted"><span>Shipping</span><span className="font-mono">{formatRupees(shippingCents)}</span></div>
           <div className="flex justify-between pt-1.5 mt-1.5 border-t border-line/50 text-ink font-semibold"><span>Total</span><span className="font-mono">{formatRupees(totalCents)}</span></div>
         </div>
 
