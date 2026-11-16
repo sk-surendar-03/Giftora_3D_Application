@@ -21,9 +21,7 @@ export async function uploadStl(req, res) {
   if (!Buffer.isBuffer(req.body)) throw new HttpError(415, 'Send the STL with Content-Type: application/octet-stream.')
   const claimed = req.get('x-content-sha256')
   if (claimed !== undefined && !SHA256_HEX.test(claimed)) throw new HttpError(400, 'X-Content-SHA256 must be a 64-character hex SHA-256.')
-  const volumeHeader = req.get('x-volume-cm3')
-  const actualVolumeCm3 = volumeHeader ? parseFloat(volumeHeader) : undefined
-  const design = await storeStl(req.user.id, req.params.id, req.body, claimed, actualVolumeCm3)
+  const design = await storeStl(req.user.id, req.params.id, req.body, claimed)
   res.json({ design: toPublicDesign(design) })
 }
 

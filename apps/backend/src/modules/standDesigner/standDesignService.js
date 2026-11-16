@@ -1,7 +1,7 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
 import { getStorage } from '../storage/storage.js'
-import { sha256Hex, validateBinaryStl, validatePng } from '../customizer/stlValidator.js'
+import { sha256Hex, validateBinaryStl, validatePng, computeSignedVolumeCm3 } from '../customizer/stlValidator.js'
 import { STAND_SCHEMA_VERSION, priceForStand } from './standDesignOptions.js'
 import { validateStandDesignInput } from './standDesignValidator.js'
 
@@ -20,6 +20,7 @@ function toPublicStandDesign(design, { admin = false } = {}) {
   }
   if (admin) {
     result.schemaVersion = design.schemaVersion
+    result.solidVolumeCm3 = design.solidVolumeCm3
     result.stl = design.stlKey
       ? { sizeBytes: design.stlSizeBytes, sha256: design.stlSha256, triangleCount: design.triangleCount, bboxMm: design.bboxMm }
       : null
@@ -43,10 +44,10 @@ export async function createStandDesign(userId, input) {
   const existing = await prisma.standDesign.findUnique({ where: { userId_paramsHash: { userId, paramsHash } } })
   if (existing) return { design: existing, created: false }
 
-  // Volume is only known after STL upload; use a placeholder estimate now.
-  // The real price gets recomputed and stored when the STL arrives (storeStl).
-  const { solidVolumeCm3 = 50 } = input
-  const unitPriceCents = priceForStand(canonical.category, solidVolumeCm3)
+  // Volume is only known after the STL is uploaded, and it must be measured on
+  // the server — the client's figure is only a display hint and must never
+  // influence money. The real price is set in storeStl.
+  const unitPriceCents = 0
 
   try {
     const design = await prisma.standDesign.create({
@@ -70,7 +71,7 @@ export async function createStandDesign(userId, input) {
   }
 }
 
-export async function storeStl(userId, designId, buffer, claimedSha256, actualVolumeCm3) {
+export async function storeStl(userId, designId, buffer, claimedSha256) {
   const design = await findOwnedStandDesign(userId, designId)
 
   if (design.status === 'READY') {
@@ -87,9 +88,14 @@ export async function storeStl(userId, designId, buffer, claimedSha256, actualVo
   const key = `stand-designs/${userId}/${designId}/${sha256}.stl`
   await getStorage().put(key, buffer, { immutable: true })
 
-  // Recompute price now that we know the real volume
-  const volume = typeof actualVolumeCm3 === 'number' && actualVolumeCm3 > 0 ? actualVolumeCm3 : 50
-  const unitPriceCents = priceForStand(design.category, volume)
+  // Price from the mesh we actually store, not from anything the client sent.
+  // Signed volume is only meaningful for a closed mesh, so an implausible
+  // reading is a rejection, never a cheap model.
+  const solidVolumeCm3 = computeSignedVolumeCm3(buffer)
+  if (!(solidVolumeCm3 >= 1) || solidVolumeCm3 > 5000) {
+    throw new HttpError(400, 'The model volume could not be measured reliably. Please regenerate the stand and try again.')
+  }
+  const unitPriceCents = priceForStand(design.category, solidVolumeCm3)
 
   const updated = await prisma.standDesign.updateMany({
     where: { id: designId, status: 'PENDING' },
@@ -100,6 +106,7 @@ export async function storeStl(userId, designId, buffer, claimedSha256, actualVo
       stlSizeBytes: buffer.length,
       triangleCount: meta.triangleCount,
       bboxMm: meta.bboxMm,
+      solidVolumeCm3,
       unitPriceCents,
     },
   })

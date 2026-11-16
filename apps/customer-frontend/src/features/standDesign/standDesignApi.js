@@ -14,7 +14,7 @@ export async function uploadStandStl(designId, stlBlob, options) {
   const opts = options || {}
   const headers = { 'Content-Type': 'application/octet-stream' }
   if (opts.sha256) headers['X-Content-SHA256'] = opts.sha256
-  if (opts.volumeCm3 != null) headers['X-Volume-Cm3'] = String(opts.volumeCm3)
+  // Volume is measured server-side from the STL; no volume header is sent.
 
   const { data } = await api.put('/stand-designs/' + designId + '/stl', stlBlob, {
     headers,

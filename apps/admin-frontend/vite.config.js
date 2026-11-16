@@ -7,7 +7,11 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
-      "/api": "https://api.jasvel3dmakers.co.in",
+      "/api": {
+        target: "http://localhost:4000",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });

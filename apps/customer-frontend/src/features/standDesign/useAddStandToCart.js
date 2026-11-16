@@ -44,17 +44,14 @@ export function useAddStandToCart() {
       }
       const stlBlob = new Blob([stlBytes], { type: 'application/octet-stream' })
       const sha256 = await sha256Hex(stlBytes)
-      const volumeCm3 = payload.assembly.solidVolumeCm3 || 50
 
-      const createData = await createStandDesign({
-        ...payload.design,
-        solidVolumeCm3: volumeCm3,
-      })
+      const createData = await createStandDesign(payload.design)
       const standDesignId = createData.design && createData.design.id
       if (!standDesignId) throw new Error('Server did not return a design ID.')
 
       setPhase('uploading-stl')
-      await uploadStandStl(standDesignId, stlBlob, { sha256, volumeCm3 })
+      // The server measures the volume from these bytes and sets the price.
+      await uploadStandStl(standDesignId, stlBlob, { sha256 })
 
       setPhase('uploading-preview')
       try {

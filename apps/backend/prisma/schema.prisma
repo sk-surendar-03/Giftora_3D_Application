@@ -119,6 +119,9 @@ model StandDesign {
   designConfig     Json
   paramsHash       String
   unitPriceCents   Int
+  // Volume in cm³, computed server-side from the uploaded STL. Never taken
+  // from the client — it is the price basis for the volume fee.
+  solidVolumeCm3   Float?
   status           DesignStatus @default(PENDING)
   stlKey           String?      @unique
   stlSha256        String?
