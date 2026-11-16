@@ -15,10 +15,23 @@ export function AuthProvider({ children }) {
         saveSession(data.token, data.user)
         setUser(data.user)
       },
-      async register(name, email, password, phone) {
-        const { data } = await api.post('/auth/register', { name, email, password, phone })
+      async registerRequest(name, email, password, phone) {
+        const { data } = await api.post('/auth/register-request', { name, email, password, phone })
+        return data
+      },
+      async registerVerify(email, otp) {
+        const { data } = await api.post('/auth/register-verify', { email, otp })
         saveSession(data.token, data.user)
         setUser(data.user)
+        return data
+      },
+      async registerResend(email) {
+        const { data } = await api.post('/auth/register-resend', { email })
+        return data
+      },
+      async register(name, email, password, phone) {
+        // Forwarding call for backward compatibility
+        return this.registerRequest(name, email, password, phone)
       },
       logout() {
         clearSession()
