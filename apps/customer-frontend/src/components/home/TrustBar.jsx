@@ -31,27 +31,37 @@ const items = [
 
 export default function TrustBar() {
   return (
-    <section className="border-b border-line bg-surface py-6">
-      <div className="mx-auto max-w-[1800px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
-        <div className="grid grid-cols-1 min-[761px]:grid-cols-2 min-[1041px]:grid-cols-4 gap-5">
-          {items.map((item) => (
-            <div key={item.title} className="flex items-center gap-3.5">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-soft text-accent">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                  {item.icon}
-                </svg>
-              </span>
-              <div>
-                <h4 className="font-sans text-[14px] font-semibold text-ink m-0 leading-tight">
-                  {item.title}
-                </h4>
-                <p className="font-sans text-[13px] text-muted m-0 mt-0.5 leading-tight">
-                  {item.sub}
-                </p>
-              </div>
+    <section className="border-b border-line bg-surface py-5 overflow-hidden">
+      <style>{`
+        @keyframes trustMarquee {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .trust-track {
+          display: flex;
+          width: max-content;
+          animation: trustMarquee 18s linear infinite;
+        }
+        .trust-track:hover { animation-play-state: paused; }
+      `}</style>
+      <div className="trust-track">
+        {[...items, ...items].map((item, i) => (
+          <div key={i} className="flex items-center gap-3.5 shrink-0 px-8">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-soft text-accent">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                {item.icon}
+              </svg>
+            </span>
+            <div>
+              <h4 className="font-sans text-[14px] font-semibold text-ink m-0 leading-tight whitespace-nowrap">
+                {item.title}
+              </h4>
+              <p className="font-sans text-[13px] text-muted m-0 mt-0.5 leading-tight whitespace-nowrap">
+                {item.sub}
+              </p>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </section>
   )

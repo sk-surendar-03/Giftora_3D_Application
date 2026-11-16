@@ -1,4 +1,4 @@
-export default function VisualDesignCardRail({ label, items, value, onChange }) {
+export default function VisualDesignCardRail({ label, items, value, onChange, previewName }) {
   if (!items || items.length === 0) return null
 
   return (

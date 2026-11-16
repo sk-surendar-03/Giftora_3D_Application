@@ -1,44 +1,89 @@
 import { Link } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
 import Button from '../ui/Button'
+
+const SLIDES = [
+  { src: '/hero-products.png', alt: 'Jasvel 3D Prints — personalised spiritual gifts and figurines' },
+  { src: '/hero-2.png',       alt: 'JAS 3D — personalised desk sets and spiritual figurines' },
+  { src: '/hero-3.png',       alt: 'JAS 3D — divine figurines in marble finish' },
+  { src: '/hero-4.png',       alt: 'JAS 3D — premium black and gold decorative pieces' },
+]
+const INTERVAL = 3500
 
 export default function Hero() {
   const customiseLink = '/customise'
+  const [current, setCurrent] = useState(0)
+  const [prev, setPrev] = useState(null)
+  const [fading, setFading] = useState(false)
+
+  const goTo = useCallback((index) => {
+    if (index === current) return
+    setPrev(current)
+    setFading(true)
+    setCurrent(index)
+    setTimeout(() => {
+      setPrev(null)
+      setFading(false)
+    }, 900)
+  }, [current])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      goTo((current + 1) % SLIDES.length)
+    }, INTERVAL)
+    return () => clearInterval(timer)
+  }, [current, goTo])
 
   return (
     <section className="relative overflow-hidden border-b border-line">
 
-      <img
-        src="/hero-products.png"
-        alt="Jasvel 3D Prints — personalised spiritual gifts and figurines"
-        className="block w-full h-auto min-[761px]:max-h-[680px] min-[761px]:object-cover min-[761px]:object-center"
-      />
+      {/* Slide images — crossfade */}
+      {SLIDES.map((slide, i) => (
+        <img
+          key={slide.src}
+          src={slide.src}
+          alt={slide.alt}
+          className="block w-full h-auto min-[761px]:max-h-[680px] min-[761px]:object-cover min-[761px]:object-center"
+          style={{
+            position: i === 0 ? 'relative' : 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            transition: 'opacity 0.9s ease-in-out',
+            opacity: i === current ? 1 : 0,
+            pointerEvents: 'none',
+            zIndex: i === current ? 1 : 0,
+          }}
+        />
+      ))}
 
       {/* Base dark layer */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: 'rgba(0,0,0,0.42)' }}
+        style={{ background: 'rgba(0,0,0,0.42)', zIndex: 2 }}
       />
 
-      {/* Left-heavy gradient — same angle on all screens */}
+      {/* Left-heavy gradient */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'linear-gradient(105deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.82) 25%, rgba(0,0,0,0.5) 48%, rgba(0,0,0,0.1) 65%, transparent 100%)'
+          background: 'linear-gradient(105deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.82) 25%, rgba(0,0,0,0.5) 48%, rgba(0,0,0,0.1) 65%, transparent 100%)',
+          zIndex: 2,
         }}
       />
 
       {/* Bottom vignette */}
       <div
         className="absolute inset-x-0 bottom-0 pointer-events-none"
-        style={{ height: '28%', background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}
+        style={{ height: '28%', background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)', zIndex: 2 }}
       />
 
-      {/* Text overlay — left-aligned with proportional padding, top-aligned on mobile */}
-      <div className="absolute inset-0 flex items-center max-[760px]:items-start max-[760px]:pt-5">
+      {/* Text overlay */}
+      <div className="absolute inset-0 flex items-center max-[760px]:items-start max-[760px]:pt-5" style={{ zIndex: 3 }}>
         <div className="w-full pl-[clamp(16px,6vw,96px)] pr-6 max-[760px]:pl-4 max-[760px]:pr-4">
           <div className="max-w-[520px] max-[760px]:max-w-[58%]">
 
-            {/* Eyebrow — hidden on mobile to save space */}
             <div className="hidden min-[761px]:flex items-center gap-2 mb-3">
               <span className="w-6 h-[2px] shrink-0" style={{ background: '#D9AE4E' }} />
               <span
@@ -49,7 +94,6 @@ export default function Hero() {
               </span>
             </div>
 
-            {/* Headline */}
             <h1
               className="font-display font-bold leading-[1.05] tracking-[-0.02em] mb-3 max-[760px]:mb-2"
               style={{
@@ -61,7 +105,6 @@ export default function Hero() {
               Gifts that carry<br />their name.
             </h1>
 
-            {/* Body */}
             <p
               className="leading-[1.5] mb-4 max-[760px]:mb-3"
               style={{
@@ -73,7 +116,6 @@ export default function Hero() {
               Design a keepsake in 3D, preview it from every angle, and we will make it just for them.
             </p>
 
-            {/* Buttons — always one row, equal size */}
             <div className="flex flex-row items-center gap-2 max-[760px]:mb-0 min-[761px]:gap-3 min-[761px]:mb-5">
               <Link to={customiseLink} className="flex-1 min-[761px]:flex-none">
                 <Button variant="hero" size="lg" className="w-full whitespace-nowrap max-[760px]:!text-[10px] max-[760px]:!py-0 max-[760px]:!px-2 max-[760px]:!h-7 max-[760px]:!leading-7">
@@ -88,7 +130,6 @@ export default function Hero() {
               </Link>
             </div>
 
-            {/* Trust badges — all screens, compact on mobile */}
             <div
               className="flex flex-wrap items-center gap-3 font-medium max-[760px]:gap-x-2 max-[760px]:gap-y-0.5 max-[760px]:mt-1.5"
               style={{
@@ -121,7 +162,31 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Preview in 3D badge — shown on all screens, smaller on mobile */}
+      {/* Dot indicators */}
+      <div
+        className="absolute bottom-4 min-[761px]:bottom-7 flex items-center gap-2"
+        style={{ left: '50%', transform: 'translateX(-50%)', zIndex: 4 }}
+      >
+        {SLIDES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            aria-label={`Go to slide ${i + 1}`}
+            style={{
+              width: i === current ? 24 : 8,
+              height: 8,
+              borderRadius: 4,
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'width 0.35s ease, background 0.35s ease',
+              background: i === current ? '#D9AE4E' : 'rgba(255,255,255,0.4)',
+              padding: 0,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Preview in 3D badge */}
       <div
         className="flex absolute items-center gap-2 rounded-card max-[760px]:bottom-3 max-[760px]:right-3 max-[760px]:px-2.5 max-[760px]:py-2 min-[761px]:bottom-6 min-[761px]:right-8 min-[761px]:gap-3 min-[761px]:px-4 min-[761px]:py-3"
         style={{
@@ -129,6 +194,7 @@ export default function Hero() {
           border: '1px solid rgba(217,174,78,0.35)',
           backdropFilter: 'blur(12px)',
           boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(217,174,78,0.1)',
+          zIndex: 4,
         }}
       >
         <span

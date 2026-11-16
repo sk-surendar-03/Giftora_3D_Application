@@ -13,6 +13,7 @@ export const STYLE_PREVIEWS = {
     'soft-tag': '/showcase/styles/name-keychain-soft-tag.png',
     bubble: '/showcase/styles/name-keychain-bubble.png',
     arch: '/showcase/styles/name-keychain-arch.png',
+    ribbon: '/showcase/styles/name-keychain-ribbon.png',
     'heart-split': '/showcase/styles/name-keychain-heart-split.png',
   },
   'plant-label': {

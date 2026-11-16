@@ -31,7 +31,8 @@ import { countBillableCharacters, calculateTotalCustomizationPriceCents } from '
 import { useDesignOptions } from '../features/customDesign/useDesignOptions.js'
 import { clearDraft, loadDraft, restoreChoices } from '../features/customDesign/designDraft.js'
 
-const DEFAULT_EXAMPLE_TEXT = 'Alex'
+const EXAMPLE_NAMES = ['Jasvel', 'Alex', 'Priya', 'Arjun', 'Meera', 'Ravi', 'Ananya', 'Kiran', 'Divya', 'Rahul', 'Nisha', 'Vikram', 'Pooja']
+const DEFAULT_EXAMPLE_TEXT = EXAMPLE_NAMES[Math.floor(Math.random() * EXAMPLE_NAMES.length)]
 const DEFAULT_TEMPLATE_ID = 'name-keychain'
 const DEFAULT_SIZE_LABEL = 'Medium (5.5 cm)'
 
@@ -432,9 +433,9 @@ function CustomiserWorkspace({ options }) {
               </section>
             )}
 
-            {/* Step 4: Font Style */}
+            {/* Step 3: Font Style */}
             <section className="py-4">
-              <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">Font style</span>
+              <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">3. Font style</span>
               <FontPickerCards
                 fonts={selectableFonts}
                 value={effectiveFontId}
@@ -442,15 +443,15 @@ function CustomiserWorkspace({ options }) {
               />
             </section>
 
-            {/* Step 5: Thickness & Dimensions */}
+            {/* Step 4: Thickness & Dimensions */}
             <section className="py-4">
-              <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">Base thickness</span>
+              <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">4. Base thickness</span>
               <ThicknessPicker value={thickness} onChange={setThickness} options={thicknessPickerOptions} />
             </section>
 
-            {/* Step 6: Size & Quantity */}
+            {/* Step 5: Size & Quantity */}
             <section className="py-4">
-              <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">Size & Quantity</span>
+              <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">5. Size & Quantity</span>
               <div className="space-y-3">
                 {/* Style A size pills — name + price from admin, falls back to plain names */}
                 <div>
@@ -499,7 +500,7 @@ function CustomiserWorkspace({ options }) {
             {/* Step 7: Shipping Method */}
             {customizerSettings.shippingMethods.length > 0 && (
               <section className="py-4">
-                <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">7. Shipping Method</span>
+                <span className="mb-2 block font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">6. Shipping Method</span>
                 <div className="space-y-2">
                   {customizerSettings.shippingMethods.map((method) => {
                     const isSelected = selectedShipping?.name === method.name
@@ -535,8 +536,8 @@ function CustomiserWorkspace({ options }) {
           />
         </aside>
 
-        {/* RIGHT COLUMN: 3D Preview + Live Print Facts (Sticky on Desktop) */}
-        <main className="min-w-0 space-y-5 order-1 min-[1041px]:order-2 min-[1041px]:sticky min-[1041px]:top-5">
+        {/* RIGHT COLUMN: 3D Preview — sticky on both mobile and desktop */}
+        <main className="min-w-0 space-y-5 order-1 min-[1041px]:order-2 sticky top-0 max-[1040px]:z-20 max-[1040px]:bg-[var(--color-bg,#0a0a0a)] max-[1040px]:pb-3 min-[1041px]:top-5">
           {/* Header Title with live status */}
           <div className="flex items-center justify-between pb-2 border-b border-line">
             <div>
@@ -571,24 +572,46 @@ function CustomiserWorkspace({ options }) {
             onCaptureReady={handleCaptureReady}
           />
 
-          {/* Live Print Facts Card */}
-          <PrintFactsCard report={preflight} dimensions={preflight.dimensions} />
+          {/* Live Print Facts Card — desktop only here; repeats below grid on mobile */}
+          <div className="max-[1040px]:hidden">
+            <PrintFactsCard report={preflight} dimensions={preflight.dimensions} />
+          </div>
 
-          {/* Customization Summary & Add to Cart */}
-          <CustomizationSummary
-            design={design}
-            quantity={quantity}
-            totalPriceRupees={totalPriceRupees}
-            selectedShipping={selectedShipping}
-            canAdd={preflight.printable && engine.status === 'ready' && cleanText.length > 0 && Boolean(engine.client)}
-            engineClient={engine.client}
-            engineParams={params}
-            fontDefinition={fontDef}
-            subtitleFontDefinition={subtitleFontDef}
-            allowDisconnected={allowDisconnected}
-            capturePreview={() => captureRef.current?.()}
-          />
+          {/* Customization Summary — desktop only here; repeats below grid on mobile */}
+          <div className="max-[1040px]:hidden">
+            <CustomizationSummary
+              design={design}
+              quantity={quantity}
+              totalPriceRupees={totalPriceRupees}
+              selectedShipping={selectedShipping}
+              canAdd={preflight.printable && engine.status === 'ready' && cleanText.length > 0 && Boolean(engine.client)}
+              engineClient={engine.client}
+              engineParams={params}
+              fontDefinition={fontDef}
+              subtitleFontDefinition={subtitleFontDef}
+              allowDisconnected={allowDisconnected}
+              capturePreview={() => captureRef.current?.()}
+            />
+          </div>
         </main>
+      </div>
+
+      {/* Mobile-only: Print Facts + Summary below all controls */}
+      <div className="min-[1041px]:hidden mt-5 space-y-5">
+        <PrintFactsCard report={preflight} dimensions={preflight.dimensions} />
+        <CustomizationSummary
+          design={design}
+          quantity={quantity}
+          totalPriceRupees={totalPriceRupees}
+          selectedShipping={selectedShipping}
+          canAdd={preflight.printable && engine.status === 'ready' && cleanText.length > 0 && Boolean(engine.client)}
+          engineClient={engine.client}
+          engineParams={params}
+          fontDefinition={fontDef}
+          subtitleFontDefinition={subtitleFontDef}
+          allowDisconnected={allowDisconnected}
+          capturePreview={() => captureRef.current?.()}
+        />
       </div>
     </div>
   )

@@ -24,9 +24,9 @@ const columns = [
 export default function Footer() {
   return (
     <footer className="border-t border-line bg-band text-muted pt-16 pb-7">
-      <div className="mx-auto max-w-[1200px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
-        <div className="grid grid-cols-1 min-[761px]:grid-cols-2 min-[1041px]:grid-cols-[320px_1fr_1fr] gap-10 min-[1041px]:gap-x-16">
-          
+      <div className="mx-auto max-w-[1800px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px]">
+        <div className="flex flex-col min-[761px]:flex-row min-[761px]:justify-between gap-8 min-[761px]:gap-x-8">
+
           {/* Brand info */}
           <div>
             <div className="flex items-center gap-2.5">
@@ -45,28 +45,30 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Columns */}
-          {columns.map((column) => (
-            <div key={column.heading}>
-              <h4 className="font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ink mb-4">
-                {column.heading}
-              </h4>
-              <ul className="space-y-2.5 list-none p-0 m-0">
-                {column.links.map((link) => (
-                  <li key={link.label}>
-                    <Link to={link.to} className="text-[14px] text-muted hover:text-ink transition-colors">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {/* Columns — side by side on mobile, separate on tablet/desktop */}
+          <div className="grid grid-cols-2 gap-6 min-[761px]:contents">
+            {columns.map((column) => (
+              <div key={column.heading}>
+                <h4 className="font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ink mb-4">
+                  {column.heading}
+                </h4>
+                <ul className="space-y-2.5 list-none p-0 m-0">
+                  {column.links.map((link) => (
+                    <li key={link.label}>
+                      <Link to={link.to} className="text-[14px] text-muted hover:text-ink transition-colors">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
 
         </div>
 
         {/* Bottom row */}
-        <div className="mt-11 pt-5.5 border-t border-line flex flex-col min-[761px]:flex-row items-center justify-between gap-4 text-[13px] text-muted">
+        <div className="mt-11 pt-5.5 border-t border-line flex flex-col min-[761px]:flex-row items-center justify-between gap-4 text-[13px] text-muted w-full">
           <div className="text-center min-[761px]:text-left space-y-1">
             <p>&copy; 2026 JAS 3D PRINTING. All rights reserved.</p>
             <p className="flex flex-wrap items-center justify-center min-[761px]:justify-start gap-1.5">
