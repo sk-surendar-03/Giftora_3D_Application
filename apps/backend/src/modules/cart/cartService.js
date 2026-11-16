@@ -1,8 +1,9 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
-import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping } from '../settings/settingsService.js'
+import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig } from '../settings/settingsService.js'
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { priceForDesign, stlIsAvailable } from '../customizer/designService.js'
+import { priceForStand } from '../standDesigner/standDesignOptions.js'
 
 const CART_INCLUDE = { items: { include: { product: true, customDesign: true, standDesign: true }, orderBy: { createdAt: 'asc' } } }
 
@@ -151,13 +152,18 @@ export async function addStandItem(userId, { standDesignId, quantity, shippingMe
   const resolvedShipping = await resolveShippingMethod(shippingMethod)
   if (resolvedShipping) customizationData.shippingMethod = resolvedShipping
 
+  // Recompute price server-side from stored volume + current admin config.
+  // Never trust design.unitPriceCents (it may be stale).
+  const standConfig = await getStandPricingConfig()
+  const unitPriceCents = priceForStand(design.category, design.solidVolumeCm3 ?? 0, standConfig)
+
   return prisma.cartItem.create({
     data: {
       cartId: cart.id,
       itemType: 'STAND_DESIGN',
       standDesignId: design.id,
       quantity,
-      unitPriceCents: design.unitPriceCents,
+      unitPriceCents,
       ...(Object.keys(customizationData).length > 0 ? { customization: customizationData } : {}),
     },
     include: { product: true, customDesign: true, standDesign: true },

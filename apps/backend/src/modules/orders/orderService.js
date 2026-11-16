@@ -4,6 +4,10 @@ import { generateOrderNumber } from './orderNumber.js'
 import { parsePagination, buildMeta } from '../../utils/pagination.js'
 import { stlIsAvailable, toPublicDesign } from '../customizer/designService.js'
 import { stlIsAvailable as standStlIsAvailable, toPublicStandDesign } from '../standDesigner/standDesignService.js'
+import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig } from '../settings/settingsService.js'
+import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
+import { priceForDesign } from '../customizer/designService.js'
+import { priceForStand } from '../standDesigner/standDesignOptions.js'
 import { resolveTrackingUrl } from './carrierTracking.js'
 
 const CART_INCLUDE = { items: { include: { product: true, customDesign: true, standDesign: true }, orderBy: { createdAt: 'asc' } } }
@@ -86,21 +90,68 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
           throw new HttpError(409, `${unavailable.map((i) => i.name).join(', ')} ${unavailable.length > 1 ? 'are' : 'is'} no longer available. Please remove ${unavailable.length > 1 ? 'them' : 'it'} from your cart before placing this order.`)
         }
 
-        // Use each cart item's own snapshotted unitPriceCents (the real,
-        // per-character customizer price computed at add-to-cart time), not
-        // the product's own base priceCents — customizer products have no
-        // separate base price; see cartService.js's addItem.
-        const subtotalCents = cart.items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0)
+        // Recompute every price from current admin config — never trust the
+        // cart snapshot alone. If any price has changed since the item was
+        // added to the cart, refuse the order so the customer can refresh
+        // checkout instead of being silently charged a different amount.
+        const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }, standPricingConfig, { methods: shippingMethods }] =
+          await Promise.all([
+            getPricingConfig(),
+            getCustomizerSizes(),
+            getCustomizerThicknesses(),
+            getStandPricingConfig(),
+            getCustomizerShipping(),
+          ])
+
+        const recomputedPrices = new Map()
+        const priceChangedItems = []
+        for (const item of cart.items) {
+          let currentUnitPriceCents
+          if (item.itemType === 'CUSTOM_DESIGN') {
+            const charPrice = priceForDesign(item.customDesign.params, perCharacterPriceCents, baseCharacters, basePriceCents)
+            const sizePriceCents = adminSizes.find((s) => s.name === item.customDesign.params.size)?.priceCents ?? 0
+            const thicknessPriceCents = adminThicknesses.find((t) => t.name === item.customDesign.params.thickness)?.priceCents ?? 0
+            currentUnitPriceCents = charPrice + sizePriceCents + thicknessPriceCents
+          } else if (item.itemType === 'STAND_DESIGN') {
+            currentUnitPriceCents = priceForStand(item.standDesign.category, item.standDesign.solidVolumeCm3 ?? 0, standPricingConfig)
+          } else {
+            const matOpts = Array.isArray(item.product?.materialOptions) ? item.product.materialOptions : []
+            const sizeOpts = Array.isArray(item.product?.sizeOptions) ? item.product.sizeOptions : []
+            const selMat = matOpts.find((m) => m.name === item.customization?.material)
+            if (selMat) {
+              currentUnitPriceCents = selMat.priceCents
+              const selSize = sizeOpts.find((s) => s.name === item.customization?.size)
+              if (selSize) currentUnitPriceCents += (selSize.additionalCents || 0)
+            } else if (item.customization?.text) {
+              currentUnitPriceCents = calculateTotalCustomizationPriceCents(item.customization.text, item.customization?.subtitle, perCharacterPriceCents, baseCharacters, basePriceCents)
+            } else {
+              currentUnitPriceCents = item.product?.priceCents ?? 0
+            }
+          }
+          recomputedPrices.set(item.id, currentUnitPriceCents)
+          if (currentUnitPriceCents !== item.unitPriceCents) {
+            priceChangedItems.push(item.customDesign?.title || item.standDesign?.title || item.product?.name || 'An item')
+          }
+        }
+
+        if (priceChangedItems.length > 0) {
+          throw new HttpError(409, `Prices have changed for: ${priceChangedItems.join(', ')}. Please refresh your cart and checkout before placing this order.`)
+        }
+
+        // Recompute shipping from server config
         const shippingCents = cart.items.reduce((sum, item) => {
           const selMethod = item.customization?.shippingMethod
-          if (selMethod && typeof selMethod.priceCents === 'number') {
-            return sum + selMethod.priceCents
+          if (selMethod && typeof selMethod.name === 'string') {
+            const serverMethod = shippingMethods.find((m) => m.name === selMethod.name)
+            return sum + (serverMethod ? serverMethod.priceCents : (typeof selMethod.priceCents === 'number' ? selMethod.priceCents : 0))
           }
           if (item.itemType === 'PRODUCT' && item.product?.shippingCents > 0) {
             return sum + item.product.shippingCents * item.quantity
           }
           return sum
         }, 0)
+
+        const subtotalCents = cart.items.reduce((sum, item) => sum + (recomputedPrices.get(item.id) ?? item.unitPriceCents) * item.quantity, 0)
         const totalCents = subtotalCents + shippingCents
 
         const order = await tx.order.create({
@@ -116,6 +167,7 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
             totalCents,
             items: {
               create: cart.items.map((item) => {
+                const currentPrice = recomputedPrices.get(item.id) ?? item.unitPriceCents
                 if (item.itemType === 'CUSTOM_DESIGN') {
                   return {
                     // Standalone design: no product. The design title is the
@@ -128,7 +180,7 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
                     productImage: null,
                     quantity: item.quantity,
                     customization: { ...item.customDesign.params, ...(item.customization ?? {}) },
-                    unitPriceCents: item.unitPriceCents,
+                    unitPriceCents: currentPrice,
                   }
                 }
                 if (item.itemType === 'STAND_DESIGN') {
@@ -142,7 +194,7 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
                     productImage: null,
                     quantity: item.quantity,
                     customization: { ...item.standDesign.designConfig, ...(item.customization ?? {}) },
-                    unitPriceCents: item.unitPriceCents,
+                    unitPriceCents: currentPrice,
                   }
                 }
                 return {
@@ -153,7 +205,7 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
                   productImage: item.product.images?.[0] ?? null,
                   quantity: item.quantity,
                   customization: item.customization ?? undefined,
-                  unitPriceCents: item.unitPriceCents,
+                  unitPriceCents: currentPrice,
                 }
               }),
             },
