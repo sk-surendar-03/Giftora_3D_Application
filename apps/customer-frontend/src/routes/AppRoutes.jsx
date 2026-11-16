@@ -5,6 +5,7 @@ import Home from '../pages/Home'
 import Products from '../pages/Products'
 import ProductDetail from '../pages/ProductDetail'
 import Customiser from '../pages/Customiser'
+import StandCustomiser from '../pages/StandCustomiser'
 import Cart from '../pages/Cart'
 import Addresses from '../pages/Addresses'
 import Checkout from '../pages/Checkout'
@@ -29,6 +30,7 @@ export default function AppRoutes() {
           <Route path="/products/:slug" element={<ProductDetail />} />
           <Route path="/customise" element={<Customiser />} />
           <Route path="/customise/:productId" element={<Navigate to="/customise" replace />} />
+          <Route path="/customise/stand" element={<StandCustomiser />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/addresses" element={<Addresses />} />
           <Route path="/checkout" element={<Checkout />} />
