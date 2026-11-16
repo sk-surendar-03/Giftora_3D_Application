@@ -1,4 +1,4 @@
-﻿ALTER TABLE `custom_designs`
+ALTER TABLE `custom_designs`
   ADD COLUMN `reliefStlKey` VARCHAR(191) NULL,
   ADD COLUMN `reliefStlSha256` VARCHAR(191) NULL,
   ADD COLUMN `reliefStlBytes` INT NULL;
