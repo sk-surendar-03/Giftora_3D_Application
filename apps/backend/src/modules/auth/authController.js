@@ -1,19 +1,33 @@
 import { HttpError } from '../../utils/httpError.js'
-import { isValidEmail, isValidPassword, isNonEmptyString } from '../../utils/validation.js'
-import { registerUser, loginUser, updateProfile } from './authService.js'
+import { isValidEmail } from '../../utils/validation.js'
+import { loginUser, updateProfile } from './authService.js'
+import {
+  initiateRegistration,
+  verifyRegistrationOtp,
+  resendRegistrationOtp,
+} from './registrationOtpService.js'
+
+export async function registerRequest(req, res) {
+  const { name, email, password, phone } = req.body ?? {}
+  const result = await initiateRegistration({ name, email, phone, password })
+  res.status(200).json(result)
+}
+
+export async function registerVerify(req, res) {
+  const { email, otp } = req.body ?? {}
+  const result = await verifyRegistrationOtp({ email, otp })
+  res.status(201).json(result)
+}
+
+export async function registerResend(req, res) {
+  const { email } = req.body ?? {}
+  const result = await resendRegistrationOtp({ email })
+  res.status(200).json(result)
+}
 
 export async function register(req, res) {
-  const { name, email, password, phone } = req.body ?? {}
-
-  if (!isNonEmptyString(name, 100)) throw new HttpError(400, 'Name is required.')
-  if (!isValidEmail(email)) throw new HttpError(400, 'A valid email is required.')
-  if (!isValidPassword(password)) throw new HttpError(400, 'Password must be 8-128 characters.')
-  if (!phone || typeof phone !== 'string' || !/^[0-9+\-() ]{6,20}$/.test(phone.trim())) {
-    throw new HttpError(400, 'A valid phone number is required.')
-  }
-
-  const { user, token } = await registerUser({ name: name.trim(), email: email.toLowerCase().trim(), password, phone: phone.trim() })
-  res.status(201).json({ user, token })
+  // Direct or legacy registration requests initiate the OTP verification workflow
+  return registerRequest(req, res)
 }
 
 export async function login(req, res) {
