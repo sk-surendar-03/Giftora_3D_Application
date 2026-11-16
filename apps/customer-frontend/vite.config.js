@@ -5,6 +5,9 @@ import { defineConfig } from "vite";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  resolve: {
+    dedupe: ['three'],
+  },
   server: {
     proxy: {
       "/api": "https://api.jasvel3dmakers.co.in",
