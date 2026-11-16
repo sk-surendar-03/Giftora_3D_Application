@@ -10,6 +10,7 @@ import { buildStandAssembly, disposeAssembly } from '../features/standStudio/geo
 import { validateDesignConfig } from '../features/standStudio/core/validation'
 import { useAddStandToCart, PHASE_LABELS } from '../features/standDesign/useAddStandToCart.js'
 import { computeStandPriceCents, formatRupees } from '../features/standDesign/standPricing.js'
+import { fetchStandOptions } from '../features/standDesign/standDesignApi.js'
 import { useAuth } from '../features/auth/useAuth.js'
 import api from '../services/api'
 import Button from '../components/ui/Button'
@@ -30,6 +31,7 @@ function StandCustomiserWorkspace() {
   const [quantity, setQuantity] = useState(1)
   const [shippingOptions, setShippingOptions] = useState([])
   const [shippingMethod, setShippingMethod] = useState(null)
+  const [standPricingConfig, setStandPricingConfig] = useState(null)
   const [loading, setLoading] = useState(false)
   const [assembly, setAssembly] = useState(null)
   const assemblyRef = useRef(null)
@@ -53,6 +55,24 @@ function StandCustomiserWorkspace() {
       if (methods.length > 0 && !shippingMethod) setShippingMethod(methods[0])
     }).catch(() => {
       // Shipping methods are optional; fall back to none.
+    })
+    return () => { cancelled = true }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    let cancelled = false
+    fetchStandOptions().then((opts) => {
+      if (cancelled) return
+      if (opts) {
+        setStandPricingConfig({
+          pricePerCm3Cents: opts.pricePerCm3Cents,
+          categories: Object.fromEntries(
+            (opts.categories || []).map((c) => [c.id, { basePriceCents: c.basePriceCents }])
+          ),
+        })
+      }
+    }).catch(() => {
+      // Fall back to defaults
     })
     return () => { cancelled = true }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -83,7 +103,7 @@ function StandCustomiserWorkspace() {
     : { validForExport: false, issues: [], dimensions: { width: 0, depth: 0, height: 0 }, fitsBed: false, bedLimit: { x: 220, y: 220, z: 250 } }
 
   const volumeCm3 = assembly?.solidVolumeCm3 ?? 0
-  const standPriceCents = computeStandPriceCents(design.category, volumeCm3)
+  const standPriceCents = computeStandPriceCents(design.category, volumeCm3, standPricingConfig)
   const shippingCents = shippingMethod?.priceCents ?? 0
   const totalCents = standPriceCents * quantity + shippingCents
 

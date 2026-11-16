@@ -95,7 +95,9 @@ export async function storeStl(userId, designId, buffer, claimedSha256) {
   if (!(solidVolumeCm3 >= 1) || solidVolumeCm3 > 5000) {
     throw new HttpError(400, 'The model volume could not be measured reliably. Please regenerate the stand and try again.')
   }
-  const unitPriceCents = priceForStand(design.category, solidVolumeCm3)
+  const { getStandPricingConfig } = await import('../settings/settingsService.js')
+  const standConfig = await getStandPricingConfig()
+  const unitPriceCents = priceForStand(design.category, solidVolumeCm3, standConfig)
 
   const updated = await prisma.standDesign.updateMany({
     where: { id: designId, status: 'PENDING' },

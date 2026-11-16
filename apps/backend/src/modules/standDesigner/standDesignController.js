@@ -4,8 +4,8 @@ import { createStandDesign, getOwnedStandDesign, readPreview, storePreview, stor
 
 const SHA256_HEX = /^[a-fA-F0-9]{64}$/
 
-export function getOptions(req, res) {
-  res.json({ options: buildPublicOptions() })
+export async function getOptions(req, res) {
+  res.json({ options: await buildPublicOptions() })
 }
 
 export async function create(req, res) {

@@ -6,10 +6,20 @@ const COLORS_KEY = 'customizer_colors'
 const SHIPPING_KEY = 'customizer_shipping'
 const SIZES_KEY = 'customizer_sizes'
 const THICKNESSES_KEY = 'customizer_thicknesses'
+const STAND_PRICING_KEY = 'stand_pricing'
 
 export const DEFAULT_PER_CHARACTER_PRICE_CENTS = 500
 export const DEFAULT_BASE_CHARACTERS = 10
 export const DEFAULT_BASE_PRICE_CENTS = 0
+
+export const DEFAULT_STAND_PRICE_PER_CM3_CENTS = 100
+export const DEFAULT_STAND_CATEGORY_BASE_PRICES = {
+  'phone-stand': 50000,
+  'pen-holder': 60000,
+  'combined': 90000,
+  'desk-organizer': 120000,
+  'personalized-gift': 80000,
+}
 
 export async function getPricingConfig() {
   const row = await prisma.setting.findUnique({ where: { key: PRICING_KEY } })
@@ -30,6 +40,40 @@ export async function updatePricingConfig({ perCharacterPriceCents, baseCharacte
   await prisma.setting.upsert({
     where: { key: PRICING_KEY },
     create: { key: PRICING_KEY, value: next },
+    update: { value: next },
+  })
+  return next
+}
+
+export async function getStandPricingConfig() {
+  const row = await prisma.setting.findUnique({ where: { key: STAND_PRICING_KEY } })
+  const v = row?.value ?? {}
+  const pricePerCm3Cents = Number.isInteger(v.pricePerCm3Cents) && v.pricePerCm3Cents >= 0 ? v.pricePerCm3Cents : DEFAULT_STAND_PRICE_PER_CM3_CENTS
+  const categories = {}
+  for (const [id, defaultBase] of Object.entries(DEFAULT_STAND_CATEGORY_BASE_PRICES)) {
+    const entry = v.categories?.[id]
+    const basePriceCents = entry && Number.isInteger(entry.basePriceCents) && entry.basePriceCents >= 0 ? entry.basePriceCents : defaultBase
+    categories[id] = { basePriceCents }
+  }
+  return { pricePerCm3Cents, categories }
+}
+
+export async function updateStandPricingConfig({ pricePerCm3Cents, categories }) {
+  const current = await getStandPricingConfig()
+  const next = {
+    pricePerCm3Cents: Number.isInteger(pricePerCm3Cents) && pricePerCm3Cents >= 0 ? pricePerCm3Cents : current.pricePerCm3Cents,
+    categories: { ...current.categories },
+  }
+  if (categories && typeof categories === 'object') {
+    for (const [id, entry] of Object.entries(categories)) {
+      if (DEFAULT_STAND_CATEGORY_BASE_PRICES[id] !== undefined && entry && Number.isInteger(entry.basePriceCents) && entry.basePriceCents >= 0) {
+        next.categories[id] = { basePriceCents: entry.basePriceCents }
+      }
+    }
+  }
+  await prisma.setting.upsert({
+    where: { key: STAND_PRICING_KEY },
+    create: { key: STAND_PRICING_KEY, value: next },
     update: { value: next },
   })
   return next

@@ -14,6 +14,8 @@ import {
   updateSizes,
   getThicknesses,
   updateThicknesses,
+  getStandPricing,
+  updateStandPricing,
 } from './settingsController.js'
 
 // Public — customer frontend needs these without auth
@@ -24,6 +26,7 @@ settingsRouter.get('/customizer/colors', asyncHandler(getColors))
 settingsRouter.get('/customizer/shipping', asyncHandler(getShipping))
 settingsRouter.get('/customizer/sizes', asyncHandler(getSizes))
 settingsRouter.get('/customizer/thicknesses', asyncHandler(getThicknesses))
+settingsRouter.get('/stand-pricing', asyncHandler(getStandPricing))
 
 // Admin-only
 export const adminSettingsRouter = Router()
@@ -33,3 +36,4 @@ adminSettingsRouter.patch('/customizer/colors', authenticate, authorize('ADMIN')
 adminSettingsRouter.patch('/customizer/shipping', authenticate, authorize('ADMIN'), asyncHandler(updateShipping))
 adminSettingsRouter.patch('/customizer/sizes', authenticate, authorize('ADMIN'), asyncHandler(updateSizes))
 adminSettingsRouter.patch('/customizer/thicknesses', authenticate, authorize('ADMIN'), asyncHandler(updateThicknesses))
+adminSettingsRouter.patch('/stand-pricing', authenticate, authorize('ADMIN'), asyncHandler(updateStandPricing))
