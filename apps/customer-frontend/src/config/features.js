@@ -3,5 +3,5 @@
 export const FEATURES = {
   // Phone & Pen Stand customiser — under active development.
   // Hidden on production `main`; enabled on `feature/stand-customiser`.
-  standCustomiser: true,
+  standCustomiser: false,
 }
