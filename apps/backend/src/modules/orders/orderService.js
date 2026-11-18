@@ -3,23 +3,29 @@ import { HttpError } from '../../utils/httpError.js'
 import { generateOrderNumber } from './orderNumber.js'
 import { parsePagination, buildMeta } from '../../utils/pagination.js'
 import { stlIsAvailable, toPublicDesign } from '../customizer/designService.js'
+import { stlIsAvailable as standStlIsAvailable, toPublicStandDesign } from '../standDesigner/standDesignService.js'
+import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig } from '../settings/settingsService.js'
+import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
+import { priceForDesign } from '../customizer/designService.js'
+import { priceForStand } from '../standDesigner/standDesignOptions.js'
 import { resolveTrackingUrl } from './carrierTracking.js'
 
-const CART_INCLUDE = { items: { include: { product: true, customDesign: true }, orderBy: { createdAt: 'asc' } } }
-const ORDER_INCLUDE = { items: { include: { customDesign: true } } }
+const CART_INCLUDE = { items: { include: { product: true, customDesign: true, standDesign: true }, orderBy: { createdAt: 'asc' } } }
+const ORDER_INCLUDE = { items: { include: { customDesign: true, standDesign: true } } }
 
 /**
  * Shapes an order for the API: each custom-design line carries a `design`
- * summary (never storage keys). `admin` additionally exposes the stored
- * file's metadata and the exact engine parameters.
+ * summary and each stand line a `stand` summary (never storage keys).
+ * `admin` additionally exposes the stored file's metadata and parameters.
  */
 function serializeOrder(order, { admin = false } = {}) {
   if (!order) return order
   return {
     ...order,
-    items: order.items.map(({ customDesign, ...item }) => ({
+    items: order.items.map(({ customDesign, standDesign, ...item }) => ({
       ...item,
       ...(customDesign !== undefined ? { design: toPublicDesign(customDesign, { admin }) } : {}),
+      ...(standDesign !== undefined ? { stand: toPublicStandDesign(standDesign, { admin }) } : {}),
     })),
   }
 }
@@ -56,7 +62,7 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
 
   // Everything that reads the cart/products and then writes the order +
   // clears the cart happens inside one transaction: if any validation
-  // fails or the write fails partway, nothing is committed — the cart is
+  // fails or the write fails partway, nothing is committed ΓÇö the cart is
   // never cleared without a real, persisted order existing, and no order
   // is left referencing items that were never actually removed.
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -68,34 +74,84 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
         }
 
         // A catalog line is unavailable once its product is deactivated; a
-        // custom design once its STL is no longer stored.
+        // custom design once its STL is no longer stored; a stand design once
+        // its STL is missing too.
         const unavailable = []
         for (const item of cart.items) {
           if (item.itemType === 'CUSTOM_DESIGN') {
             if (!(await stlIsAvailable(item.customDesign))) unavailable.push({ name: item.customDesign.title })
-          } else if (!item.product.isActive) {
-            unavailable.push({ name: item.product.name })
+          } else if (item.itemType === 'STAND_DESIGN') {
+            if (!(await standStlIsAvailable(item.standDesign))) unavailable.push({ name: item.standDesign.title })
+          } else if (!item.product?.isActive) {
+            unavailable.push({ name: item.product?.name ?? 'An item' })
           }
         }
         if (unavailable.length > 0) {
           throw new HttpError(409, `${unavailable.map((i) => i.name).join(', ')} ${unavailable.length > 1 ? 'are' : 'is'} no longer available. Please remove ${unavailable.length > 1 ? 'them' : 'it'} from your cart before placing this order.`)
         }
 
-        // Use each cart item's own snapshotted unitPriceCents (the real,
-        // per-character customizer price computed at add-to-cart time), not
-        // the product's own base priceCents — customizer products have no
-        // separate base price; see cartService.js's addItem.
-        const subtotalCents = cart.items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0)
+        // Recompute every price from current admin config ΓÇö never trust the
+        // cart snapshot alone. If any price has changed since the item was
+        // added to the cart, refuse the order so the customer can refresh
+        // checkout instead of being silently charged a different amount.
+        const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }, standPricingConfig, { methods: shippingMethods }] =
+          await Promise.all([
+            getPricingConfig(),
+            getCustomizerSizes(),
+            getCustomizerThicknesses(),
+            getStandPricingConfig(),
+            getCustomizerShipping(),
+          ])
+
+        const recomputedPrices = new Map()
+        const priceChangedItems = []
+        for (const item of cart.items) {
+          let currentUnitPriceCents
+          if (item.itemType === 'CUSTOM_DESIGN') {
+            const charPrice = priceForDesign(item.customDesign.params, perCharacterPriceCents, baseCharacters, basePriceCents)
+            const sizePriceCents = adminSizes.find((s) => s.name === item.customDesign.params.size)?.priceCents ?? 0
+            const thicknessPriceCents = adminThicknesses.find((t) => t.name === item.customDesign.params.thickness)?.priceCents ?? 0
+            currentUnitPriceCents = charPrice + sizePriceCents + thicknessPriceCents
+          } else if (item.itemType === 'STAND_DESIGN') {
+            currentUnitPriceCents = priceForStand(item.standDesign.category, item.standDesign.solidVolumeCm3 ?? 0, standPricingConfig)
+          } else {
+            const matOpts = Array.isArray(item.product?.materialOptions) ? item.product.materialOptions : []
+            const sizeOpts = Array.isArray(item.product?.sizeOptions) ? item.product.sizeOptions : []
+            const selMat = matOpts.find((m) => m.name === item.customization?.material)
+            if (selMat) {
+              currentUnitPriceCents = selMat.priceCents
+              const selSize = sizeOpts.find((s) => s.name === item.customization?.size)
+              if (selSize) currentUnitPriceCents += (selSize.additionalCents || 0)
+            } else if (item.customization?.text) {
+              currentUnitPriceCents = calculateTotalCustomizationPriceCents(item.customization.text, item.customization?.subtitle, perCharacterPriceCents, baseCharacters, basePriceCents)
+            } else {
+              currentUnitPriceCents = item.product?.priceCents ?? 0
+            }
+          }
+          recomputedPrices.set(item.id, currentUnitPriceCents)
+          if (currentUnitPriceCents !== item.unitPriceCents) {
+            priceChangedItems.push(item.customDesign?.title || item.standDesign?.title || item.product?.name || 'An item')
+          }
+        }
+
+        if (priceChangedItems.length > 0) {
+          throw new HttpError(409, `Prices have changed for: ${priceChangedItems.join(', ')}. Please refresh your cart and checkout before placing this order.`)
+        }
+
+        // Recompute shipping from server config
         const shippingCents = cart.items.reduce((sum, item) => {
           const selMethod = item.customization?.shippingMethod
-          if (selMethod && typeof selMethod.priceCents === 'number') {
-            return sum + selMethod.priceCents
+          if (selMethod && typeof selMethod.name === 'string') {
+            const serverMethod = shippingMethods.find((m) => m.name === selMethod.name)
+            return sum + (serverMethod ? serverMethod.priceCents : (typeof selMethod.priceCents === 'number' ? selMethod.priceCents : 0))
           }
           if (item.itemType === 'PRODUCT' && item.product?.shippingCents > 0) {
             return sum + item.product.shippingCents * item.quantity
           }
           return sum
         }, 0)
+
+        const subtotalCents = cart.items.reduce((sum, item) => sum + (recomputedPrices.get(item.id) ?? item.unitPriceCents) * item.quantity, 0)
         const totalCents = subtotalCents + shippingCents
 
         const order = await tx.order.create({
@@ -110,51 +166,67 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
             shippingCents,
             totalCents,
             items: {
-              create: cart.items.map((item) =>
-                item.itemType === 'CUSTOM_DESIGN'
-                  ? {
-                      // Standalone design: no product. The design title is the
-                      // name snapshot and the validated params are snapshotted
-                      // on the line; the STL stays linked via customDesignId.
-                      itemType: 'CUSTOM_DESIGN',
-                      customDesignId: item.customDesignId,
-                      productName: item.customDesign.title,
-                      productSlug: null,
-                      productImage: null,
-                      quantity: item.quantity,
-                      customization: { ...item.customDesign.params, ...(item.customization ?? {}) },
-                      unitPriceCents: item.unitPriceCents,
-                    }
-                  : {
-                      itemType: 'PRODUCT',
-                      productId: item.productId,
-                      productName: item.product.name,
-                      productSlug: item.product.slug,
-                      productImage: item.product.images?.[0] ?? null,
-                      quantity: item.quantity,
-                      customization: item.customization ?? undefined,
-                      unitPriceCents: item.unitPriceCents,
-                    },
-              ),
+              create: cart.items.map((item) => {
+                const currentPrice = recomputedPrices.get(item.id) ?? item.unitPriceCents
+                if (item.itemType === 'CUSTOM_DESIGN') {
+                  return {
+                    // Standalone design: no product. The design title is the
+                    // name snapshot and the validated params are snapshotted
+                    // on the line; the STL stays linked via customDesignId.
+                    itemType: 'CUSTOM_DESIGN',
+                    customDesignId: item.customDesignId,
+                    productName: item.customDesign.title,
+                    productSlug: null,
+                    productImage: null,
+                    quantity: item.quantity,
+                    customization: { ...item.customDesign.params, ...(item.customization ?? {}) },
+                    unitPriceCents: currentPrice,
+                  }
+                }
+                if (item.itemType === 'STAND_DESIGN') {
+                  return {
+                    // Standalone stand: same shape as a custom design line,
+                    // with the stand's own config snapshotted on the line.
+                    itemType: 'STAND_DESIGN',
+                    standDesignId: item.standDesignId,
+                    productName: item.standDesign.title,
+                    productSlug: null,
+                    productImage: null,
+                    quantity: item.quantity,
+                    customization: { ...item.standDesign.designConfig, ...(item.customization ?? {}) },
+                    unitPriceCents: currentPrice,
+                  }
+                }
+                return {
+                  itemType: 'PRODUCT',
+                  productId: item.productId,
+                  productName: item.product.name,
+                  productSlug: item.product.slug,
+                  productImage: item.product.images?.[0] ?? null,
+                  quantity: item.quantity,
+                  customization: item.customization ?? undefined,
+                  unitPriceCents: currentPrice,
+                }
+              }),
             },
           },
           include: ORDER_INCLUDE,
         })
 
         // Clear the cart only now that the order has actually been created
-        // (same transaction — both commit together or neither does).
+        // (same transaction ΓÇö both commit together or neither does).
         await tx.cartItem.deleteMany({ where: { cartId: cart.id } })
 
         return serializeOrder(order)
       })
     } catch (err) {
       if (err.code === 'P2002' && err.meta?.target?.includes?.('orderNumber')) {
-        // Astronomically unlikely collision on the random order number —
+        // Astronomically unlikely collision on the random order number ΓÇö
         // retry with a freshly generated one rather than failing the order.
         continue
       }
       if (err.code === 'P2002' && err.meta?.target?.includes?.('idempotencyKey')) {
-        // Lost a race with a concurrent identical request — return the
+        // Lost a race with a concurrent identical request ΓÇö return the
         // order the other request just created instead of erroring.
         const existing = await prisma.order.findUnique({ where: { idempotencyKey }, include: ORDER_INCLUDE })
         if (existing) return serializeOrder(existing)
@@ -183,12 +255,12 @@ export async function getOrder(userId, orderId) {
 // status-update responses include the full design record (admin view).
 const USER_SELECT = { select: { id: true, name: true, email: true } }
 const ADMIN_ORDER_LIST_INCLUDE = { items: true, user: USER_SELECT }
-const ADMIN_ORDER_INCLUDE = { items: { include: { customDesign: true } }, user: USER_SELECT }
+const ADMIN_ORDER_INCLUDE = { items: { include: { customDesign: true, standDesign: true } }, user: USER_SELECT }
 
 /**
  * Unlike `listOrders`/`getOrder` above (scoped to the calling customer),
  * these three are for the admin order-management screens and deliberately
- * have no `userId` filter — an admin can see and manage every customer's
+ * have no `userId` filter ΓÇö an admin can see and manage every customer's
  * orders. Access to these functions must only ever be reached through a
  * route gated by `authorize('ADMIN')` (see adminOrderRoutes.js).
  */
@@ -198,9 +270,10 @@ export async function listOrdersForAdmin({ page, pageSize, search, status, type,
   const where = {
     ...(status ? { status } : {}),
     ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lt: to } : {}) } } : {}),
-    // Orders containing at least one line of the given kind (PRODUCT or CUSTOM_DESIGN).
+    // Orders containing at least one line of the given kind (PRODUCT,
+    // CUSTOM_DESIGN or STAND_DESIGN).
     ...(type ? { items: { some: { itemType: type } } } : {}),
-    // No `mode: 'insensitive'` (Postgres-only) — MySQL's default collation
+    // No `mode: 'insensitive'` (Postgres-only) ΓÇö MySQL's default collation
     // is already case-insensitive.
     ...(search
       ? {
@@ -232,7 +305,7 @@ export async function getOrderForAdmin(orderId) {
 
 // The allowed order-processing workflow. A terminal status (CANCELLED,
 // REFUNDED) has no further transitions. Anything not listed as a valid
-// "next" status for the order's current status is rejected — this is the
+// "next" status for the order's current status is rejected ΓÇö this is the
 // backend validation the requirements ask for, not just accepting any enum
 // value.
 //

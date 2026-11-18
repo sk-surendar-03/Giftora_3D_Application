@@ -12,6 +12,8 @@ import {
   updateCustomizerSizes,
   getCustomizerThicknesses,
   updateCustomizerThicknesses,
+  getStandPricingConfig,
+  updateStandPricingConfig,
 } from './settingsService.js'
 
 export async function getPricing(req, res) {
@@ -86,4 +88,19 @@ export async function updateThicknesses(req, res) {
   const { thicknesses } = req.body ?? {}
   if (!Array.isArray(thicknesses)) throw new HttpError(400, 'thicknesses must be an array.')
   res.json(await updateCustomizerThicknesses({ thicknesses }))
+}
+
+export async function getStandPricing(req, res) {
+  res.json({ standPricing: await getStandPricingConfig() })
+}
+
+export async function updateStandPricing(req, res) {
+  const { pricePerCm3Cents, categories } = req.body ?? {}
+  if (pricePerCm3Cents !== undefined && (!Number.isInteger(pricePerCm3Cents) || pricePerCm3Cents < 0)) {
+    throw new HttpError(400, 'pricePerCm3Cents must be a non-negative whole number.')
+  }
+  if (categories !== undefined && (typeof categories !== 'object' || categories === null || Array.isArray(categories))) {
+    throw new HttpError(400, 'categories must be an object.')
+  }
+  res.json({ standPricing: await updateStandPricingConfig({ pricePerCm3Cents, categories }) })
 }

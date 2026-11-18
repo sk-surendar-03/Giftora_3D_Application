@@ -60,6 +60,46 @@ export function validateBinaryStl(buffer) {
   return { triangleCount, bboxMm: { min: round(min), max: round(max), size: round(size) } }
 }
 
+/**
+ * Computes the signed volume of a binary STL and returns it in cm┬│.
+ *
+ * Uses the divergence theorem: the signed volume of a closed triangle mesh is
+ * the sum over triangles of  v0 ┬╖ (v1 ├ù v2) / 6. This is the same formula as
+ * three-bvh-csg's `computeMeshVolume`, which the stand studio uses in the
+ * browser, so server and client agree to within float rounding.
+ *
+ * The result is the absolute value, so triangle winding does not flip the sign.
+ * Callers must treat 0 (or a wildly implausible value) as a failed measurement,
+ * not a free model: signed volume only equals real volume for a closed mesh.
+ */
+export function computeSignedVolumeCm3(buffer) {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 84) return 0
+  const triangleCount = buffer.readUInt32LE(80)
+  if (buffer.length !== 84 + 50 * triangleCount) return 0
+
+  let sixTimesVolumeMm3 = 0
+  for (let triangle = 0; triangle < triangleCount; triangle += 1) {
+    const offset = 84 + triangle * 50 + 12 // skip the 12-byte normal
+    const ax = buffer.readFloatLE(offset)
+    const ay = buffer.readFloatLE(offset + 4)
+    const az = buffer.readFloatLE(offset + 8)
+    const bx = buffer.readFloatLE(offset + 12)
+    const by = buffer.readFloatLE(offset + 16)
+    const bz = buffer.readFloatLE(offset + 20)
+    const cx = buffer.readFloatLE(offset + 24)
+    const cy = buffer.readFloatLE(offset + 28)
+    const cz = buffer.readFloatLE(offset + 32)
+
+    // a ┬╖ (b ├ù c)
+    sixTimesVolumeMm3 +=
+      ax * (by * cz - bz * cy) +
+      ay * (bz * cx - bx * cz) +
+      az * (bx * cy - by * cx)
+  }
+
+  return Math.abs(sixTimesVolumeMm3) / 6 / 1000 // mm┬│ ΓåÆ cm┬│
+}
+
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
 /** Checks a PNG's signature and reads its dimensions from the IHDR chunk. */

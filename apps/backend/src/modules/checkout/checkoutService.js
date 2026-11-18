@@ -1,17 +1,12 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
 import { getOrCreateCart } from '../cart/cartService.js'
-import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses } from '../settings/settingsService.js'
+import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig } from '../settings/settingsService.js'
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { priceForDesign, stlIsAvailable, toPublicDesign } from '../customizer/designService.js'
+import { stlIsAvailable as standStlIsAvailable, toPublicDesign as toPublicStandDesign } from '../standDesigner/standDesignService.js'
+import { priceForStand } from '../standDesigner/standDesignOptions.js'
 
-/**
- * Builds a checkout review purely from the current, authoritative state of
- * the cart/products/address — never from anything the client claims about
- * totals. This performs no writes (no order is created here; that's
- * Phase 9), so it's safe to call both to render the checkout page and
- * again right before a future "place order" action re-validates.
- */
 export async function reviewCheckout(userId, addressId) {
   const cart = await getOrCreateCart(userId)
 
@@ -24,29 +19,43 @@ export async function reviewCheckout(userId, addressId) {
     throw new HttpError(404, 'Address not found.')
   }
 
-  const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }] =
-    await Promise.all([getPricingConfig(), getCustomizerSizes(), getCustomizerThicknesses()])
+  const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }, standPricingConfig, { methods: shippingMethods }] =
+    await Promise.all([getPricingConfig(), getCustomizerSizes(), getCustomizerThicknesses(), getStandPricingConfig(), getCustomizerShipping()])
 
   let subtotalCents = 0
   const items = []
   for (const item of cart.items) {
     const isCustom = item.itemType === 'CUSTOM_DESIGN'
+    const isStand = item.itemType === 'STAND_DESIGN'
     const design = item.customDesign
+    const standDesign = item.standDesign
     const product = item.product
 
-    // Catalog lines are available while the product is active; standalone
-    // designs while their STL file exists. Customizer lines have no separate
-    // base price — the per-character rate (possibly changed by an admin since
-    // this item was added) is the only current price source, same as
-    // cartService.js.
-    const available = isCustom ? await stlIsAvailable(design) : product.isActive
-    let currentUnitPriceCents
-    if (isCustom) {
+    let available, currentUnitPriceCents, title, productSnapshot, designSnapshot, standDesignSnapshot
+
+    if (isStand) {
+      // ΓöÇΓöÇΓöÇ STAND_DESIGN ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+      available = standDesign ? await standStlIsAvailable(standDesign) : false
+      const charPrice = priceForStand(standDesign?.category, standDesign?.solidVolumeCm3 ?? 0, standPricingConfig)
+      currentUnitPriceCents = charPrice
+      title = standDesign?.title ?? 'Stand design'
+      productSnapshot = null
+      designSnapshot = null
+      standDesignSnapshot = standDesign ? toPublicStandDesign(standDesign) : null
+    } else if (isCustom) {
+      // ΓöÇΓöÇΓöÇ CUSTOM_DESIGN ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+      available = await stlIsAvailable(design)
       const charPrice = priceForDesign(design.params, perCharacterPriceCents, baseCharacters, basePriceCents)
       const sizePriceCents = adminSizes.find((s) => s.name === design.params.size)?.priceCents ?? 0
       const thicknessPriceCents = adminThicknesses.find((t) => t.name === design.params.thickness)?.priceCents ?? 0
       currentUnitPriceCents = charPrice + sizePriceCents + thicknessPriceCents
+      title = design.title
+      productSnapshot = null
+      designSnapshot = toPublicDesign(design)
+      standDesignSnapshot = null
     } else {
+      // ΓöÇΓöÇΓöÇ PRODUCT ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+      available = product?.isActive ?? false
       const matOpts = Array.isArray(product?.materialOptions) ? product.materialOptions : []
       const sizeOpts = Array.isArray(product?.sizeOptions) ? product.sizeOptions : []
       const selMat = matOpts.find((m) => m.name === item.customization?.material)
@@ -59,7 +68,14 @@ export async function reviewCheckout(userId, addressId) {
       } else {
         currentUnitPriceCents = product?.priceCents ?? 0
       }
+      title = product?.name ?? 'Product'
+      productSnapshot = product
+        ? { id: product.id, slug: product.slug, name: product.name, images: product.images, shippingCents: product.shippingCents ?? 0 }
+        : null
+      designSnapshot = null
+      standDesignSnapshot = null
     }
+
     const priceChanged = currentUnitPriceCents !== item.unitPriceCents
     const lineTotalCents = available ? currentUnitPriceCents * item.quantity : 0
     if (available) subtotalCents += lineTotalCents
@@ -68,9 +84,10 @@ export async function reviewCheckout(userId, addressId) {
       id: item.id,
       itemType: item.itemType,
       productId: item.productId,
-      title: isCustom ? design.title : product.name,
-      product: isCustom ? null : { id: product.id, slug: product.slug, name: product.name, images: product.images, shippingCents: product.shippingCents ?? 0 },
-      design: isCustom ? toPublicDesign(design) : null,
+      title,
+      product: productSnapshot,
+      design: designSnapshot,
+      standDesign: standDesignSnapshot,
       quantity: item.quantity,
       customization: item.customization,
       cartUnitPriceCents: item.unitPriceCents,
@@ -100,8 +117,14 @@ export async function reviewCheckout(userId, addressId) {
   let shippingCents = 0
   for (const item of cart.items) {
     const selMethod = item.customization?.shippingMethod
-    if (selMethod && typeof selMethod.priceCents === 'number') {
-      shippingCents += selMethod.priceCents
+    if (selMethod && typeof selMethod.name === 'string') {
+      // Re-resolve against server config ΓÇö never trust stored price
+      const serverMethod = shippingMethods.find((m) => m.name === selMethod.name)
+      if (serverMethod) {
+        shippingCents += serverMethod.priceCents
+      } else if (typeof selMethod.priceCents === 'number') {
+        shippingCents += selMethod.priceCents
+      }
     } else if (item.itemType === 'PRODUCT' && item.product?.shippingCents > 0) {
       shippingCents += item.product.shippingCents
     }
