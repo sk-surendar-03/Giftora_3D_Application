@@ -160,7 +160,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                 category: e.target.value as StudioCategory,
               }))
             }
-            className="w-full px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0D1117] text-slate-900 dark:text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="w-full px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0D1117] text-slate-900 dark:text-slate-100 focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
           >
             {(Object.keys(CATEGORY_META) as StudioCategory[]).map((cat) => (
               <option key={cat} value={cat}>
@@ -182,7 +182,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
               id="design-theme-select"
               value={config.appearance.themeId}
               onChange={(e) => onApplyTheme(e.target.value as DesignThemeId)}
-              className="w-full px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0D1117] text-slate-900 dark:text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              className="w-full px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0D1117] text-slate-900 dark:text-slate-100 focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
             >
               {Object.values(DESIGN_THEMES).map((t) => (
                 <option key={t.id} value={t.id}>
@@ -205,7 +205,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
               onChange={(e) => {
                 if (e.target.value) onApplyTemplate(e.target.value);
               }}
-              className="w-full px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0D1117] text-slate-900 dark:text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              className="w-full px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0D1117] text-slate-900 dark:text-slate-100 focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
             >
               <option value="">Choose template...</option>
               {TEMPLATE_LIBRARY.map((tpl) => (
@@ -237,9 +237,9 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
             type="button"
             aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`py-1.5 px-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+            className={`py-1.5 px-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               activeTab === tab.id
-                ? 'bg-white dark:bg-[#1F2937] text-slate-900 dark:text-white shadow-sm'
+                ? 'bg-white dark:bg-[#1F2937] text-accent font-bold shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
@@ -937,7 +937,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                       personalization: { ...prev.personalization, text: e.target.value },
                     }))
                   }
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0D1117] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0D1117] focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
                 />
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {['STARK', 'A & M', 'VIP', 'MAKER', 'FOCUS'].map((preset) => (
@@ -1275,7 +1275,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                     onClick={() => setActiveZone(z.id)}
                     className={`flex flex-col items-center gap-1 py-1.5 px-1 rounded-lg border text-[11px] font-medium transition-colors ${
                       activeZone === z.id
-                        ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
+                        ? 'border-accent bg-accent/15 text-accent font-semibold shadow-xs'
                         : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
                     }`}
                   >
@@ -1366,7 +1366,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                             },
                           }))
                         }
-                        className="flex items-center gap-1.5 p-1 rounded border border-slate-200 dark:border-slate-800 hover:border-blue-500 text-left"
+                        className="flex items-center gap-1.5 p-1 rounded border border-slate-200 dark:border-slate-800 hover:border-accent text-left"
                       >
                         <span
                           className="w-3.5 h-3.5 rounded-sm shrink-0 border border-black/15"
@@ -1455,7 +1455,7 @@ const ToggleField: React.FC<ToggleFieldProps> = ({ id, label, checked, onChange 
       type="checkbox"
       checked={checked}
       onChange={(e) => onChange(e.target.checked)}
-      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+      className="w-4 h-4 rounded border-slate-300 text-accent focus:ring-accent accent-accent"
     />
   </label>
 );

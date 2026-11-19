@@ -63,50 +63,13 @@ export default function CustomisationHub() {
               <span>Ships Across India in 3 Days</span>
             </div>
           </div>
-
-          {/* Filter Pills */}
-          <div className="mt-10 inline-flex items-center rounded-full border border-line bg-surface p-1.5 shadow-xs">
-            <button
-              type="button"
-              onClick={() => setActiveTab('all')}
-              className={`rounded-full px-5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'all'
-                  ? 'bg-accent text-on-accent shadow-sm'
-                  : 'text-muted hover:text-ink'
-              }`}
-            >
-              All Studios ({CUSTOMISATION_PRODUCTS.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('active')}
-              className={`rounded-full px-5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'active'
-                  ? 'bg-accent text-on-accent shadow-sm'
-                  : 'text-muted hover:text-ink'
-              }`}
-            >
-              Ready to Customise ({CUSTOMISATION_PRODUCTS.filter((p) => p.status === 'active').length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('coming-soon')}
-              className={`rounded-full px-5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'coming-soon'
-                  ? 'bg-accent text-on-accent shadow-sm'
-                  : 'text-muted hover:text-ink'
-              }`}
-            >
-              Coming Soon ({CUSTOMISATION_PRODUCTS.filter((p) => p.status === 'coming-soon').length})
-            </button>
-          </div>
         </div>
       </section>
 
       {/* Product Cards Grid */}
-      <section className="mx-auto max-w-[1400px] px-6 sm:px-10 pt-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 lg:gap-10">
-          {displayedProducts.map((product) => (
+      <section className="mx-auto max-w-[1400px] px-6 sm:px-10 pt-14">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
+          {CUSTOMISATION_PRODUCTS.map((product) => (
             <ProductHubCard key={product.id} product={product} />
           ))}
         </div>

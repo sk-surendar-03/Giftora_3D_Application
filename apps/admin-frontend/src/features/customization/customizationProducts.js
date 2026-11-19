@@ -1,6 +1,6 @@
 /**
- * Registry of all 3D Customizable products for JAS 3D Printing / Giftora.
- * Extensible configuration: Add new products here to display them across the hub.
+ * Registry of 3D Customizable products for JAS 3D Printing / Giftora.
+ * Strict Scope: Name Keychain and Phone & Pen Stand.
  */
 export const CUSTOMIZATION_PRODUCTS = [
   {
@@ -40,43 +40,5 @@ export const CUSTOMIZATION_PRODUCTS = [
       { label: 'Customization', value: '9 Finishes · 10 Themes' },
     ],
     tags: ['Volume Pricing', 'STL Generation', 'Real-time 3D'],
-  },
-  {
-    id: 'custom-figurines',
-    name: 'Custom 3D Figurines',
-    subtitle: 'Personalised Statuettes & Idols',
-    description: 'Sculpted devotional, ceremonial, and character figurines with industrial precision and luxury metallic/marble dual-tone finishes.',
-    status: 'coming-soon',
-    statusLabel: 'Coming Soon',
-    badge: 'Planned',
-    badgeColor: 'purple',
-    manageRoute: null,
-    customerRoute: null,
-    thumbnail: '/hero-3.png',
-    stats: [
-      { label: 'Pricing Model', value: 'Geometry Analysis' },
-      { label: 'Finishes', value: 'Marble & Metallic' },
-      { label: 'Resolution', value: '0.12mm Ultra-fine' },
-    ],
-    tags: ['High Detail', 'Devotional', 'Collector Edition'],
-  },
-  {
-    id: 'photo-lithophane',
-    name: 'Photo Lithophane',
-    subtitle: 'Backlit 3D Image Keepsakes',
-    description: 'Transform customer photographs into translucent 3D embossed relief panels that reveal stunning backlit imagery with custom wooden LED light bases.',
-    status: 'coming-soon',
-    statusLabel: 'Coming Soon',
-    badge: 'In Development',
-    badgeColor: 'blue',
-    manageRoute: null,
-    customerRoute: null,
-    thumbnail: '/hero-4.png',
-    stats: [
-      { label: 'Source', value: 'Image to Depth Map' },
-      { label: 'Mounting', value: 'Curved / Flat / Night Lamp' },
-      { label: 'Lighting', value: 'USB Warm LED' },
-    ],
-    tags: ['Photo Relief', 'Backlit LED', 'Memorial Keepsake'],
   },
 ]

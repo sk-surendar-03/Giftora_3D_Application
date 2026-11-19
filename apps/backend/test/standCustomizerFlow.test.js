@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { validateStandDesignInput } from '../src/modules/standDesigner/standDesignValidator.js'
-import { priceForStand, CATEGORIES, FINISHES, THEMES } from '../src/modules/standDesigner/standDesignOptions.js'
+import { priceForStand, CATEGORIES, FINISHES, THEMES, buildPublicOptions } from '../src/modules/standDesigner/standDesignOptions.js'
 import { toPublicStandDesign } from '../src/modules/standDesigner/standDesignService.js'
 import { toCartResponse } from '../src/modules/cart/cartController.js'
 import { serializeOrder } from '../src/modules/orders/orderService.js'
@@ -326,4 +326,18 @@ test('serializeOrder preserves stand summary in both customer and admin views', 
   assert.equal(adminOrder.items[0].stand.solidVolumeCm3, 80)
   assert.equal(adminOrder.items[0].stand.stl.sizeBytes, 524288)
   assert.equal(adminOrder.items[0].stand.stl.triangleCount, 30000)
+})
+
+test('buildPublicOptions returns expected options schema', async () => {
+  const options = await buildPublicOptions()
+  assert.equal(options.schemaVersion, 1)
+  assert.equal(options.categories.length, 5)
+  assert.ok(options.categories.some((c) => c.id === 'phone-stand' && typeof c.basePriceCents === 'number'))
+  assert.ok(options.categories.some((c) => c.id === 'combined' && typeof c.basePriceCents === 'number'))
+  assert.ok(Array.isArray(options.finishes) && options.finishes.includes('metallic-gold'))
+  assert.ok(Array.isArray(options.themes) && options.themes.includes('luxury-executive'))
+  assert.ok(Array.isArray(options.fonts) && options.fonts.includes('futuristic'))
+  assert.ok(Array.isArray(options.motifs) && options.motifs.includes('star'))
+  assert.equal(options.stl.maxBytes, 50 * 1024 * 1024)
+  assert.equal(options.previewMaxBytes, 2 * 1024 * 1024)
 })

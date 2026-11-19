@@ -46,7 +46,12 @@ export async function updatePricingConfig({ perCharacterPriceCents, baseCharacte
 }
 
 export async function getStandPricingConfig() {
-  const row = await prisma.setting.findUnique({ where: { key: STAND_PRICING_KEY } })
+  let row = null
+  try {
+    row = await prisma.setting.findUnique({ where: { key: STAND_PRICING_KEY } })
+  } catch {
+    row = null
+  }
   const v = row?.value ?? {}
   const pricePerCm3Cents = Number.isInteger(v.pricePerCm3Cents) && v.pricePerCm3Cents >= 0 ? v.pricePerCm3Cents : DEFAULT_STAND_PRICE_PER_CM3_CENTS
   const categories = {}

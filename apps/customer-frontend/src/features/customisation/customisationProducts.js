@@ -1,6 +1,6 @@
 /**
- * Registry of all 3D Customisable Products for the Customer Hub.
- * Maintainable & extensible: New 3D products can be added here without restructuring the hub.
+ * Registry of 3D Customisable Products for the Customer Hub.
+ * Strict Scope: Name Keychain and Phone & Pen Stand.
  */
 export const CUSTOMISATION_PRODUCTS = [
   {
@@ -42,43 +42,5 @@ export const CUSTOMISATION_PRODUCTS = [
       'Exact volumetric pricing & STL generation',
     ],
     ctaText: 'Customise Now',
-  },
-  {
-    id: 'custom-figurines',
-    name: 'Custom 3D Figurines',
-    subtitle: 'Sculpted Keepsakes & Statuettes',
-    description: 'Transform portraits, spiritual deities, and characters into detailed multi-tone 3D figurines.',
-    longDescription: 'Hand-sculpted digital models printed with precision multi-filament technology. Featuring marble stone textures, rich gold gilding, and commemorative plinths.',
-    priceHint: 'Coming Soon',
-    badge: 'Roadmap',
-    badgeTone: 'muted',
-    status: 'coming-soon',
-    route: null,
-    image: '/hero-3.png',
-    features: [
-      'Ultra-fine 0.12mm layer precision',
-      'Marble composite & antique bronze finishes',
-      'Custom engraved presentation base',
-    ],
-    ctaText: 'Coming Soon',
-  },
-  {
-    id: 'photo-lithophane',
-    name: 'Photo Lithophane',
-    subtitle: 'Illuminated 3D Relief Panels',
-    description: 'Turn your favourite photographs into illuminated 3D translucent light panels that reveal your memory when backlit.',
-    longDescription: 'Using precision depth-map slicing, your photograph is transformed into a textured polymer relief that casts a glowing, photographic image when illuminated from behind.',
-    priceHint: 'Coming Soon',
-    badge: 'In Development',
-    badgeTone: 'muted',
-    status: 'coming-soon',
-    route: null,
-    image: '/hero-4.png',
-    features: [
-      'High-contrast optical grade polymer',
-      'Curved panoramic & flat desk frame options',
-      'Solid wood USB warm LED backlight stand',
-    ],
-    ctaText: 'Coming Soon',
   },
 ]

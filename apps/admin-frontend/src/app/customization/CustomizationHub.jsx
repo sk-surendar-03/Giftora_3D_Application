@@ -3,14 +3,6 @@ import { Link } from 'react-router-dom'
 import { CUSTOMIZATION_PRODUCTS } from '../../features/customization/customizationProducts.js'
 
 export default function CustomizationHub() {
-  const [filter, setFilter] = useState('all')
-
-  const filteredProducts = CUSTOMIZATION_PRODUCTS.filter((product) => {
-    if (filter === 'active') return product.status === 'active'
-    if (filter === 'coming-soon') return product.status === 'coming-soon'
-    return true
-  })
-
   const activeCount = CUSTOMIZATION_PRODUCTS.filter((p) => p.status === 'active').length
   const totalCount = CUSTOMIZATION_PRODUCTS.length
 
@@ -46,52 +38,9 @@ export default function CustomizationHub() {
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="inline-flex rounded-control border border-line bg-surface p-1 shadow-xs">
-          <button
-            type="button"
-            onClick={() => setFilter('all')}
-            className={`rounded-control px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-              filter === 'all'
-                ? 'bg-accent text-on-accent shadow-xs'
-                : 'text-muted hover:text-ink hover:bg-alt'
-            }`}
-          >
-            All Products ({totalCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter('active')}
-            className={`rounded-control px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-              filter === 'active'
-                ? 'bg-accent text-on-accent shadow-xs'
-                : 'text-muted hover:text-ink hover:bg-alt'
-            }`}
-          >
-            Active Studios ({activeCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter('coming-soon')}
-            className={`rounded-control px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-              filter === 'coming-soon'
-                ? 'bg-accent text-on-accent shadow-xs'
-                : 'text-muted hover:text-ink hover:bg-alt'
-            }`}
-          >
-            Roadmap ({totalCount - activeCount})
-          </button>
-        </div>
-
-        <span className="hidden sm:inline text-xs text-muted">
-          Click any active studio to configure its individual parameters
-        </span>
-      </div>
-
-      {/* Product Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-7">
-        {filteredProducts.map((product) => {
+      {/* Active Studio Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+        {CUSTOMIZATION_PRODUCTS.map((product) => {
           const isActive = product.status === 'active'
 
           return (
