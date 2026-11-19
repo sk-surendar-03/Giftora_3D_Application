@@ -140,14 +140,14 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
   return (
     <aside
       aria-label="Design customization controls"
-      className="flex flex-col h-full bg-white dark:bg-[#161B22] border-r border-slate-200 dark:border-slate-800 overflow-hidden"
+      className="divide-y divide-line rounded-card border border-line bg-surface"
     >
       {/* Category & Quick Preset Selector */}
-      <div className="p-4 border-b border-slate-200 dark:border-slate-800 space-y-3">
+      <div className="p-5 space-y-4">
         <div>
           <label
             htmlFor="studio-category-select"
-            className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1"
+            className="block text-xs font-medium text-muted mb-1"
           >
             Studio Category
           </label>
@@ -160,7 +160,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                 category: e.target.value as StudioCategory,
               }))
             }
-            className="w-full px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0D1117] text-slate-900 dark:text-slate-100 focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
+            className="w-full px-3 py-2 text-sm font-medium rounded-control border border-line bg-alt text-ink focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
           >
             {(Object.keys(CATEGORY_META) as StudioCategory[]).map((cat) => (
               <option key={cat} value={cat}>
@@ -174,7 +174,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
           <div>
             <label
               htmlFor="design-theme-select"
-              className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1"
+              className="block text-xs font-medium text-muted mb-1"
             >
               Design Theme
             </label>
@@ -182,7 +182,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
               id="design-theme-select"
               value={config.appearance.themeId}
               onChange={(e) => onApplyTheme(e.target.value as DesignThemeId)}
-              className="w-full px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0D1117] text-slate-900 dark:text-slate-100 focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full px-2.5 py-1.5 text-xs font-medium rounded-control border border-line bg-alt text-ink focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
             >
               {Object.values(DESIGN_THEMES).map((t) => (
                 <option key={t.id} value={t.id}>
@@ -195,7 +195,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
           <div>
             <label
               htmlFor="quick-template-select"
-              className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1"
+              className="block text-xs font-medium text-muted mb-1"
             >
               Load Preset
             </label>
@@ -205,7 +205,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
               onChange={(e) => {
                 if (e.target.value) onApplyTemplate(e.target.value);
               }}
-              className="w-full px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0D1117] text-slate-900 dark:text-slate-100 focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full px-2.5 py-1.5 text-xs font-medium rounded-control border border-line bg-alt text-ink focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
             >
               <option value="">Choose template...</option>
               {TEMPLATE_LIBRARY.map((tpl) => (
@@ -222,7 +222,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
       <div
         role="tablist"
         aria-label="Customization sections"
-        className="grid grid-cols-3 gap-1 p-1.5 mx-3 mt-3 bg-slate-100 dark:bg-[#0D1117] rounded-lg border border-slate-200/70 dark:border-slate-800"
+        className="sticky top-0 z-10 bg-surface/95 backdrop-blur-md px-5 py-3 border-b border-line"
       >
         {(
           [
@@ -237,10 +237,10 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
             type="button"
             aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`py-1.5 px-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+            className={`py-1.5 px-2 text-xs font-semibold rounded-control transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               activeTab === tab.id
                 ? 'bg-white dark:bg-[#1F2937] text-accent font-bold shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                : 'text-muted hover:text-ink hover:bg-surface/50 border border-transparent'
             }`}
           >
             {tab.label}
@@ -249,19 +249,19 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
       </div>
 
       {/* Scrollable Body */}
-      <div className="flex-1 overflow-y-auto studio-scroll p-4 space-y-5">
+      <div className="p-5 space-y-6">
         {activeTab === 'geometry' && (
           <>
             {showCombinedControls && (
-              <section className="space-y-3 pb-4 border-b border-slate-200 dark:border-slate-800">
-                <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+              <section className="space-y-3 pb-4 border-b border-line">
+                <h3 className="font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">
                   Combined Layout & Assembly
                 </h3>
 
                 <div>
                   <label
                     htmlFor="combined-layout-select"
-                    className="block text-xs text-slate-600 dark:text-slate-400 mb-1"
+                    className="block text-xs text-muted mb-1"
                   >
                     Arrangement
                   </label>
@@ -274,7 +274,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                         combined: { ...prev.combined, type: e.target.value as CombinedType },
                       }))
                     }
-                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0D1117]"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-control border border-line bg-alt"
                   >
                     {COMBINED_TYPES.map((t) => (
                       <option key={t.id} value={t.id}>
@@ -287,7 +287,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                 <div>
                   <label
                     htmlFor="base-shape-select"
-                    className="block text-xs text-slate-600 dark:text-slate-400 mb-1"
+                    className="block text-xs text-muted mb-1"
                   >
                     Base Footprint Shape
                   </label>
@@ -300,7 +300,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                         combined: { ...prev.combined, baseShape: e.target.value as BaseShape },
                       }))
                     }
-                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0D1117]"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-control border border-line bg-alt"
                   >
                     <option value="rounded-rect">Rounded Rectangle</option>
                     <option value="stadium">Stadium Pill</option>
@@ -388,15 +388,15 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
             )}
 
             {showPhoneControls && (
-              <section className="space-y-3 pb-4 border-b border-slate-200 dark:border-slate-800">
-                <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+              <section className="space-y-3 pb-4 border-b border-line">
+                <h3 className="font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">
                   Phone Stand Geometry
                 </h3>
 
                 <div>
                   <label
                     htmlFor="phone-type-select"
-                    className="block text-xs text-slate-600 dark:text-slate-400 mb-1"
+                    className="block text-xs text-muted mb-1"
                   >
                     Stand Style
                   </label>
@@ -409,7 +409,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                         phone: { ...prev.phone, type: e.target.value as PhoneStandType },
                       }))
                     }
-                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0D1117]"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-control border border-line bg-alt"
                   >
                     {PHONE_TYPES.map((t) => (
                       <option key={t.id} value={t.id}>
@@ -420,8 +420,8 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-slate-600 dark:text-slate-400">Device Orientation</span>
-                  <div className="inline-flex rounded-lg p-0.5 bg-slate-100 dark:bg-[#0D1117] border border-slate-200 dark:border-slate-800">
+                  <span className="text-xs text-muted">Device Orientation</span>
+                  <div className="inline-flex rounded-control p-0.5 bg-alt border border-line">
                     {(['portrait', 'landscape'] as const).map((orient) => (
                       <button
                         key={orient}
@@ -432,10 +432,10 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                             phone: { ...prev.phone, orientation: orient },
                           }))
                         }
-                        className={`px-2.5 py-1 text-xs font-medium rounded-md capitalize transition-colors ${
+                        className={`px-2.5 py-1 text-xs font-medium rounded-control capitalize transition-colors ${
                           config.phone.orientation === orient
-                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
-                            : 'text-slate-600 dark:text-slate-400'
+                            ? 'bg-accent text-on-accent font-semibold shadow-xs'
+                            : 'text-muted'
                         }`}
                       >
                         {orient}
@@ -639,14 +639,14 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
 
             {showPenControls && (
               <section className="space-y-3">
-                <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                <h3 className="font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">
                   Pen Holder Geometry
                 </h3>
 
                 <div>
                   <label
                     htmlFor="pen-type-select"
-                    className="block text-xs text-slate-600 dark:text-slate-400 mb-1"
+                    className="block text-xs text-muted mb-1"
                   >
                     Holder Style
                   </label>
@@ -659,7 +659,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                         pen: { ...prev.pen, type: e.target.value as PenHolderType },
                       }))
                     }
-                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0D1117]"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-control border border-line bg-alt"
                   >
                     {PEN_TYPES.map((t) => (
                       <option key={t.id} value={t.id}>
@@ -733,7 +733,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                 </div>
 
                 {config.pen.type === 'multi-slot-rack' && (
-                  <div className="p-3 rounded-lg bg-slate-50 dark:bg-[#0D1117] border border-slate-200 dark:border-slate-800 space-y-3">
+                  <div className="p-3 rounded-control bg-alt border border-line space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <SliderField
                         id="pen-slot-count"
@@ -771,7 +771,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                       <div>
                         <label
                           htmlFor="hole-shape-select"
-                          className="block text-[11px] text-slate-500 mb-1"
+                          className="block text-[11px] text-muted mb-1"
                         >
                           Opening Shape
                         </label>
@@ -784,7 +784,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                               pen: { ...prev.pen, holeShape: e.target.value as HoleShape },
                             }))
                           }
-                          className="w-full px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#161B22]"
+                          className="w-full px-2 py-1 text-xs rounded border border-line bg-alt"
                         >
                           <option value="round">Round</option>
                           <option value="square">Square</option>
@@ -794,7 +794,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                       <div>
                         <label
                           htmlFor="hole-layout-select"
-                          className="block text-[11px] text-slate-500 mb-1"
+                          className="block text-[11px] text-muted mb-1"
                         >
                           Arrangement
                         </label>
@@ -810,7 +810,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                               },
                             }))
                           }
-                          className="w-full px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#161B22]"
+                          className="w-full px-2 py-1 text-xs rounded border border-line bg-alt"
                         >
                           <option value="grid">Grid</option>
                           <option value="circular">Circular</option>
@@ -921,7 +921,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
               <div>
                 <label
                   htmlFor="custom-text-input"
-                  className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1"
+                  className="block text-xs font-medium text-muted mb-1"
                 >
                   Custom Name / Monogram
                 </label>
@@ -937,7 +937,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                       personalization: { ...prev.personalization, text: e.target.value },
                     }))
                   }
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0D1117] focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
+                  className="w-full px-3 py-2 text-sm rounded-control border border-line bg-alt focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
                 />
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {['STARK', 'A & M', 'VIP', 'MAKER', 'FOCUS'].map((preset) => (
@@ -950,7 +950,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                           personalization: { ...prev.personalization, text: preset },
                         }))
                       }
-                      className="px-2 py-1 text-[11px] font-medium rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      className="px-2.5 py-1 text-[11px] font-medium rounded-control border border-line bg-alt text-muted hover:text-accent hover:border-accent transition-colors"
                     >
                       {preset}
                     </button>
@@ -959,8 +959,8 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
               </div>
 
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-slate-600 dark:text-slate-400">Text Geometry</span>
-                <div className="inline-flex rounded-lg p-0.5 bg-slate-100 dark:bg-[#0D1117] border border-slate-200 dark:border-slate-800">
+                <span className="text-xs text-muted">Text Geometry</span>
+                <div className="inline-flex rounded-control p-0.5 bg-alt border border-line">
                   {(['raised', 'engraved'] as const).map((m) => (
                     <button
                       key={m}
@@ -971,10 +971,10 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                           personalization: { ...prev.personalization, mode: m },
                         }))
                       }
-                      className={`px-2.5 py-1 text-xs font-medium rounded-md capitalize transition-colors ${
+                      className={`px-2.5 py-1 text-xs font-medium rounded-control capitalize transition-colors ${
                         config.personalization.mode === m
-                          ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
-                          : 'text-slate-600 dark:text-slate-400'
+                          ? 'bg-accent text-on-accent font-semibold shadow-xs'
+                          : 'text-muted'
                       }`}
                     >
                       {m}
@@ -987,7 +987,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                 <div>
                   <label
                     htmlFor="font-style-select"
-                    className="block text-xs text-slate-600 dark:text-slate-400 mb-1"
+                    className="block text-xs text-muted mb-1"
                   >
                     Font Style
                   </label>
@@ -1003,7 +1003,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                         },
                       }))
                     }
-                    className="w-full px-2 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0D1117]"
+                    className="w-full px-2 py-1.5 text-xs rounded-control border border-line bg-alt"
                   >
                     {FONT_STYLES.map((f) => (
                       <option key={f.id} value={f.id}>
@@ -1016,7 +1016,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                 <div>
                   <label
                     htmlFor="text-placement-select"
-                    className="block text-xs text-slate-600 dark:text-slate-400 mb-1"
+                    className="block text-xs text-muted mb-1"
                   >
                     Placement
                   </label>
@@ -1032,7 +1032,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                         },
                       }))
                     }
-                    className="w-full px-2 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0D1117]"
+                    className="w-full px-2 py-1.5 text-xs rounded-control border border-line bg-alt"
                   >
                     <option value="front">Front Face</option>
                     <option value="base">Base Top</option>
@@ -1091,7 +1091,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                 <div>
                   <label
                     htmlFor="text-align-select"
-                    className="block text-xs text-slate-600 dark:text-slate-400 mb-1"
+                    className="block text-xs text-muted mb-1"
                   >
                     Alignment
                   </label>
@@ -1107,7 +1107,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                         },
                       }))
                     }
-                    className="w-full px-2 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0D1117]"
+                    className="w-full px-2 py-1.5 text-xs rounded-control border border-line bg-alt"
                   >
                     <option value="left">Left</option>
                     <option value="center">Center</option>
@@ -1129,12 +1129,12 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
               />
 
               {/* Decorative Motif */}
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
+              <div className="pt-3 border-t border-line space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label
                       htmlFor="motif-select"
-                      className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1"
+                      className="block text-xs font-medium text-muted mb-1"
                     >
                       Decorative Motif
                     </label>
@@ -1150,7 +1150,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                           },
                         }))
                       }
-                      className="w-full px-2 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0D1117]"
+                      className="w-full px-2 py-1.5 text-xs rounded-control border border-line bg-alt"
                     >
                       {MOTIFS.map((m) => (
                         <option key={m.id} value={m.id}>
@@ -1178,10 +1178,10 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
               </div>
 
               {/* SVG Logo Upload */}
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="pt-3 border-t border-line space-y-2">
                 <label
                   htmlFor="svg-logo-upload"
-                  className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-medium text-ink"
                 >
                   Upload Custom SVG Logo
                 </label>
@@ -1190,10 +1190,10 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                   type="file"
                   accept=".svg,image/svg+xml"
                   onChange={handleSvgUpload}
-                  className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-slate-300 dark:file:border-slate-700 file:text-xs file:font-medium file:bg-slate-50 dark:file:bg-slate-800 file:text-slate-700 dark:file:text-slate-200 hover:file:bg-slate-100"
+                  className="block w-full text-xs text-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-control file:border file:border-line file:text-xs file:font-medium file:bg-alt file:text-ink hover:file:bg-soft hover:file:border-accent cursor-pointer"
                 />
                 {config.personalization.svgLogoName && (
-                  <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-[#0D1117] px-2.5 py-1.5 rounded border border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center justify-between text-xs bg-alt px-2.5 py-1.5 rounded border border-line">
                     <span className="truncate">{config.personalization.svgLogoName}</span>
                     <button
                       type="button"
@@ -1228,7 +1228,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
             <div>
               <label
                 htmlFor="material-finish-select"
-                className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1"
+                className="block text-xs font-medium text-muted mb-1"
               >
                 Surface Finish Preview
               </label>
@@ -1244,7 +1244,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                     },
                   }))
                 }
-                className="w-full px-2.5 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0D1117]"
+                className="w-full px-2.5 py-2 text-xs rounded-control border border-line bg-alt"
               >
                 {FINISHES.map((f) => (
                   <option key={f.id} value={f.id}>
@@ -1256,7 +1256,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
 
             {/* Color Zone Selector */}
             <div>
-              <span className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+              <span className="block text-xs font-medium text-muted mb-1.5">
                 Select Part Zone to Color
               </span>
               <div className="grid grid-cols-5 gap-1">
@@ -1273,10 +1273,10 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                     key={z.id}
                     type="button"
                     onClick={() => setActiveZone(z.id)}
-                    className={`flex flex-col items-center gap-1 py-1.5 px-1 rounded-lg border text-[11px] font-medium transition-colors ${
+                    className={`flex flex-col items-center gap-1 py-1.5 px-1 rounded-control border text-[11px] font-medium transition-colors ${
                       activeZone === z.id
                         ? 'border-accent bg-accent/15 text-accent font-semibold shadow-xs'
-                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                        : 'border-line text-muted'
                     }`}
                   >
                     <span
@@ -1310,7 +1310,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                     },
                   }))
                 }
-                className="w-10 h-9 rounded border border-slate-300 dark:border-slate-700 cursor-pointer bg-transparent"
+                className="w-10 h-9 rounded border border-line cursor-pointer bg-transparent"
               />
               <div className="flex-1">
                 <label htmlFor="zone-hex-input" className="sr-only">
@@ -1335,7 +1335,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                       }));
                     }
                   }}
-                  className="w-full px-2.5 py-1.5 text-xs font-mono uppercase rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0D1117]"
+                  className="w-full px-2.5 py-1.5 text-xs font-mono uppercase rounded-control border border-line bg-alt"
                 />
               </div>
             </div>
@@ -1344,7 +1344,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
             <div className="space-y-2.5">
               {(['Neutrals', 'Metallics', 'Pastels', 'Neons'] as const).map((group) => (
                 <div key={group}>
-                  <span className="block text-[11px] font-medium text-slate-500 mb-1">
+                  <span className="block text-[11px] font-medium text-muted mb-1">
                     {group}
                   </span>
                   <div className="grid grid-cols-4 gap-1.5">
@@ -1366,13 +1366,13 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
                             },
                           }))
                         }
-                        className="flex items-center gap-1.5 p-1 rounded border border-slate-200 dark:border-slate-800 hover:border-accent text-left"
+                        className="flex items-center gap-1.5 p-1 rounded border border-line hover:border-accent text-left"
                       >
                         <span
                           className="w-3.5 h-3.5 rounded-sm shrink-0 border border-black/15"
                           style={{ backgroundColor: swatch.hex }}
                         />
-                        <span className="text-[10px] truncate text-slate-700 dark:text-slate-300">
+                        <span className="text-[10px] truncate text-ink">
                           {swatch.name.split(' ')[1] || swatch.name}
                         </span>
                       </button>
@@ -1382,8 +1382,8 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
               ))}
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-[#0D1117] border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              <strong className="text-slate-800 dark:text-slate-200">STL Color Note:</strong>{' '}
+            <div className="p-3 rounded-control bg-alt border border-line text-xs text-muted leading-relaxed">
+              <strong className="text-ink">STL Color Note:</strong>{' '}
               Standard binary STL files store geometry triangles only and do not embed color or shader data. For multi-color printing, disable &ldquo;Merge into Single Solid&rdquo; and export the Multi-Part ZIP to assign filaments per part in your slicer.
             </div>
           </div>
@@ -1416,10 +1416,10 @@ const SliderField: React.FC<SliderFieldProps> = ({
 }) => (
   <div>
     <div className="flex items-center justify-between text-xs mb-1">
-      <label htmlFor={id} className="text-slate-600 dark:text-slate-400 truncate pr-1">
+      <label htmlFor={id} className="text-muted truncate pr-1">
         {label}
       </label>
-      <span className="font-mono font-medium text-slate-900 dark:text-slate-100 shrink-0">
+      <span className="font-mono font-medium text-ink shrink-0">
         {Number.isInteger(step) ? value : value.toFixed(1)}
         {unit}
       </span>
@@ -1432,7 +1432,7 @@ const SliderField: React.FC<SliderFieldProps> = ({
       step={step}
       value={value}
       onChange={(e) => onChange(parseFloat(e.target.value))}
-      className="w-full h-1.5 rounded-lg cursor-pointer accent-accent"
+      className="w-full h-1.5 rounded-control cursor-pointer accent-accent"
     />
   </div>
 );
@@ -1447,7 +1447,7 @@ interface ToggleFieldProps {
 const ToggleField: React.FC<ToggleFieldProps> = ({ id, label, checked, onChange }) => (
   <label
     htmlFor={id}
-    className="flex items-center justify-between gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer py-0.5"
+    className="flex items-center justify-between gap-2 text-xs text-ink cursor-pointer py-0.5"
   >
     <span>{label}</span>
     <input
@@ -1455,7 +1455,7 @@ const ToggleField: React.FC<ToggleFieldProps> = ({ id, label, checked, onChange 
       type="checkbox"
       checked={checked}
       onChange={(e) => onChange(e.target.checked)}
-      className="w-4 h-4 rounded border-slate-300 text-accent focus:ring-accent accent-accent"
+      className="w-4 h-4 rounded border-line text-accent focus:ring-accent accent-accent"
     />
   </label>
 );

@@ -28,9 +28,9 @@ export const ViewportControlsBar: React.FC<ViewportControlsBarProps> = ({
   onFitCamera,
 }) => {
   return (
-    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 max-w-[95%] flex flex-nowrap overflow-x-auto sm:flex-wrap sm:overflow-visible items-center sm:justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-white/95 dark:bg-[#161B22]/95 border border-slate-200 dark:border-slate-700 shadow-lg">
+    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 max-w-[95%] flex flex-nowrap overflow-x-auto sm:flex-wrap sm:overflow-visible items-center sm:justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-card bg-surface/95 border border-line shadow-card backdrop-blur-md">
       {/* Camera Presets */}
-      <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-[#0D1117] p-0.5 rounded-lg">
+      <div className="flex items-center gap-0.5 bg-alt p-0.5 rounded-control border border-line">
         {(['iso', 'front', 'side', 'top'] as const).map((preset) => (
           <button
             key={preset}
@@ -39,10 +39,10 @@ export const ViewportControlsBar: React.FC<ViewportControlsBarProps> = ({
               onChange((v) => ({ ...v, cameraPreset: preset }));
               onFitCamera();
             }}
-            className={`px-2 py-1 text-[11px] font-semibold uppercase rounded-md transition-colors whitespace-nowrap ${
+            className={`px-2 py-1 text-[11px] font-semibold uppercase rounded-control transition-colors whitespace-nowrap ${
               viewport.cameraPreset === preset
-                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                ? 'bg-accent text-on-accent font-bold shadow-xs'
+                : 'text-muted hover:text-ink hover:bg-surface/50'
             }`}
           >
             {preset}
@@ -55,7 +55,7 @@ export const ViewportControlsBar: React.FC<ViewportControlsBarProps> = ({
         title="Fit model to viewport"
         aria-label="Fit model to viewport"
         onClick={onFitCamera}
-        className="px-2 py-1 text-[11px] font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center gap-1 whitespace-nowrap"
+        className="px-2 py-1 text-[11px] font-medium rounded-control border border-line bg-alt text-muted hover:text-accent hover:border-accent inline-flex items-center gap-1 whitespace-nowrap transition-colors"
       >
         <Maximize2 className="w-3 h-3" />
         <span>Fit</span>
@@ -70,13 +70,13 @@ export const ViewportControlsBar: React.FC<ViewportControlsBarProps> = ({
             projection: v.projection === 'perspective' ? 'orthographic' : 'perspective',
           }))
         }
-        className="px-2 py-1 text-[11px] font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center gap-1 whitespace-nowrap"
+        className="px-2 py-1 text-[11px] font-medium rounded-control border border-line bg-alt text-muted hover:text-accent hover:border-accent inline-flex items-center gap-1 whitespace-nowrap transition-colors"
       >
         <Box className="w-3 h-3" />
         <span>{viewport.projection === 'perspective' ? 'Persp' : 'Ortho'}</span>
       </button>
 
-      <span className="w-px h-4 bg-slate-200 dark:bg-slate-700" aria-hidden="true" />
+      <span className="w-px h-4 bg-line" aria-hidden="true" />
 
       {/* Overlays */}
       <ToggleChip
@@ -124,8 +124,8 @@ export const ViewportControlsBar: React.FC<ViewportControlsBarProps> = ({
       )}
 
       {hasMultipleParts && (
-        <div className="flex items-center gap-1.5 pl-1.5 border-l border-slate-200 dark:border-slate-700">
-          <label htmlFor="exploded-view-slider" className="text-[11px] font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
+        <div className="flex items-center gap-1.5 pl-1.5 border-l border-line">
+          <label htmlFor="exploded-view-slider" className="text-[11px] font-medium text-muted whitespace-nowrap">
             Explode
           </label>
           <input
@@ -156,10 +156,10 @@ const ToggleChip: React.FC<{
     type="button"
     aria-pressed={active}
     onClick={onClick}
-    className={`px-2 py-1 text-[11px] font-medium rounded-lg border inline-flex items-center gap-1 transition-colors whitespace-nowrap ${
+    className={`px-2 py-1 text-[11px] font-medium rounded-control border inline-flex items-center gap-1 transition-colors whitespace-nowrap ${
       active
         ? 'bg-accent border-accent text-on-accent font-semibold shadow-xs'
-        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+        : 'border-line text-muted hover:text-ink hover:bg-alt'
     }`}
   >
     {children}
