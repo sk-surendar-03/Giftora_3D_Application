@@ -6,6 +6,7 @@ import { useCheckoutReview } from '../features/checkout/useCheckoutReview.js'
 import { createOrder } from '../features/orders/ordersApi.js'
 import CustomizationDetails from '../components/product/CustomizationDetails.jsx'
 import DesignPreviewImage from '../components/design/DesignPreviewImage.jsx'
+import StandPreviewImage from '../components/design/StandPreviewImage.jsx'
 import Button from '../components/ui/Button'
 import { resolveImageUrl } from '../utils/imageUrl.js'
 
@@ -285,9 +286,11 @@ export default function Checkout() {
                       <div key={item.id} className="py-3 flex gap-3 text-[13.5px]">
                         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-control bg-soft border border-line flex items-center justify-center">
                           {item.itemType === 'CUSTOM_DESIGN' ? (
-                            <DesignPreviewImage designId={item.design.id} hasPreview={item.design.hasPreview} alt={item.title} />
-                          ) : item.product.images?.[0] ? (
-                            <img src={resolveImageUrl(item.product.images[0])} alt={item.product.name} className="h-full w-full object-cover" />
+                            <DesignPreviewImage designId={item.design?.id} hasPreview={item.design?.hasPreview} alt={item.title} />
+                          ) : item.itemType === 'STAND_DESIGN' ? (
+                            <StandPreviewImage designId={item.stand?.id || item.standDesign?.id} hasPreview={item.stand?.hasPreview || item.standDesign?.hasPreview} alt={item.title} />
+                          ) : item.product?.images?.[0] ? (
+                            <img src={resolveImageUrl(item.product.images[0])} alt={item.product?.name} className="h-full w-full object-cover" />
                           ) : (
                             <span className="text-xs text-muted">3D</span>
                           )}

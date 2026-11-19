@@ -1,7 +1,9 @@
 import { OrderStatus, OrderItemType } from '@prisma/client'
+import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
 import { listOrdersForAdmin, getOrderForAdmin, updateOrderStatus } from './orderService.js'
 import { getPreviewForOrderItem, getStlForOrderItem, getThreeMfForOrderItem } from '../customizer/designService.js'
+import { getStlForStandOrderItem, getPreviewForStandOrderItem } from '../standDesigner/standDesignService.js'
 
 const VALID_STATUSES = Object.values(OrderStatus)
 const VALID_TYPES = Object.values(OrderItemType)
@@ -25,6 +27,8 @@ export async function list(req, res) {
     normalizedType = OrderItemType.CUSTOM_DESIGN
   } else if (normalizedType === 'CATALOG') {
     normalizedType = OrderItemType.PRODUCT
+  } else if (normalizedType === 'STAND') {
+    normalizedType = 'STAND_DESIGN'
   }
 
   let normalizedStatus = req.query.status
@@ -75,7 +79,22 @@ export async function updateStatus(req, res) {
 // Looked up by BOTH the order id and the item id, so a file can only be
 // downloaded through the order it actually belongs to.
 export async function downloadItemStl(req, res) {
-  const { buffer, filename } = await getStlForOrderItem(req.params.orderId, req.params.itemId)
+  const item = await prisma.orderItem.findFirst({
+    where: { id: req.params.itemId, orderId: req.params.orderId },
+    select: { itemType: true },
+  })
+  if (!item) throw new HttpError(404, 'Order item not found.')
+
+  let result
+  if (item.itemType === 'STAND_DESIGN') {
+    result = await getStlForStandOrderItem(req.params.orderId, req.params.itemId)
+  } else if (item.itemType === 'CUSTOM_DESIGN') {
+    result = await getStlForOrderItem(req.params.orderId, req.params.itemId)
+  } else {
+    throw new HttpError(400, 'This item type does not have a downloadable custom STL.')
+  }
+
+  const { buffer, filename } = result
   res
     .set({
       'Content-Type': 'model/stl',
@@ -87,6 +106,14 @@ export async function downloadItemStl(req, res) {
 }
 
 export async function downloadItem3mf(req, res) {
+  const item = await prisma.orderItem.findFirst({
+    where: { id: req.params.itemId, orderId: req.params.orderId },
+    select: { itemType: true },
+  })
+  if (!item) throw new HttpError(404, 'Order item not found.')
+  if (item.itemType !== 'CUSTOM_DESIGN') {
+    throw new HttpError(400, '3MF export is currently available for keychain custom designs.')
+  }
   const { buffer, filename } = await getThreeMfForOrderItem(req.params.orderId, req.params.itemId)
   res
     .set({
@@ -99,6 +126,19 @@ export async function downloadItem3mf(req, res) {
 }
 
 export async function itemPreview(req, res) {
-  const buffer = await getPreviewForOrderItem(req.params.orderId, req.params.itemId)
+  const item = await prisma.orderItem.findFirst({
+    where: { id: req.params.itemId, orderId: req.params.orderId },
+    select: { itemType: true },
+  })
+  if (!item) throw new HttpError(404, 'Order item not found.')
+
+  let buffer
+  if (item.itemType === 'STAND_DESIGN') {
+    buffer = await getPreviewForStandOrderItem(req.params.orderId, req.params.itemId)
+  } else if (item.itemType === 'CUSTOM_DESIGN') {
+    buffer = await getPreviewForOrderItem(req.params.orderId, req.params.itemId)
+  } else {
+    throw new HttpError(400, 'This item type does not have a 3D preview.')
+  }
   res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'private, max-age=300', 'X-Content-Type-Options': 'nosniff' }).send(buffer)
 }

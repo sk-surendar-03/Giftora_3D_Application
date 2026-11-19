@@ -26,6 +26,7 @@ npm-debug.log*
 # Giftora local DB backups and uploaded design files (contain customer data)
 /apps/backend/backups/
 /apps/backend/storage/
+/apps/backend/storage-*/
 Admin Portal Login Credentials.txt
 .vercel
 .env*

@@ -101,6 +101,38 @@ function describeAdminDesign(params) {
   ].filter(Boolean)
 }
 
+function describeAdminStandDesign(stand) {
+  if (!stand) return []
+  const cfg = stand.designConfig || {}
+
+  const text = cfg.personalization?.text ?? cfg.text
+  const font = cfg.personalization?.fontStyle ?? cfg.font
+  const finish = cfg.appearance?.finish ?? cfg.finish
+  const theme = cfg.appearance?.themeId ?? cfg.theme
+
+  const baseHex = cfg.appearance?.colors?.base ?? (typeof cfg.color === 'string' ? cfg.color : cfg.color?.hex)
+  const baseLabel = typeof cfg.color === 'object' && cfg.color?.label ? cfg.color.label : baseHex
+
+  const textHex = cfg.appearance?.colors?.text ?? (typeof cfg.textColor === 'string' ? cfg.textColor : cfg.textColor?.hex)
+  const textLabel = typeof cfg.textColor === 'object' && cfg.textColor?.label ? cfg.textColor.label : textHex
+
+  const penSlots = cfg.pen?.slotCount ?? cfg.penSlotCount
+  const slotWidth = cfg.phone?.phoneThickness ?? cfg.phoneSlotWidthMm
+
+  return [
+    { label: 'Category', value: stand.category || 'phone-pen' },
+    text && { label: 'Text', value: text },
+    font && { label: 'Font', value: font },
+    finish && { label: 'Finish', value: typeof finish === 'string' ? finish.replace(/-/g, ' ') : finish },
+    theme && { label: 'Theme', value: typeof theme === 'string' ? theme.replace(/-/g, ' ') : theme },
+    baseHex && { label: 'Base colour', value: baseLabel, hex: baseHex },
+    textHex && { label: 'Text colour', value: textLabel, hex: textHex },
+    penSlots !== undefined && { label: 'Pen slots', value: String(penSlots) },
+    slotWidth !== undefined && { label: 'Slot width', value: `${slotWidth} mm` },
+    stand.solidVolumeCm3 !== undefined && { label: 'Volume', value: `${stand.solidVolumeCm3} cm³` },
+  ].filter(Boolean)
+}
+
 export default function OrderDetail() {
   const { id } = useParams()
   const toast = useToast()
@@ -277,17 +309,25 @@ export default function OrderDetail() {
             <div className="divide-y divide-line">
               {order.items.map((item) => {
                 const isCustom = item.itemType === 'CUSTOM_DESIGN' && item.design
+                const isStand = item.itemType === 'STAND_DESIGN' && (item.stand || item.standDesign)
                 const design = item.design
-                const stlMeta = design?.stl
-                const designRows = isCustom ? describeAdminDesign(design.params) : []
+                const stand = item.stand || item.standDesign
+                const stlMeta = isCustom ? design?.stl : isStand ? stand?.stl : null
+                const hasStl = isCustom ? design?.hasStl : isStand ? stand?.hasStl : false
+                const hasPreview = isCustom ? design?.hasPreview : isStand ? stand?.hasPreview : false
+                const designRows = isCustom
+                  ? describeAdminDesign(design?.params)
+                  : isStand
+                  ? describeAdminStandDesign(stand)
+                  : []
 
                 return (
                   <div key={item.id} className="py-5 space-y-4">
                     <div className="flex gap-4 items-start">
                       {/* Image or 3D Preview Thumbnail */}
                       <div className="h-20 w-20 shrink-0 overflow-hidden rounded-control border border-line bg-soft flex items-center justify-center">
-                        {isCustom ? (
-                          <AdminDesignPreview orderId={order.id} itemId={item.id} hasPreview={design.hasPreview} alt={item.productName} />
+                        {isCustom || isStand ? (
+                          <AdminDesignPreview orderId={order.id} itemId={item.id} hasPreview={hasPreview} alt={item.productName} />
                         ) : resolveImage(item.productImage) ? (
                           <img src={resolveImage(item.productImage)} alt={item.productName} className="h-full w-full object-cover" />
                         ) : (
@@ -305,6 +345,10 @@ export default function OrderDetail() {
                                 <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
                                   Custom 3D
                                 </span>
+                              ) : isStand ? (
+                                <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
+                                  Stand 3D
+                                </span>
                               ) : (
                                 <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium bg-soft text-muted border border-line">
                                   Catalog
@@ -320,14 +364,14 @@ export default function OrderDetail() {
                       </div>
                     </div>
 
-                    {/* Custom Design Details Card */}
-                    {isCustom && (
+                    {/* Custom Design or Stand Design Details Card */}
+                    {(isCustom || isStand) && (
                       <div className="rounded-control border border-line/80 bg-alt/60 p-4 space-y-3.5">
                         <div className="flex items-center justify-between border-b border-line/60 pb-2.5">
                           <span className="text-xs font-bold uppercase tracking-wider text-accent">
                             3D Manufacturing Specifications
                           </span>
-                          {design.hasStl ? (
+                          {hasStl ? (
                             <div className="flex flex-wrap items-center gap-2">
                             <button
                               type="button"
@@ -340,17 +384,19 @@ export default function OrderDetail() {
                               </svg>
                               {downloadingStlId === item.id ? 'Downloading…' : 'Download STL'}
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDownload3mf(item.id, `${item.productName.replace(/[^a-z0-9_-]/gi, '_')}.3mf`)}
-                              disabled={downloadingStlId === item.id || downloading3mfId === item.id}
-                              className="inline-flex items-center gap-1.5 rounded-control bg-alt border border-line px-3 py-1.5 text-xs font-bold text-ink hover:border-accent hover:text-accent transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
-                            >
-                              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                              </svg>
-                              {downloading3mfId === item.id ? 'Downloading…' : 'Download 3MF'}
-                            </button>
+                            {isCustom && (
+                              <button
+                                type="button"
+                                onClick={() => handleDownload3mf(item.id, `${item.productName.replace(/[^a-z0-9_-]/gi, '_')}.3mf`)}
+                                disabled={downloadingStlId === item.id || downloading3mfId === item.id}
+                                className="inline-flex items-center gap-1.5 rounded-control bg-alt border border-line px-3 py-1.5 text-xs font-bold text-ink hover:border-accent hover:text-accent transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+                              >
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                                </svg>
+                                {downloading3mfId === item.id ? 'Downloading…' : 'Download 3MF'}
+                              </button>
+                            )}
                           </div>
                           ) : (
                             <span className="text-xs text-muted/80 italic">File unavailable</span>
@@ -400,7 +446,7 @@ export default function OrderDetail() {
                     )}
 
                     {/* Standard Catalog Customization (e.g. engraving) */}
-                    {!isCustom && item.customization && (
+                    {!isCustom && !isStand && item.customization && (
                       <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted bg-alt/40 p-3 rounded-control border border-line">
                         {Object.entries(item.customization).map(([key, value]) =>
                           value ? (

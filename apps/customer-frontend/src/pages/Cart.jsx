@@ -4,6 +4,8 @@ import QuantitySelector from '../components/product/QuantitySelector'
 import CustomizationDetails from '../components/product/CustomizationDetails.jsx'
 import DesignDetails from '../components/design/DesignDetails.jsx'
 import DesignPreviewImage from '../components/design/DesignPreviewImage.jsx'
+import StandDetails from '../components/design/StandDetails.jsx'
+import StandPreviewImage from '../components/design/StandPreviewImage.jsx'
 import Button from '../components/ui/Button'
 import { resolveImageUrl } from '../utils/imageUrl.js'
 
@@ -73,7 +75,7 @@ export default function Cart() {
   }
 
   const totalShippingCents = cart.items.reduce((sum, item) => {
-    if (item.itemType === 'CUSTOM_DESIGN') {
+    if (item.itemType === 'CUSTOM_DESIGN' || item.itemType === 'STAND_DESIGN') {
       return sum + (item.customization?.shippingMethod?.priceCents ?? 0)
     }
     return sum + (item.customization?.shippingMethod?.priceCents ?? item.product?.shippingCents ?? 0)
@@ -103,14 +105,18 @@ export default function Cart() {
           {/* Cart items list */}
           <div className="rounded-card border border-line bg-surface divide-y divide-line p-6">
             {cart.items.map((item) => {
-              // A line is either a catalog product or a standalone custom design.
+              // A line is either a catalog product, a keychain custom design, or a stand design.
               const isCustom = item.itemType === 'CUSTOM_DESIGN'
+              const isStand = item.itemType === 'STAND_DESIGN'
+              const stand = item.stand || item.standDesign
               return (
               <div key={item.id} className="grid grid-cols-[80px_1fr] min-[761px]:grid-cols-[104px_1fr_auto] gap-5 py-5 first:pt-0 last:pb-0">
                 <div className="h-20 w-20 min-[761px]:h-[104px] min-[761px]:w-[104px] shrink-0 overflow-hidden rounded-control bg-soft border border-line flex items-center justify-center">
                   {isCustom ? (
-                    <DesignPreviewImage designId={item.design.id} hasPreview={item.design.hasPreview} alt={item.design.title} />
-                  ) : item.product.images?.[0] ? (
+                    <DesignPreviewImage designId={item.design?.id} hasPreview={item.design?.hasPreview} alt={item.design?.title} />
+                  ) : isStand ? (
+                    <StandPreviewImage designId={stand?.id} hasPreview={stand?.hasPreview} alt={stand?.title || 'Stand design'} />
+                  ) : item.product?.images?.[0] ? (
                     <img src={resolveImageUrl(item.product.images[0])} alt={item.product.name} className="h-full w-full object-cover" />
                   ) : (
                     <svg className="w-8 h-8 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -123,10 +129,37 @@ export default function Cart() {
                   <div>
                     {isCustom ? (
                       <>
-                        <span className="font-sans text-[16px] font-semibold text-ink">{item.design.title}</span>
+                        <span className="font-sans text-[16px] font-semibold text-ink">{item.design?.title}</span>
                         <span className="ml-2 align-middle rounded-full bg-soft px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-accent">Custom design</span>
                         <div className="mt-1 text-[13px] text-muted">
-                          <DesignDetails params={item.design.params} />
+                          <DesignDetails params={item.design?.params} />
+                        </div>
+                        <div className="mt-2 text-xs">
+                          {(() => {
+                            const sm = item.customization?.shippingMethod
+                            const shipCents = sm?.priceCents ?? 0
+                            if (shipCents > 0) {
+                              return (
+                                <span className="font-medium text-muted bg-soft px-2 py-0.5 rounded-full border border-line">
+                                  {sm.name}: <span className="font-semibold text-ink">₹{(shipCents / 100).toFixed(2).replace(/\.00$/, '')}</span>
+                                  {sm.estimatedDays && <span className="ml-1 text-muted">{sm.estimatedDays}</span>}
+                                </span>
+                              )
+                            }
+                            return (
+                              <span className="font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
+                                Free Shipping
+                              </span>
+                            )
+                          })()}
+                        </div>
+                      </>
+                    ) : isStand ? (
+                      <>
+                        <span className="font-sans text-[16px] font-semibold text-ink">{stand?.title || 'Phone & Pen Stand'}</span>
+                        <span className="ml-2 align-middle rounded-full bg-soft px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-accent">Stand design</span>
+                        <div className="mt-1 text-[13px] text-muted">
+                          <StandDetails config={stand?.designConfig} category={stand?.category} />
                         </div>
                         <div className="mt-2 text-xs">
                           {(() => {
@@ -150,17 +183,17 @@ export default function Cart() {
                       </>
                     ) : (
                       <>
-                        <Link to={`/products/${item.product.slug}`} className="font-sans text-[16px] font-semibold text-ink hover:text-accent transition-colors">
-                          {item.product.name}
+                        <Link to={`/products/${item.product?.slug}`} className="font-sans text-[16px] font-semibold text-ink hover:text-accent transition-colors">
+                          {item.product?.name}
                         </Link>
-                        {!item.product.isActive && <p className="mt-0.5 text-xs text-danger">No longer available</p>}
+                        {!item.product?.isActive && <p className="mt-0.5 text-xs text-danger">No longer available</p>}
                         <div className="mt-1 text-[13px] text-muted">
                           <CustomizationDetails customization={item.customization} />
                         </div>
                         <div className="mt-2 text-xs">
                           {(() => {
                             const sm = item.customization?.shippingMethod
-                            const shipCents = sm?.priceCents ?? item.product.shippingCents ?? 0
+                            const shipCents = sm?.priceCents ?? item.product?.shippingCents ?? 0
                             const shipLabel = sm?.name ?? null
                             if (shipCents > 0) {
                               return (

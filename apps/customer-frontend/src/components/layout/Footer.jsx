@@ -6,6 +6,7 @@ const columns = [
     links: [
       { to: '/products', label: 'All Products' },
       { to: '/customise', label: '3D Customiser' },
+      { to: '/customise/stand', label: 'Phone & Pen Stand' },
       { to: '/track-order', label: 'Track Order' },
     ],
   },

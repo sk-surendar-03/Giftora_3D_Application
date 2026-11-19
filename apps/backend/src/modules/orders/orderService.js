@@ -18,7 +18,7 @@ const ORDER_INCLUDE = { items: { include: { customDesign: true, standDesign: tru
  * summary and each stand line a `stand` summary (never storage keys).
  * `admin` additionally exposes the stored file's metadata and parameters.
  */
-function serializeOrder(order, { admin = false } = {}) {
+export function serializeOrder(order, { admin = false } = {}) {
   if (!order) return order
   return {
     ...order,

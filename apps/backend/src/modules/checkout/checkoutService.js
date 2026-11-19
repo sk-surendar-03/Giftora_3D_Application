@@ -87,6 +87,7 @@ export async function reviewCheckout(userId, addressId) {
       title,
       product: productSnapshot,
       design: designSnapshot,
+      stand: standDesignSnapshot,
       standDesign: standDesignSnapshot,
       quantity: item.quantity,
       customization: item.customization,

@@ -8,6 +8,7 @@ const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/products', label: 'Shop all' },
   { to: '/customise', label: '3D Customiser' },
+  { to: '/customise/stand', label: 'Phone & Pen Stand' },
   { to: '/contact', label: 'Contact' },
 ]
 
@@ -229,7 +230,7 @@ export default function Header() {
             <NavLink
               key={link.to}
               to={link.to}
-              end={link.to === '/'}
+              end={link.to === '/' || link.to === '/customise'}
               className={({ isActive }) =>
                 `py-1.5 border-b-2 whitespace-nowrap transition-colors ${
                   isActive
@@ -343,7 +344,7 @@ export default function Header() {
               <li key={link.to}>
                 <NavLink
                   to={link.to}
-                  end={link.to === '/'}
+                  end={link.to === '/' || link.to === '/customise'}
                   onClick={() => setMenuOpen(false)}
                   className={({ isActive }) =>
                     `block py-2.5 text-base font-medium transition-colors ${
