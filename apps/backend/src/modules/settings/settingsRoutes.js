@@ -16,9 +16,11 @@ import {
   updateThicknesses,
   getStandPricing,
   updateStandPricing,
+  getNameplatePricing,
+  updateNameplatePricing,
 } from './settingsController.js'
 
-// Public ΓÇö customer frontend needs these without auth
+// Public — customer frontend needs these without auth
 export const settingsRouter = Router()
 settingsRouter.get('/pricing', asyncHandler(getPricing))
 settingsRouter.get('/announcement', asyncHandler(getAnnouncement))
@@ -27,6 +29,7 @@ settingsRouter.get('/customizer/shipping', asyncHandler(getShipping))
 settingsRouter.get('/customizer/sizes', asyncHandler(getSizes))
 settingsRouter.get('/customizer/thicknesses', asyncHandler(getThicknesses))
 settingsRouter.get('/stand-pricing', asyncHandler(getStandPricing))
+settingsRouter.get('/nameplate-pricing', asyncHandler(getNameplatePricing))
 
 // Admin-only
 export const adminSettingsRouter = Router()
@@ -37,3 +40,4 @@ adminSettingsRouter.patch('/customizer/shipping', authenticate, authorize('ADMIN
 adminSettingsRouter.patch('/customizer/sizes', authenticate, authorize('ADMIN'), asyncHandler(updateSizes))
 adminSettingsRouter.patch('/customizer/thicknesses', authenticate, authorize('ADMIN'), asyncHandler(updateThicknesses))
 adminSettingsRouter.patch('/stand-pricing', authenticate, authorize('ADMIN'), asyncHandler(updateStandPricing))
+adminSettingsRouter.patch('/nameplate-pricing', authenticate, authorize('ADMIN'), asyncHandler(updateNameplatePricing))

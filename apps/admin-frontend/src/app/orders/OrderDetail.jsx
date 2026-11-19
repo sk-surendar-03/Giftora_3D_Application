@@ -133,6 +133,47 @@ function describeAdminStandDesign(stand) {
   ].filter(Boolean)
 }
 
+function describeAdminNameplateDesign(nameplate) {
+  if (!nameplate) return []
+  const cfg = nameplate.designConfig || {}
+
+  const textCfg = cfg.text || {}
+  const line1 = textCfg.line1 || cfg.line1
+  const line2 = textCfg.line2 || cfg.line2
+  const font1 = textCfg.font1 || cfg.font1
+  const font2 = textCfg.font2 || cfg.font2
+
+  const shape = cfg.shape
+  const plateType = nameplate.plateType || cfg.plateType
+  const mounting = cfg.mountingStyle || cfg.mounting
+  const finish = cfg.finish
+
+  const colors = cfg.colors || {}
+  const baseHex = colors.base
+  const borderHex = colors.border
+  const textHex = colors.text
+
+  const width = cfg.widthMm || cfg.dimensions?.width
+  const height = cfg.heightMm || cfg.dimensions?.height
+  const thickness = cfg.baseThicknessMm || cfg.dimensions?.thickness
+
+  return [
+    plateType && { label: 'Plate Type', value: typeof plateType === 'string' ? plateType.replace(/-/g, ' ') : plateType },
+    shape && { label: 'Shape', value: typeof shape === 'string' ? shape.replace(/-/g, ' ') : shape },
+    line1 && { label: 'Line 1 Text', value: line1 },
+    font1 && { label: 'Line 1 Font', value: font1 },
+    line2 && { label: 'Line 2 Text', value: line2 },
+    font2 && { label: 'Line 2 Font', value: font2 },
+    mounting && { label: 'Mounting Style', value: typeof mounting === 'string' ? mounting.replace(/-/g, ' ') : mounting },
+    finish && { label: 'Finish', value: typeof finish === 'string' ? finish.replace(/-/g, ' ') : finish },
+    (width && height) && { label: 'Dimensions', value: `${width} × ${height} × ${thickness || 4} mm` },
+    baseHex && { label: 'Base colour', value: baseHex, hex: baseHex },
+    borderHex && { label: 'Border colour', value: borderHex, hex: borderHex },
+    textHex && { label: 'Text colour', value: textHex, hex: textHex },
+    nameplate.solidVolumeCm3 !== undefined && { label: 'Volume', value: `${nameplate.solidVolumeCm3} cm³` },
+  ].filter(Boolean)
+}
+
 export default function OrderDetail() {
   const { id } = useParams()
   const toast = useToast()
@@ -310,15 +351,19 @@ export default function OrderDetail() {
               {order.items.map((item) => {
                 const isCustom = item.itemType === 'CUSTOM_DESIGN' && item.design
                 const isStand = item.itemType === 'STAND_DESIGN' && (item.stand || item.standDesign)
+                const isNameplate = item.itemType === 'NAMEPLATE_DESIGN' && (item.nameplate || item.nameplateDesign)
                 const design = item.design
                 const stand = item.stand || item.standDesign
-                const stlMeta = isCustom ? design?.stl : isStand ? stand?.stl : null
-                const hasStl = isCustom ? design?.hasStl : isStand ? stand?.hasStl : false
-                const hasPreview = isCustom ? design?.hasPreview : isStand ? stand?.hasPreview : false
+                const nameplate = item.nameplate || item.nameplateDesign
+                const stlMeta = isCustom ? design?.stl : isStand ? stand?.stl : isNameplate ? nameplate?.stl : null
+                const hasStl = isCustom ? design?.hasStl : isStand ? stand?.hasStl : isNameplate ? nameplate?.hasStl : false
+                const hasPreview = isCustom ? design?.hasPreview : isStand ? stand?.hasPreview : isNameplate ? nameplate?.hasPreview : false
                 const designRows = isCustom
                   ? describeAdminDesign(design?.params)
                   : isStand
                   ? describeAdminStandDesign(stand)
+                  : isNameplate
+                  ? describeAdminNameplateDesign(nameplate)
                   : []
 
                 return (
@@ -326,7 +371,7 @@ export default function OrderDetail() {
                     <div className="flex gap-4 items-start">
                       {/* Image or 3D Preview Thumbnail */}
                       <div className="h-20 w-20 shrink-0 overflow-hidden rounded-control border border-line bg-soft flex items-center justify-center">
-                        {isCustom || isStand ? (
+                        {isCustom || isStand || isNameplate ? (
                           <AdminDesignPreview orderId={order.id} itemId={item.id} hasPreview={hasPreview} alt={item.productName} />
                         ) : resolveImage(item.productImage) ? (
                           <img src={resolveImage(item.productImage)} alt={item.productName} className="h-full w-full object-cover" />
@@ -349,6 +394,10 @@ export default function OrderDetail() {
                                 <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
                                   Stand 3D
                                 </span>
+                              ) : isNameplate ? (
+                                <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
+                                  Nameplate 3D
+                                </span>
                               ) : (
                                 <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium bg-soft text-muted border border-line">
                                   Catalog
@@ -364,8 +413,8 @@ export default function OrderDetail() {
                       </div>
                     </div>
 
-                    {/* Custom Design or Stand Design Details Card */}
-                    {(isCustom || isStand) && (
+                    {/* Custom Design, Stand Design, or Nameplate Design Details Card */}
+                    {(isCustom || isStand || isNameplate) && (
                       <div className="rounded-control border border-line/80 bg-alt/60 p-4 space-y-3.5">
                         <div className="flex items-center justify-between border-b border-line/60 pb-2.5">
                           <span className="text-xs font-bold uppercase tracking-wider text-accent">
@@ -446,7 +495,7 @@ export default function OrderDetail() {
                     )}
 
                     {/* Standard Catalog Customization (e.g. engraving) */}
-                    {!isCustom && !isStand && item.customization && (
+                    {!isCustom && !isStand && !isNameplate && item.customization && (
                       <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted bg-alt/40 p-3 rounded-control border border-line">
                         {Object.entries(item.customization).map(([key, value]) =>
                           value ? (

@@ -7,6 +7,7 @@ const SHIPPING_KEY = 'customizer_shipping'
 const SIZES_KEY = 'customizer_sizes'
 const THICKNESSES_KEY = 'customizer_thicknesses'
 const STAND_PRICING_KEY = 'stand_pricing'
+const NAMEPLATE_PRICING_KEY = 'nameplate_pricing'
 
 export const DEFAULT_PER_CHARACTER_PRICE_CENTS = 500
 export const DEFAULT_BASE_CHARACTERS = 10
@@ -19,6 +20,22 @@ export const DEFAULT_STAND_CATEGORY_BASE_PRICES = {
   'combined': 90000,
   'desk-organizer': 120000,
   'personalized-gift': 80000,
+}
+
+export const DEFAULT_NAMEPLATE_PRICE_PER_CM3_CENTS = 120
+export const DEFAULT_NAMEPLATE_LED_GLOW_SURCHARGE_CENTS = 15000
+export const DEFAULT_NAMEPLATE_LAYERED_BACKING_SURCHARGE_CENTS = 10000
+export const DEFAULT_NAMEPLATE_TYPE_BASE_PRICES = {
+  'desk': 55000,
+  'door': 65000,
+  'wall': 75000,
+  'kids': 60000,
+  'business': 85000,
+  'led': 95000,
+  'decorative-3d': 50000,
+  'wedding': 70000,
+  'house-number': 65000,
+  'gaming': 60000,
 }
 
 export async function getPricingConfig() {
@@ -79,6 +96,49 @@ export async function updateStandPricingConfig({ pricePerCm3Cents, categories })
   await prisma.setting.upsert({
     where: { key: STAND_PRICING_KEY },
     create: { key: STAND_PRICING_KEY, value: next },
+    update: { value: next },
+  })
+  return next
+}
+
+export async function getNameplatePricingConfig() {
+  let row = null
+  try {
+    row = await prisma.setting.findUnique({ where: { key: NAMEPLATE_PRICING_KEY } })
+  } catch {
+    row = null
+  }
+  const v = row?.value ?? {}
+  const pricePerCm3Cents = Number.isInteger(v.pricePerCm3Cents) && v.pricePerCm3Cents >= 0 ? v.pricePerCm3Cents : DEFAULT_NAMEPLATE_PRICE_PER_CM3_CENTS
+  const ledGlowSurchargeCents = Number.isInteger(v.ledGlowSurchargeCents) && v.ledGlowSurchargeCents >= 0 ? v.ledGlowSurchargeCents : DEFAULT_NAMEPLATE_LED_GLOW_SURCHARGE_CENTS
+  const layeredBackingSurchargeCents = Number.isInteger(v.layeredBackingSurchargeCents) && v.layeredBackingSurchargeCents >= 0 ? v.layeredBackingSurchargeCents : DEFAULT_NAMEPLATE_LAYERED_BACKING_SURCHARGE_CENTS
+  const types = {}
+  for (const [id, defaultBase] of Object.entries(DEFAULT_NAMEPLATE_TYPE_BASE_PRICES)) {
+    const entry = v.types?.[id]
+    const basePriceCents = entry && Number.isInteger(entry.basePriceCents) && entry.basePriceCents >= 0 ? entry.basePriceCents : defaultBase
+    types[id] = { basePriceCents }
+  }
+  return { pricePerCm3Cents, ledGlowSurchargeCents, layeredBackingSurchargeCents, types }
+}
+
+export async function updateNameplatePricingConfig({ pricePerCm3Cents, ledGlowSurchargeCents, layeredBackingSurchargeCents, types }) {
+  const current = await getNameplatePricingConfig()
+  const next = {
+    pricePerCm3Cents: Number.isInteger(pricePerCm3Cents) && pricePerCm3Cents >= 0 ? pricePerCm3Cents : current.pricePerCm3Cents,
+    ledGlowSurchargeCents: Number.isInteger(ledGlowSurchargeCents) && ledGlowSurchargeCents >= 0 ? ledGlowSurchargeCents : current.ledGlowSurchargeCents,
+    layeredBackingSurchargeCents: Number.isInteger(layeredBackingSurchargeCents) && layeredBackingSurchargeCents >= 0 ? layeredBackingSurchargeCents : current.layeredBackingSurchargeCents,
+    types: { ...current.types },
+  }
+  if (types && typeof types === 'object') {
+    for (const [id, entry] of Object.entries(types)) {
+      if (DEFAULT_NAMEPLATE_TYPE_BASE_PRICES[id] !== undefined && entry && Number.isInteger(entry.basePriceCents) && entry.basePriceCents >= 0) {
+        next.types[id] = { basePriceCents: entry.basePriceCents }
+      }
+    }
+  }
+  await prisma.setting.upsert({
+    where: { key: NAMEPLATE_PRICING_KEY },
+    create: { key: NAMEPLATE_PRICING_KEY, value: next },
     update: { value: next },
   })
   return next

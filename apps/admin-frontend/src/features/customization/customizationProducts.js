@@ -41,4 +41,23 @@ export const CUSTOMIZATION_PRODUCTS = [
     ],
     tags: ['Volume Pricing', 'STL Generation', 'Real-time 3D'],
   },
+  {
+    id: 'nameplate',
+    name: 'Custom Nameplate',
+    subtitle: 'Architectural & Desk Nameplates',
+    description: 'Design bespoke desk, door and wall-mounted nameplates with custom 3D typography and emblems. Features 20 silhouette shapes, 70+ fonts, and multi-line vector text.',
+    status: 'active',
+    statusLabel: 'Active',
+    badge: 'New Studio',
+    badgeColor: 'amber',
+    manageRoute: '/customization/nameplate',
+    customerRoute: 'https://www.jasvel3dmakers.co.in/customise/nameplate',
+    thumbnail: '/hero-3.png',
+    stats: [
+      { label: 'Plate Types', value: '10 Archetypes' },
+      { label: 'Pricing Model', value: 'Base + Volume (cm³)' },
+      { label: 'Typography', value: '70+ Fonts (Tamil + EN)' },
+    ],
+    tags: ['Multi-line 3D', 'Volume Pricing', 'Desk & Wall'],
+  },
 ]

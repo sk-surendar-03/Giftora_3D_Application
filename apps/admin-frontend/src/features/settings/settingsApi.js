@@ -69,3 +69,18 @@ export async function updateStandPricing({ pricePerCm3Cents, categories }) {
   const { data } = await api.patch('/admin/settings/stand-pricing', { pricePerCm3Cents, categories })
   return data.standPricing
 }
+
+export async function fetchNameplatePricing() {
+  const { data } = await api.get('/settings/nameplate-pricing')
+  return data.nameplatePricing
+}
+
+export async function updateNameplatePricing({ pricePerCm3Cents, ledGlowSurchargeCents, layeredBackingSurchargeCents, types }) {
+  const { data } = await api.patch('/admin/settings/nameplate-pricing', {
+    pricePerCm3Cents,
+    ledGlowSurchargeCents,
+    layeredBackingSurchargeCents,
+    types,
+  })
+  return data.nameplatePricing
+}

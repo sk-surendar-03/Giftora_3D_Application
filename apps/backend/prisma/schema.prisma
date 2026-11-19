@@ -42,6 +42,7 @@ enum OrderItemType {
   PRODUCT
   CUSTOM_DESIGN
   STAND_DESIGN
+  NAMEPLATE_DESIGN
 }
 
 // PENDING until the generated STL has been uploaded, validated and stored.
@@ -70,6 +71,7 @@ model User {
   orders        Order[]
   customDesigns CustomDesign[]
   standDesigns  StandDesign[]
+  nameplateDesigns NameplateDesign[]
   wishlistItems WishlistItem[]
 
   @@map("users")
@@ -147,6 +149,39 @@ model StandDesign {
   @@index([userId])
   @@index([status])
   @@map("stand_designs")
+}
+
+model NameplateDesign {
+  id               String       @id @default(cuid())
+  userId           String
+  user             User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  schemaVersion    Int          @default(1)
+  title            String
+  nameplateType    String       @db.VarChar(40)
+  shape            String       @db.VarChar(40)
+  mountingStyle    String       @db.VarChar(40)
+  designConfig     Json
+  paramsHash       String
+  unitPriceCents   Int
+  solidVolumeCm3   Float?
+  status           DesignStatus @default(PENDING)
+  stlKey           String?      @unique
+  stlSha256        String?
+  stlSizeBytes     Int?
+  triangleCount    Int?
+  bboxMm           Json?
+  previewKey       String?
+  previewSizeBytes Int?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@unique([userId, paramsHash])
+  @@index([userId])
+  @@index([status])
+  @@map("nameplate_designs")
 }
 
 // Generic admin-configurable key/value store. Currently holds the
@@ -266,6 +301,8 @@ model CartItem {
   customDesign   CustomDesign? @relation(fields: [customDesignId], references: [id], onDelete: Restrict)
   standDesignId  String?
   standDesign    StandDesign?  @relation(fields: [standDesignId], references: [id], onDelete: Restrict)
+  nameplateDesignId String?
+  nameplateDesign   NameplateDesign? @relation(fields: [nameplateDesignId], references: [id], onDelete: Restrict)
   quantity       Int      @default(1)
   // Customization is stored as JSON (text, font, material, colors,
   // thickness, etc.) — the shape mirrors the real customizer's params, but
@@ -281,6 +318,7 @@ model CartItem {
   @@index([productId])
   @@index([customDesignId])
   @@index([standDesignId])
+  @@index([nameplateDesignId])
   @@map("cart_items")
 }
 
@@ -331,6 +369,8 @@ model OrderItem {
   customDesign   CustomDesign? @relation(fields: [customDesignId], references: [id], onDelete: Restrict)
   standDesignId  String?
   standDesign    StandDesign?  @relation(fields: [standDesignId], references: [id], onDelete: Restrict)
+  nameplateDesignId String?
+  nameplateDesign   NameplateDesign? @relation(fields: [nameplateDesignId], references: [id], onDelete: Restrict)
   // Snapshots of the product as it was at order time — same reasoning as
   // Order.shippingAddress: `productId` is a live reference, but the
   // product's name/slug/image can change, or the product can be
@@ -347,6 +387,7 @@ model OrderItem {
   @@index([productId])
   @@index([customDesignId])
   @@index([standDesignId])
+  @@index([nameplateDesignId])
   @@map("order_items")
 }
 

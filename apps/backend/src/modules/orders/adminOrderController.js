@@ -4,6 +4,7 @@ import { HttpError } from '../../utils/httpError.js'
 import { listOrdersForAdmin, getOrderForAdmin, updateOrderStatus } from './orderService.js'
 import { getPreviewForOrderItem, getStlForOrderItem, getThreeMfForOrderItem } from '../customizer/designService.js'
 import { getStlForStandOrderItem, getPreviewForStandOrderItem } from '../standDesigner/standDesignService.js'
+import { getStlForNameplateOrderItem, getPreviewForNameplateOrderItem } from '../nameplateDesigner/nameplateDesignService.js'
 
 const VALID_STATUSES = Object.values(OrderStatus)
 const VALID_TYPES = Object.values(OrderItemType)
@@ -29,6 +30,8 @@ export async function list(req, res) {
     normalizedType = OrderItemType.PRODUCT
   } else if (normalizedType === 'STAND') {
     normalizedType = 'STAND_DESIGN'
+  } else if (normalizedType === 'NAMEPLATE') {
+    normalizedType = 'NAMEPLATE_DESIGN'
   }
 
   let normalizedStatus = req.query.status
@@ -88,6 +91,8 @@ export async function downloadItemStl(req, res) {
   let result
   if (item.itemType === 'STAND_DESIGN') {
     result = await getStlForStandOrderItem(req.params.orderId, req.params.itemId)
+  } else if (item.itemType === 'NAMEPLATE_DESIGN') {
+    result = await getStlForNameplateOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'CUSTOM_DESIGN') {
     result = await getStlForOrderItem(req.params.orderId, req.params.itemId)
   } else {
@@ -135,6 +140,8 @@ export async function itemPreview(req, res) {
   let buffer
   if (item.itemType === 'STAND_DESIGN') {
     buffer = await getPreviewForStandOrderItem(req.params.orderId, req.params.itemId)
+  } else if (item.itemType === 'NAMEPLATE_DESIGN') {
+    buffer = await getPreviewForNameplateOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'CUSTOM_DESIGN') {
     buffer = await getPreviewForOrderItem(req.params.orderId, req.params.itemId)
   } else {

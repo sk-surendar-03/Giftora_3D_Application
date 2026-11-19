@@ -10,6 +10,7 @@ const TYPE_OPTIONS = [
   { value: 'PRODUCT', label: 'Catalog / Product orders' },
   { value: 'CUSTOM_DESIGN', label: 'Custom 3D orders' },
   { value: 'STAND_DESIGN', label: 'Stand 3D orders' },
+  { value: 'NAMEPLATE_DESIGN', label: 'Nameplate 3D orders' },
 ]
 
 const STATUS_TONE = {
@@ -182,6 +183,7 @@ export default function Orders() {
             {orders.map((order) => {
               const hasCustom = order.items.some((i) => i.itemType === 'CUSTOM_DESIGN')
               const hasStand = order.items.some((i) => i.itemType === 'STAND_DESIGN')
+              const hasNameplate = order.items.some((i) => i.itemType === 'NAMEPLATE_DESIGN')
               const hasCatalog = order.items.some((i) => i.itemType === 'PRODUCT')
               return (
                 <div key={order.id} className="rounded-lg border border-line bg-surface p-4 space-y-2">
@@ -202,6 +204,9 @@ export default function Orders() {
                       )}
                       {hasStand && (
                         <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">Stand 3D</span>
+                      )}
+                      {hasNameplate && (
+                        <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">Nameplate 3D</span>
                       )}
                       {hasCatalog && (
                         <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium bg-soft text-muted border border-line">Catalog</span>
@@ -231,6 +236,7 @@ export default function Orders() {
               {orders.map((order) => {
                 const hasCustom = order.items.some((i) => i.itemType === 'CUSTOM_DESIGN')
                 const hasStand = order.items.some((i) => i.itemType === 'STAND_DESIGN')
+                const hasNameplate = order.items.some((i) => i.itemType === 'NAMEPLATE_DESIGN')
                 const hasCatalog = order.items.some((i) => i.itemType === 'PRODUCT')
                 return (
                   <tr key={order.id} className="border-t border-line hover:bg-alt/30 transition-colors">
@@ -258,6 +264,14 @@ export default function Orders() {
                               <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" />
                             </svg>
                             Stand 3D
+                          </span>
+                        )}
+                        {hasNameplate && (
+                          <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
+                            <svg className="w-3 h-3 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" />
+                            </svg>
+                            Nameplate 3D
                           </span>
                         )}
                         {hasCatalog && (

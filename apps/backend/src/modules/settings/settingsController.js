@@ -14,6 +14,8 @@ import {
   updateCustomizerThicknesses,
   getStandPricingConfig,
   updateStandPricingConfig,
+  getNameplatePricingConfig,
+  updateNameplatePricingConfig,
 } from './settingsService.js'
 
 export async function getPricing(req, res) {
@@ -103,4 +105,32 @@ export async function updateStandPricing(req, res) {
     throw new HttpError(400, 'categories must be an object.')
   }
   res.json({ standPricing: await updateStandPricingConfig({ pricePerCm3Cents, categories }) })
+}
+
+export async function getNameplatePricing(req, res) {
+  res.json({ nameplatePricing: await getNameplatePricingConfig() })
+}
+
+export async function updateNameplatePricing(req, res) {
+  const { pricePerCm3Cents, ledGlowSurchargeCents, layeredBackingSurchargeCents, types } = req.body ?? {}
+  if (pricePerCm3Cents !== undefined && (!Number.isInteger(pricePerCm3Cents) || pricePerCm3Cents < 0)) {
+    throw new HttpError(400, 'pricePerCm3Cents must be a non-negative whole number.')
+  }
+  if (ledGlowSurchargeCents !== undefined && (!Number.isInteger(ledGlowSurchargeCents) || ledGlowSurchargeCents < 0)) {
+    throw new HttpError(400, 'ledGlowSurchargeCents must be a non-negative whole number.')
+  }
+  if (layeredBackingSurchargeCents !== undefined && (!Number.isInteger(layeredBackingSurchargeCents) || layeredBackingSurchargeCents < 0)) {
+    throw new HttpError(400, 'layeredBackingSurchargeCents must be a non-negative whole number.')
+  }
+  if (types !== undefined && (typeof types !== 'object' || types === null || Array.isArray(types))) {
+    throw new HttpError(400, 'types must be an object.')
+  }
+  res.json({
+    nameplatePricing: await updateNameplatePricingConfig({
+      pricePerCm3Cents,
+      ledGlowSurchargeCents,
+      layeredBackingSurchargeCents,
+      types,
+    }),
+  })
 }

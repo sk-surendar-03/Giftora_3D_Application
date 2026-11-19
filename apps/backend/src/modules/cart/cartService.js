@@ -1,11 +1,12 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
-import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig } from '../settings/settingsService.js'
+import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig, getNameplatePricingConfig } from '../settings/settingsService.js'
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { priceForDesign, stlIsAvailable } from '../customizer/designService.js'
 import { priceForStand } from '../standDesigner/standDesignOptions.js'
+import { priceForNameplate } from '../nameplateDesigner/nameplateDesignOptions.js'
 
-const CART_INCLUDE = { items: { include: { product: true, customDesign: true, standDesign: true }, orderBy: { createdAt: 'asc' } } }
+const CART_INCLUDE = { items: { include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true }, orderBy: { createdAt: 'asc' } } }
 
 const MAX_CUSTOM_QUANTITY = 10
 
@@ -46,7 +47,7 @@ export async function addItem(userId, { productId, quantity, customization }) {
     return prisma.cartItem.update({
       where: { id: existingItem.id },
       data: { quantity: existingItem.quantity + quantity },
-      include: { product: true, customDesign: true, standDesign: true },
+      include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
     })
   }
 
@@ -79,7 +80,7 @@ export async function addItem(userId, { productId, quantity, customization }) {
       customization: Object.keys(safeCustomization).length > 0 ? safeCustomization : undefined,
       unitPriceCents,
     },
-    include: { product: true, customDesign: true, standDesign: true },
+    include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
   })
 }
 
@@ -98,7 +99,7 @@ export async function addCustomItem(userId, { customDesignId, quantity, shipping
     return prisma.cartItem.update({
       where: { id: existingItem.id },
       data: { quantity: existingItem.quantity + quantity },
-      include: { product: true, customDesign: true, standDesign: true },
+      include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
     })
   }
 
@@ -126,7 +127,7 @@ export async function addCustomItem(userId, { customDesignId, quantity, shipping
       unitPriceCents,
       ...(Object.keys(customizationData).length > 0 ? { customization: customizationData } : {}),
     },
-    include: { product: true, customDesign: true, standDesign: true },
+    include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
   })
 }
 
@@ -144,7 +145,7 @@ export async function addStandItem(userId, { standDesignId, quantity, shippingMe
     return prisma.cartItem.update({
       where: { id: existingItem.id },
       data: { quantity: existingItem.quantity + quantity },
-      include: { product: true, customDesign: true, standDesign: true },
+      include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
     })
   }
 
@@ -166,7 +167,47 @@ export async function addStandItem(userId, { standDesignId, quantity, shippingMe
       unitPriceCents,
       ...(Object.keys(customizationData).length > 0 ? { customization: customizationData } : {}),
     },
-    include: { product: true, customDesign: true, standDesign: true },
+    include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
+  })
+}
+
+export async function addNameplateItem(userId, { nameplateDesignId, quantity, shippingMethod }) {
+  const design = await prisma.nameplateDesign.findUnique({ where: { id: nameplateDesignId } })
+  if (!design || design.userId !== userId) throw new HttpError(404, 'Nameplate design not found.')
+  if (design.status !== 'READY') throw new HttpError(409, 'This nameplate design is not ready yet.')
+
+  const cart = await getOrCreateCart(userId)
+  const existingItem = cart.items.find((item) => item.nameplateDesignId === design.id)
+  if (existingItem) {
+    if (existingItem.quantity + quantity > MAX_CUSTOM_QUANTITY) {
+      throw new HttpError(400, `You can order at most ${MAX_CUSTOM_QUANTITY} of the same nameplate design.`)
+    }
+    return prisma.cartItem.update({
+      where: { id: existingItem.id },
+      data: { quantity: existingItem.quantity + quantity },
+      include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
+    })
+  }
+
+  const customizationData = {}
+  const resolvedShipping = await resolveShippingMethod(shippingMethod)
+  if (resolvedShipping) customizationData.shippingMethod = resolvedShipping
+
+  // Recompute price server-side from stored volume + current admin config.
+  // Never trust client prices or stale design prices.
+  const nameplateConfig = await getNameplatePricingConfig()
+  const unitPriceCents = priceForNameplate(design.nameplateType, design.solidVolumeCm3 ?? 0, design.designConfig, nameplateConfig)
+
+  return prisma.cartItem.create({
+    data: {
+      cartId: cart.id,
+      itemType: 'NAMEPLATE_DESIGN',
+      nameplateDesignId: design.id,
+      quantity,
+      unitPriceCents,
+      ...(Object.keys(customizationData).length > 0 ? { customization: customizationData } : {}),
+    },
+    include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
   })
 }
 
