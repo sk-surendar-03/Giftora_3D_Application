@@ -215,6 +215,47 @@ function StandCustomiserWorkspace() {
               if (tpl) updateDesign(instantiateTemplate(tpl, design.print))
             }}
           />
+
+          {/* Shipping Method Section (matching Name Keychain) */}
+          {shippingOptions.length > 0 && (
+            <div className="rounded-card border border-line bg-surface p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-sans text-[12px] font-bold tracking-[0.14em] text-accent uppercase">
+                  Shipping & Delivery
+                </span>
+                <span className="text-xs text-muted">Select method</span>
+              </div>
+              <div className="space-y-2">
+                {shippingOptions.map((method) => {
+                  const isSelected = shippingMethod?.name === method.name
+                  return (
+                    <button
+                      key={method.name}
+                      type="button"
+                      onClick={() => setShippingMethod(method)}
+                      className={`w-full flex items-center justify-between rounded-control border px-4 py-3 text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-accent bg-accent/10 text-ink ring-1 ring-accent shadow-xs'
+                          : 'border-line bg-alt hover:border-accent/40 text-muted'
+                      }`}
+                    >
+                      <div>
+                        <span className="text-sm font-semibold text-ink block">{method.name}</span>
+                        {method.estimatedDays && (
+                          <span className="text-xs text-muted mt-0.5 block">{method.estimatedDays}</span>
+                        )}
+                      </div>
+                      <span className={`text-sm font-bold font-mono ${isSelected ? 'text-accent' : 'text-muted'}`}>
+                        {method.priceCents === 0
+                          ? 'FREE'
+                          : `₹${(method.priceCents / 100).toFixed(2).replace(/\.00$/, '')}`}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </aside>
 
         {/* RIGHT COLUMN: 3D Preview — sticky on both mobile and desktop */}
