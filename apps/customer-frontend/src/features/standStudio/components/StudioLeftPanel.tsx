@@ -1432,7 +1432,7 @@ const SliderField: React.FC<SliderFieldProps> = ({
       step={step}
       value={value}
       onChange={(e) => onChange(parseFloat(e.target.value))}
-      className="w-full h-1.5 rounded-lg cursor-pointer"
+      className="w-full h-1.5 rounded-lg cursor-pointer accent-accent"
     />
   </div>
 );

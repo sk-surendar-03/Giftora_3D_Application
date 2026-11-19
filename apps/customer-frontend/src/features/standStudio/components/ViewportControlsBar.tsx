@@ -138,7 +138,7 @@ export const ViewportControlsBar: React.FC<ViewportControlsBarProps> = ({
             onChange={(e) =>
               onChange((v) => ({ ...v, explodedAmount: parseFloat(e.target.value) }))
             }
-            className="w-16 h-1.5 cursor-pointer"
+            className="w-16 h-1.5 cursor-pointer accent-accent"
           />
         </div>
       )}
