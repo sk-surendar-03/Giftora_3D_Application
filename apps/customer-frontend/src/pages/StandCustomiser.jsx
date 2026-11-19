@@ -169,7 +169,7 @@ function StandCustomiserWorkspace() {
         </aside>
 
         {/* RIGHT COLUMN: 3D Viewport + Summary */}
-        <main className="min-w-0 space-y-5 order-1 min-[1041px]:order-2 sticky top-0 min-[1041px]:top-5">
+        <main className="min-w-0 space-y-5 order-1 min-[1041px]:order-2 static min-[1041px]:sticky min-[1041px]:top-5">
           <div className="flex items-center justify-between pb-2 border-b border-line">
             <div>
               <h1 className="font-display text-[26px] max-[760px]:text-[22px] font-semibold text-ink leading-tight m-0">Design Your 3D Stand</h1>
