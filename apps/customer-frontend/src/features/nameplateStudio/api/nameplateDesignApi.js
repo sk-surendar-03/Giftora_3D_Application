@@ -26,3 +26,8 @@ export async function uploadNameplatePreview(designId, blob) {
   })
   return res.data?.design
 }
+
+export async function fetchNameplatePreviewBlob(designId, signal) {
+  const res = await api.get(`/nameplate-designs/${designId}/preview`, { responseType: 'blob', signal })
+  return res.data
+}

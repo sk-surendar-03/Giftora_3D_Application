@@ -1,11 +1,13 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
 import { getOrCreateCart } from '../cart/cartService.js'
-import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig } from '../settings/settingsService.js'
+import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig, getNameplatePricingConfig } from '../settings/settingsService.js'
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { priceForDesign, stlIsAvailable, toPublicDesign } from '../customizer/designService.js'
 import { stlIsAvailable as standStlIsAvailable, toPublicDesign as toPublicStandDesign } from '../standDesigner/standDesignService.js'
 import { priceForStand } from '../standDesigner/standDesignOptions.js'
+import { stlIsAvailable as nameplateStlIsAvailable, toPublicNameplateDesign } from '../nameplateDesigner/nameplateDesignService.js'
+import { priceForNameplate } from '../nameplateDesigner/nameplateDesignOptions.js'
 
 export async function reviewCheckout(userId, addressId) {
   const cart = await getOrCreateCart(userId)
@@ -19,22 +21,38 @@ export async function reviewCheckout(userId, addressId) {
     throw new HttpError(404, 'Address not found.')
   }
 
-  const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }, standPricingConfig, { methods: shippingMethods }] =
-    await Promise.all([getPricingConfig(), getCustomizerSizes(), getCustomizerThicknesses(), getStandPricingConfig(), getCustomizerShipping()])
+  const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }, standPricingConfig, nameplatePricingConfig, { methods: shippingMethods }] =
+    await Promise.all([getPricingConfig(), getCustomizerSizes(), getCustomizerThicknesses(), getStandPricingConfig(), getNameplatePricingConfig(), getCustomizerShipping()])
 
   let subtotalCents = 0
   const items = []
   for (const item of cart.items) {
     const isCustom = item.itemType === 'CUSTOM_DESIGN'
     const isStand = item.itemType === 'STAND_DESIGN'
+    const isNameplate = item.itemType === 'NAMEPLATE_DESIGN'
     const design = item.customDesign
     const standDesign = item.standDesign
+    const nameplateDesign = item.nameplateDesign
     const product = item.product
 
-    let available, currentUnitPriceCents, title, productSnapshot, designSnapshot, standDesignSnapshot
+    let available, currentUnitPriceCents, title, productSnapshot, designSnapshot, standDesignSnapshot, nameplateDesignSnapshot
 
-    if (isStand) {
-      // ΓöÇΓöÇΓöÇ STAND_DESIGN ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    if (isNameplate) {
+      // ─── NAMEPLATE_DESIGN ─────────────────────────────────────────────
+      available = nameplateDesign ? await nameplateStlIsAvailable(nameplateDesign) : false
+      currentUnitPriceCents = priceForNameplate(
+        nameplateDesign?.nameplateType,
+        nameplateDesign?.solidVolumeCm3 ?? 0,
+        nameplateDesign?.designConfig ?? {},
+        nameplatePricingConfig
+      )
+      title = nameplateDesign?.title ?? 'Nameplate design'
+      productSnapshot = null
+      designSnapshot = null
+      standDesignSnapshot = null
+      nameplateDesignSnapshot = nameplateDesign ? toPublicNameplateDesign(nameplateDesign) : null
+    } else if (isStand) {
+      // ─── STAND_DESIGN ─────────────────────────────────────────────────
       available = standDesign ? await standStlIsAvailable(standDesign) : false
       const charPrice = priceForStand(standDesign?.category, standDesign?.solidVolumeCm3 ?? 0, standPricingConfig)
       currentUnitPriceCents = charPrice
@@ -42,8 +60,9 @@ export async function reviewCheckout(userId, addressId) {
       productSnapshot = null
       designSnapshot = null
       standDesignSnapshot = standDesign ? toPublicStandDesign(standDesign) : null
+      nameplateDesignSnapshot = null
     } else if (isCustom) {
-      // ΓöÇΓöÇΓöÇ CUSTOM_DESIGN ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+      // ─── CUSTOM_DESIGN ────────────────────────────────────────────────
       available = await stlIsAvailable(design)
       const charPrice = priceForDesign(design.params, perCharacterPriceCents, baseCharacters, basePriceCents)
       const sizePriceCents = adminSizes.find((s) => s.name === design.params.size)?.priceCents ?? 0
@@ -53,8 +72,9 @@ export async function reviewCheckout(userId, addressId) {
       productSnapshot = null
       designSnapshot = toPublicDesign(design)
       standDesignSnapshot = null
+      nameplateDesignSnapshot = null
     } else {
-      // ΓöÇΓöÇΓöÇ PRODUCT ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+      // ─── PRODUCT ──────────────────────────────────────────────────────
       available = product?.isActive ?? false
       const matOpts = Array.isArray(product?.materialOptions) ? product.materialOptions : []
       const sizeOpts = Array.isArray(product?.sizeOptions) ? product.sizeOptions : []
@@ -74,6 +94,7 @@ export async function reviewCheckout(userId, addressId) {
         : null
       designSnapshot = null
       standDesignSnapshot = null
+      nameplateDesignSnapshot = null
     }
 
     const priceChanged = currentUnitPriceCents !== item.unitPriceCents
@@ -89,6 +110,8 @@ export async function reviewCheckout(userId, addressId) {
       design: designSnapshot,
       stand: standDesignSnapshot,
       standDesign: standDesignSnapshot,
+      nameplate: nameplateDesignSnapshot,
+      nameplateDesign: nameplateDesignSnapshot,
       quantity: item.quantity,
       customization: item.customization,
       cartUnitPriceCents: item.unitPriceCents,

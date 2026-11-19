@@ -4,6 +4,7 @@ import { buildPublicOptions } from './nameplateDesignOptions.js'
 import {
   createNameplateDesign,
   getOwnedNameplateDesign,
+  readPreview,
   storePreview,
   storeStl,
   toPublicNameplateDesign,
@@ -39,4 +40,10 @@ export async function uploadPreview(req, res) {
   }
   const design = await storePreview(req.user.id, req.params.id, req.body)
   res.json({ design: toPublicNameplateDesign(design) })
+}
+
+export async function getPreview(req, res) {
+  const design = await getOwnedNameplateDesign(req.user.id, req.params.id)
+  const buffer = await readPreview(design)
+  res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'private, max-age=300', 'X-Content-Type-Options': 'nosniff' }).send(buffer)
 }

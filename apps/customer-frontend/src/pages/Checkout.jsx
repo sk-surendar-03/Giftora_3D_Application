@@ -7,6 +7,7 @@ import { createOrder } from '../features/orders/ordersApi.js'
 import CustomizationDetails from '../components/product/CustomizationDetails.jsx'
 import DesignPreviewImage from '../components/design/DesignPreviewImage.jsx'
 import StandPreviewImage from '../components/design/StandPreviewImage.jsx'
+import NameplatePreviewImage from '../components/design/NameplatePreviewImage.jsx'
 import Button from '../components/ui/Button'
 import { resolveImageUrl } from '../utils/imageUrl.js'
 
@@ -289,6 +290,8 @@ export default function Checkout() {
                             <DesignPreviewImage designId={item.design?.id} hasPreview={item.design?.hasPreview} alt={item.title} />
                           ) : item.itemType === 'STAND_DESIGN' ? (
                             <StandPreviewImage designId={item.stand?.id || item.standDesign?.id} hasPreview={item.stand?.hasPreview || item.standDesign?.hasPreview} alt={item.title} />
+                          ) : item.itemType === 'NAMEPLATE_DESIGN' ? (
+                            <NameplatePreviewImage designId={item.nameplate?.id || item.nameplateDesign?.id} hasPreview={item.nameplate?.hasPreview || item.nameplateDesign?.hasPreview} alt={item.title} />
                           ) : item.product?.images?.[0] ? (
                             <img src={resolveImageUrl(item.product.images[0])} alt={item.product?.name} className="h-full w-full object-cover" />
                           ) : (

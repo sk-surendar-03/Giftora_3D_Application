@@ -129,6 +129,15 @@ export async function stlIsAvailable(design) {
   return getStorage().exists(design.stlKey)
 }
 
+export async function readPreview(design) {
+  if (!design?.previewKey) throw new HttpError(404, 'No preview for this nameplate design.')
+  try {
+    return await getStorage().get(design.previewKey)
+  } catch {
+    throw new HttpError(404, 'No preview for this nameplate design.')
+  }
+}
+
 export async function getStlForNameplateOrderItem(orderId, itemId) {
   const item = await prisma.orderItem.findFirst({
     where: { id: itemId, orderId, itemType: 'NAMEPLATE_DESIGN' },

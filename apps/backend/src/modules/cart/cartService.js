@@ -221,7 +221,7 @@ async function findOwnedItem(userId, itemId) {
 
 export async function updateItemQuantity(userId, itemId, quantity) {
   await findOwnedItem(userId, itemId)
-  return prisma.cartItem.update({ where: { id: itemId }, data: { quantity }, include: { product: true, customDesign: true, standDesign: true } })
+  return prisma.cartItem.update({ where: { id: itemId }, data: { quantity }, include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true } })
 }
 
 export async function removeItem(userId, itemId) {

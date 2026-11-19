@@ -6,6 +6,7 @@ import {
   create,
   getById,
   getOptions,
+  getPreview,
   uploadPreview,
   uploadStl,
 } from './nameplateDesignController.js'
@@ -29,6 +30,7 @@ nameplateDesignRouter.use(authenticate)
 
 nameplateDesignRouter.post('/', asyncHandler(create))
 nameplateDesignRouter.get('/:id', asyncHandler(getById))
+nameplateDesignRouter.get('/:id/preview', asyncHandler(getPreview))
 nameplateDesignRouter.put(
   '/:id/stl',
   uploadLimiter,
