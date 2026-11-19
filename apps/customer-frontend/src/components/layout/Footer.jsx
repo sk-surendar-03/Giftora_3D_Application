@@ -5,7 +5,8 @@ const columns = [
     heading: 'Shop',
     links: [
       { to: '/products', label: 'All Products' },
-      { to: '/customise', label: '3D Customiser' },
+      { to: '/3d-customisation', label: '3D Customisation Hub' },
+      { to: '/customise', label: 'Name Keychain' },
       { to: '/customise/stand', label: 'Phone & Pen Stand' },
       { to: '/track-order', label: 'Track Order' },
     ],

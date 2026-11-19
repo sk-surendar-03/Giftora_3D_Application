@@ -15,7 +15,9 @@ import CustomerDetail from './app/customers/CustomerDetail.jsx'
 import Inquiries from './app/inquiries/Inquiries.jsx'
 import Reports from './app/reports/Reports.jsx'
 import Settings from './app/settings/Settings.jsx'
+import CustomizationHub from './app/customization/CustomizationHub.jsx'
 import CustomizationSettings from './app/customization/CustomizationSettings.jsx'
+import StandCustomizationSettings from './app/customization/StandCustomizationSettings.jsx'
 
 function App() {
   return (
@@ -42,7 +44,11 @@ function App() {
           <Route path="/inquiries" element={<Inquiries />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/customization" element={<CustomizationSettings />} />
+          <Route path="/customization" element={<CustomizationHub />} />
+          <Route path="/customization/name-keychain" element={<CustomizationSettings />} />
+          <Route path="/customization/keychain" element={<CustomizationSettings />} />
+          <Route path="/customization/phone-pen-stand" element={<StandCustomizationSettings />} />
+          <Route path="/customization/stand" element={<StandCustomizationSettings />} />
         </Route>
       </Routes>
       </ToastProvider>

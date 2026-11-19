@@ -316,7 +316,13 @@ function CustomiserWorkspace({ options }) {
   return (
     <div className="mx-auto max-w-[1800px] px-10 max-[1040px]:px-7 max-[760px]:px-[18px] py-5">
       {/* Studio switcher */}
-      <div className="mb-4 flex gap-3">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Link
+          to="/3d-customisation"
+          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-alt px-3.5 py-1.5 text-[12.5px] font-semibold text-muted hover:text-accent hover:border-accent transition-colors"
+        >
+          ← 3D Studios Hub
+        </Link>
         <span className="inline-flex items-center gap-2 rounded-full border-2 border-accent bg-accent/10 px-4 py-1.5 text-[13px] font-semibold text-accent">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
           Name Keychain

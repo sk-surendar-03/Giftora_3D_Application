@@ -11,7 +11,7 @@ const SLIDES = [
 const INTERVAL = 3500
 
 export default function Hero() {
-  const customiseLink = '/customise'
+  const customiseLink = '/3d-customisation'
   const [current, setCurrent] = useState(0)
   const [prev, setPrev] = useState(null)
   const [fading, setFading] = useState(false)

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Banner from '../../components/Banner.jsx'
 import {
   fetchPricing,
@@ -571,9 +572,24 @@ export default function CustomizationSettings() {
   }
 
   return (
-    <div className="pb-16">
-      <h1 className="text-xl font-semibold text-ink">3D Customization Settings</h1>
-      <p className="mt-1 text-sm text-muted">Configure colors, sizes, thickness, and shipping for the 3D customizer.</p>
+    <div className="pb-16 max-w-6xl">
+      <Link
+        to="/customization"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:text-accent-dark transition-colors uppercase tracking-wider mb-2"
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+        Back to 3D Customisation Hub
+      </Link>
+      <div className="flex items-center gap-3">
+        <h1 className="text-xl font-semibold text-ink">Name Keychain Studio Settings</h1>
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-500 border border-emerald-500/20">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          Active
+        </span>
+      </div>
+      <p className="mt-1 text-sm text-muted">Configure pricing rules, material palettes, sizes, thicknesses, and shipping for the Name Keychain customizer.</p>
 
       {loadError && <div className="mt-4"><Banner tone="error">{loadError}</Banner></div>}
 

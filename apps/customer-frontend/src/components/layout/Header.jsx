@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth.js'
 import { useCart } from '../../features/cart/useCart.js'
 import api from '../../services/api.js'
@@ -7,8 +7,7 @@ import api from '../../services/api.js'
 const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/products', label: 'Shop all' },
-  { to: '/customise', label: '3D Customiser' },
-  { to: '/customise/stand', label: 'Phone & Pen Stand' },
+  { to: '/3d-customisation', label: '3D Customisation' },
   { to: '/contact', label: 'Contact' },
 ]
 
@@ -162,6 +161,7 @@ export default function Header() {
   const { isAuthenticated, user, logout, updateUser } = useAuth()
   const { cart } = useCart()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const cartCount = cart?.items?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 0
 
@@ -230,14 +230,15 @@ export default function Header() {
             <NavLink
               key={link.to}
               to={link.to}
-              end={link.to === '/' || link.to === '/customise'}
-              className={({ isActive }) =>
-                `py-1.5 border-b-2 whitespace-nowrap transition-colors ${
-                  isActive
+              end={link.to === '/'}
+              className={({ isActive }) => {
+                const active = isActive || (link.to === '/3d-customisation' && (location.pathname === '/3d-customisation' || location.pathname.startsWith('/customise')))
+                return `py-1.5 border-b-2 whitespace-nowrap transition-colors ${
+                  active
                     ? 'border-accent text-accent'
                     : 'border-transparent text-ink hover:text-accent'
                 }`
-              }
+              }}
             >
               {link.label}
             </NavLink>
@@ -344,13 +345,14 @@ export default function Header() {
               <li key={link.to}>
                 <NavLink
                   to={link.to}
-                  end={link.to === '/' || link.to === '/customise'}
+                  end={link.to === '/'}
                   onClick={() => setMenuOpen(false)}
-                  className={({ isActive }) =>
-                    `block py-2.5 text-base font-medium transition-colors ${
-                      isActive ? 'text-accent font-semibold' : 'text-ink hover:text-accent'
+                  className={({ isActive }) => {
+                    const active = isActive || (link.to === '/3d-customisation' && (location.pathname === '/3d-customisation' || location.pathname.startsWith('/customise')))
+                    return `block py-2.5 text-base font-medium transition-colors ${
+                      active ? 'text-accent font-semibold' : 'text-ink hover:text-accent'
                     }`
-                  }
+                  }}
                 >
                   {link.label}
                 </NavLink>

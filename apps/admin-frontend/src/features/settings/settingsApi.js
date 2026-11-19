@@ -59,3 +59,13 @@ export async function updateCustomizerThicknesses(thicknesses) {
   const { data } = await api.patch('/admin/settings/customizer/thicknesses', { thicknesses })
   return data.thicknesses
 }
+
+export async function fetchStandPricing() {
+  const { data } = await api.get('/settings/stand-pricing')
+  return data.standPricing
+}
+
+export async function updateStandPricing({ pricePerCm3Cents, categories }) {
+  const { data } = await api.patch('/admin/settings/stand-pricing', { pricePerCm3Cents, categories })
+  return data.standPricing
+}
