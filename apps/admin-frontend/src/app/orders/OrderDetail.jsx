@@ -433,7 +433,7 @@ export default function OrderDetail() {
                               </svg>
                               {downloadingStlId === item.id ? 'Downloading…' : 'Download STL'}
                             </button>
-                            {isCustom && (
+                            {(isCustom || isStand || isNameplate) && (
                               <button
                                 type="button"
                                 onClick={() => handleDownload3mf(item.id, `${item.productName.replace(/[^a-z0-9_-]/gi, '_')}.3mf`)}

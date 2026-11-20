@@ -94,11 +94,15 @@ export function useAddNameplateToCart() {
       }
 
       setPhase('adding-to-cart')
-      await api.post('/cart/nameplate-items', {
+      const cartRes = await api.post('/cart/nameplate-items', {
         nameplateDesignId,
         quantity: payload.quantity || 1,
         shippingMethod: payload.shippingMethod,
       })
+
+      if (typeof window !== 'undefined' && cartRes.data?.cart) {
+        window.dispatchEvent(new CustomEvent('giftora:cart-updated', { detail: cartRes.data.cart }))
+      }
 
       setPhase('done')
       setAdded(true)

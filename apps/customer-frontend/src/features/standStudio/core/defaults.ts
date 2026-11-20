@@ -262,12 +262,23 @@ export function createDefaultDesign(
   themeId: DesignThemeId = 'minimalist'
 ): DesignConfig {
   const theme = DESIGN_THEMES[themeId];
+  const isDeskOrganizer = category === 'desk-organizer';
+  const isPersonalizedGift = category === 'personalized-gift';
+
   return {
-    id: 'default-stark-design',
-    name: 'Stark Studio Stand',
+    id: `default-${category}-${Date.now()}`,
+    name: isDeskOrganizer
+      ? 'Modular Workstation Organizer'
+      : isPersonalizedGift
+      ? 'Monogram Gift Plinth'
+      : category === 'phone-stand'
+      ? 'Classic Phone Stand'
+      : category === 'pen-holder'
+      ? 'Executive Pen Holder'
+      : 'Stark Studio Stand',
     category,
     phone: {
-      type: 'minimalist-angled',
+      type: isDeskOrganizer ? 'cable-groove' : isPersonalizedGift ? 'nameplate' : 'minimalist-angled',
       baseWidth: 82,
       baseDepth: 96,
       baseThickness: 5,
@@ -287,7 +298,7 @@ export function createDefaultDesign(
       sidePenLoop: false,
     },
     pen: {
-      type: 'round-cup',
+      type: isDeskOrganizer ? 'multi-slot-rack' : 'round-cup',
       cupHeight: 95,
       exteriorDiameter: 68,
       wallThickness: 3.2,
@@ -306,11 +317,15 @@ export function createDefaultDesign(
       secondaryCupDiameter: 54,
     },
     combined: {
-      type: 'phone-left-pen-right',
-      moduleSpacing: 10,
-      baseShape: 'rounded-rect',
+      type: isDeskOrganizer
+        ? 'desk-organizer-tray'
+        : isPersonalizedGift
+        ? 'executive-personalized'
+        : 'phone-left-pen-right',
+      moduleSpacing: isPersonalizedGift ? 10 : 8,
+      baseShape: isPersonalizedGift ? 'chamfered' : 'rounded-rect',
       symmetrical: false,
-      includeTray: false,
+      includeTray: isDeskOrganizer,
       trayWidth: 52,
       trayDepth: 46,
       trayWallHeight: 14,
@@ -319,9 +334,9 @@ export function createDefaultDesign(
       penOffsetX: 44,
     },
     personalization: {
-      enabled: true,
-      text: 'STARK',
-      fontStyle: theme.recommendedFont,
+      enabled: isPersonalizedGift || true,
+      text: isDeskOrganizer ? 'WORK' : isPersonalizedGift ? 'GIFT' : 'STARK',
+      fontStyle: isPersonalizedGift ? 'serif' : theme.recommendedFont,
       fontSize: 8.5,
       alignment: 'center',
       letterSpacing: 1.1,

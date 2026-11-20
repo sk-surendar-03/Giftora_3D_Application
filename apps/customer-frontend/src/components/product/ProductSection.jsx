@@ -30,7 +30,7 @@ export default function ProductSection({ eyebrow, title, subtitle, products, cla
             to="/products"
             className="inline-flex items-center gap-2 font-sans text-[14.5px] font-semibold text-accent hover:text-accent-dark transition-colors"
           >
-            <span>View all</span>
+            <span>Browse Products</span>
             <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>

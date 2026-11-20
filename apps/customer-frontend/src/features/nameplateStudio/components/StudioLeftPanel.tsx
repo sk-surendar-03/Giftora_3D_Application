@@ -9,12 +9,19 @@ import {
   TextLine,
   LetteringMode,
 } from '../core/types'
-import { NAMEPLATE_TYPES, MATERIAL_PRESETS, COLOR_PALETTES } from '../core/presets'
+import { NAMEPLATE_TYPES, MATERIAL_PRESETS, COLOR_PALETTES, TEMPLATES_LIBRARY } from '../core/presets'
 import { STUDIO_FONTS, FONT_CATEGORIES } from '../core/fonts'
+import VisualDesignCardRail from '../../../components/customiser/VisualDesignCardRail'
+import {
+  getNameplateTemplatePreview,
+  getNameplateTypePreview,
+  getNameplateShapePreview,
+} from '../core/nameplateTemplateAssets'
 
 interface StudioLeftPanelProps {
   design: NameplateDesign
   onUpdateDesign: (updater: (prev: NameplateDesign) => NameplateDesign) => void
+  onApplyTemplate?: (templateId: string) => void
 }
 
 const SHAPES: { id: NameplateShape; label: string }[] = [
@@ -68,9 +75,53 @@ const DECORATIONS: { id: DecorationType; label: string }[] = [
   { id: 'paw-print', label: 'Paw Print' },
 ]
 
-export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({ design, onUpdateDesign }) => {
+export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
+  design,
+  onUpdateDesign,
+  onApplyTemplate,
+}) => {
   const [activeTab, setActiveTab] = useState<'text' | 'shape' | 'material' | 'mounting'>('text')
   const [fontCategory, setFontCategory] = useState<string>('all')
+
+  const handleApplyTemplate = (templateId: string) => {
+    if (onApplyTemplate) {
+      onApplyTemplate(templateId)
+      return
+    }
+    const tpl = TEMPLATES_LIBRARY.find((t) => t.id === templateId)
+    if (tpl) {
+      onUpdateDesign((prev) => ({
+        ...prev,
+        ...tpl.design,
+        id: prev.id,
+        name: tpl.name,
+      }))
+    }
+  }
+
+  const activeTemplate = TEMPLATES_LIBRARY.find((tpl) => tpl.name === design.name)
+
+  const templateRailItems = TEMPLATES_LIBRARY.map((tpl) => ({
+    id: tpl.id,
+    name: tpl.name,
+    description: tpl.tagline,
+    previewSrc: getNameplateTemplatePreview(tpl.id),
+    badge: tpl.theme,
+  }))
+
+  const typeRailItems = NAMEPLATE_TYPES.map((t) => ({
+    id: t.id,
+    name: t.name,
+    description: t.tagline,
+    previewSrc: getNameplateTypePreview(t.id),
+  }))
+
+  const shapeRailItems = SHAPES.map((s) => ({
+    id: s.id,
+    name: s.label,
+    description: s.label,
+    previewSrc: getNameplateShapePreview(s.id),
+  }))
 
   const filteredFonts = STUDIO_FONTS.filter((f) => fontCategory === 'all' || f.category === fontCategory)
 
@@ -116,6 +167,16 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({ design, onUpda
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Curated Template Presets Rail */}
+      <div className="rounded-card border border-line bg-surface p-4">
+        <VisualDesignCardRail
+          label="Curated Design Presets"
+          items={templateRailItems}
+          value={activeTemplate?.id}
+          onChange={handleApplyTemplate}
+        />
+      </div>
+
       {/* Tab Navigation */}
       <div className="grid grid-cols-4 gap-1 rounded-card border border-line bg-surface p-1">
         {[
@@ -288,56 +349,42 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({ design, onUpda
           </h4>
 
           {/* Nameplate Type Archetype */}
-          <div className="space-y-1.5">
-            <label className="text-[12px] font-medium text-muted">Application Style</label>
-            <div className="grid grid-cols-2 gap-2">
-              {NAMEPLATE_TYPES.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() =>
-                    onUpdateDesign((prev) => ({
-                      ...prev,
-                      type: t.id,
-                      shape: t.recommendedShape,
-                      mountingStyle: t.recommendedMounting,
-                      widthMm: t.defaultWidthMm,
-                      heightMm: t.defaultHeightMm,
-                    }))
-                  }
-                  className={`p-2.5 text-left rounded-control border transition-colors ${
-                    design.type === t.id
-                      ? 'border-accent bg-accent/10 text-accent font-semibold'
-                      : 'border-line bg-alt text-ink hover:border-muted'
-                  }`}
-                >
-                  <div className="text-[12.5px] font-medium">{t.name}</div>
-                  <div className="text-[10.5px] text-muted truncate">{t.tagline}</div>
-                </button>
-              ))}
-            </div>
+          <div className="space-y-2">
+            <span className="block font-sans text-[12px] font-bold text-accent uppercase tracking-[0.14em]">
+              Application Style
+            </span>
+            <VisualDesignCardRail
+              layout="grid"
+              items={typeRailItems}
+              value={design.type}
+              onChange={(typeId) => {
+                const t = NAMEPLATE_TYPES.find((item) => item.id === typeId)
+                if (t) {
+                  onUpdateDesign((prev) => ({
+                    ...prev,
+                    type: t.id,
+                    shape: t.recommendedShape,
+                    mountingStyle: t.recommendedMounting,
+                    widthMm: t.defaultWidthMm,
+                    heightMm: t.defaultHeightMm,
+                  }))
+                }
+              }}
+            />
           </div>
 
           {/* Silhouette Shape Selector */}
-          <div className="space-y-1.5">
-            <label className="text-[12px] font-medium text-muted">Silhouette Shape</label>
-            <div className="grid grid-cols-4 gap-2 max-h-[180px] overflow-y-auto pr-1">
-              {SHAPES.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => onUpdateDesign((prev) => ({ ...prev, shape: s.id }))}
-                  className={`p-2 text-center rounded-control border text-[11px] capitalize transition-colors truncate ${
-                    design.shape === s.id
-                      ? 'border-accent bg-accent/10 text-accent font-semibold'
-                      : 'border-line bg-alt text-ink hover:border-muted'
-                  }`}
-                  title={s.label}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
+          <div className="space-y-2 pt-2 border-t border-line">
+            <span className="block font-sans text-[12px] font-bold text-accent uppercase tracking-[0.14em]">
+              Silhouette Shape
+            </span>
+            <VisualDesignCardRail
+              items={shapeRailItems}
+              value={design.shape}
+              onChange={(shapeId) =>
+                onUpdateDesign((prev) => ({ ...prev, shape: shapeId as NameplateShape }))
+              }
+            />
           </div>
 
           {/* Dimensions */}

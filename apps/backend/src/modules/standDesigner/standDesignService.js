@@ -2,6 +2,7 @@ import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
 import { getStorage } from '../storage/storage.js'
 import { sha256Hex, validateBinaryStl, validatePng, computeSignedVolumeCm3 } from '../customizer/stlValidator.js'
+import { exportThreeMfFromStl } from '../customizer/threeMfExporter.js'
 import { STAND_SCHEMA_VERSION, priceForStand } from './standDesignOptions.js'
 import { validateStandDesignInput } from './standDesignValidator.js'
 
@@ -182,4 +183,22 @@ export async function getPreviewForStandOrderItem(orderId, itemId) {
     include: { standDesign: true },
   })
   return readPreview(item?.standDesign)
+}
+
+export async function getThreeMfForStandOrderItem(orderId, itemId) {
+  const { buffer: stlBuffer, filename: stlFilename, design } = await getStlForStandOrderItem(orderId, itemId)
+  const colors = design.designConfig?.appearance?.colors || {}
+  const baseColor = colors.base || '#374151'
+  const accentColor = colors.text || colors.accent || '#F59E0B'
+  const title = design.title || 'Stand Design'
+  const threeMfBuffer = exportThreeMfFromStl(
+    stlBuffer,
+    title,
+    baseColor,
+    null,
+    accentColor,
+    'Accent'
+  )
+  const filename = stlFilename.replace(/\.stl$/i, '.3mf')
+  return { buffer: threeMfBuffer, filename, design }
 }

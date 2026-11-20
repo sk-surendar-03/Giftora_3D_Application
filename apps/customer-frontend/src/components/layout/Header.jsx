@@ -6,7 +6,7 @@ import api from '../../services/api.js'
 
 const navLinks = [
   { to: '/', label: 'Home' },
-  { to: '/products', label: 'Shop all' },
+  { to: '/products', label: 'Browse Products' },
   { to: '/3d-customisation', label: '3D Customisation' },
   { to: '/contact', label: 'Contact' },
 ]

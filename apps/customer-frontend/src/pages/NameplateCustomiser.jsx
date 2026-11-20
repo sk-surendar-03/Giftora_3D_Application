@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { NameplateCanvas } from '../features/nameplateStudio/components/NameplateCanvas'
 import { ViewportControlsBar } from '../features/nameplateStudio/components/ViewportControlsBar'
 import { StudioLeftPanel } from '../features/nameplateStudio/components/StudioLeftPanel'
+import { TEMPLATES_LIBRARY } from '../features/nameplateStudio/core/presets'
 import { useAddNameplateToCart, PHASE_LABELS } from '../features/nameplateStudio/hooks/useAddNameplateToCart'
 import { fetchNameplateOptions } from '../features/nameplateStudio/api/nameplateDesignApi'
 import { useAuth } from '../features/auth/useAuth'
@@ -158,6 +159,18 @@ export default function NameplateCustomiser() {
     if (shippingOptions.length > 0) setShippingMethod(shippingOptions[0])
   }
 
+  function handleApplyTemplate(templateId) {
+    const tpl = TEMPLATES_LIBRARY.find((t) => t.id === templateId)
+    if (tpl) {
+      setDesign((prev) => ({
+        ...prev,
+        ...tpl.design,
+        id: prev.id,
+        name: tpl.name,
+      }))
+    }
+  }
+
   async function handleAddToCart() {
     if (!isAuthenticated) {
       navigate('/login', { state: { from: '/customise/nameplate' } })
@@ -166,13 +179,19 @@ export default function NameplateCustomiser() {
     if (!canAdd) return
 
     const exportGroup = canvasRef.current?.getExportGroup()
-    await addToCart({
-      design,
-      exportGroup,
-      quantity,
-      shippingMethod,
-      capturePreview: () => canvasRef.current?.capturePngDataUrl(),
-    })
+    if (!exportGroup) return
+
+    try {
+      await addToCart({
+        design,
+        exportGroup,
+        quantity,
+        shippingMethod,
+        capturePreview: () => canvasRef.current?.capturePngDataUrl(),
+      })
+    } catch {
+      // handled in hook
+    }
   }
 
   return (
@@ -238,28 +257,30 @@ export default function NameplateCustomiser() {
       <div className="grid min-w-0 gap-6 min-[1041px]:grid-cols-[440px_minmax(0,1fr)] min-[1200px]:grid-cols-[460px_minmax(0,1fr)] min-[1041px]:items-start min-[1041px]:gap-8">
         {/* LEFT COLUMN: Controls Panel */}
         <aside className="min-w-0 space-y-5 order-2 min-[1041px]:order-1">
-          <StudioLeftPanel design={design} onUpdateDesign={setDesign} />
-          <NameplateFactsCard />
-          <NameplateCustomizationSummary
+          <StudioLeftPanel
             design={design}
-            volumeCm3={estimatedVolumeCm3}
-            quantity={quantity}
-            onQuantityChange={setQuantity}
-            totalPriceRupees={totalRupees}
-            shippingMethod={shippingMethod}
-            shippingOptions={shippingOptions}
-            onShippingChange={setShippingMethod}
-            canAdd={canAdd}
-            busy={cartBusy}
-            phase={PHASE_LABELS[phase]}
-            added={added}
-            error={cartError}
-            onAddToCart={handleAddToCart}
+            onUpdateDesign={setDesign}
+            onApplyTemplate={handleApplyTemplate}
           />
         </aside>
 
         {/* RIGHT COLUMN: Sticky 3D Canvas */}
-        <main className="min-w-0 order-1 min-[1041px]:order-2 min-[1041px]:sticky min-[1041px]:top-6 space-y-3">
+        <main className="min-w-0 space-y-5 order-1 min-[1041px]:order-2 sticky top-0 max-[1040px]:z-20 max-[1040px]:bg-[var(--color-bg,#000000)] max-[1040px]:pb-3 min-[1041px]:top-5">
+          <div className="flex items-center justify-between pb-2 border-b border-line">
+            <div>
+              <h1 className="font-display text-[26px] max-[760px]:text-[22px] font-semibold text-ink leading-tight m-0">
+                Design Your 3D Nameplate
+              </h1>
+              <p className="mt-1 font-sans text-[13px] text-muted">Real-time 3D solid model preview</p>
+            </div>
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold bg-[#e3f4ea] text-[#17683f]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#17683f]" />
+                Preview ready
+              </span>
+            </div>
+          </div>
+
           <ViewportControlsBar
             cameraPreset={cameraPreset}
             onPresetChange={setCameraPreset}
@@ -271,7 +292,7 @@ export default function NameplateCustomiser() {
             onToggleExploded={() => setExplodedPreview((v) => !v)}
           />
 
-          <div className="h-[480px] min-[1200px]:h-[560px] w-full">
+          <div className="h-[480px] min-[1200px]:h-[540px] w-full rounded-card overflow-hidden border border-line bg-surface">
             <NameplateCanvas
               ref={canvasRef}
               design={design}
@@ -282,7 +303,49 @@ export default function NameplateCustomiser() {
               onMeasurements={setMeasurements}
             />
           </div>
+
+          {/* Desktop only: Facts Card and Customization Summary */}
+          <div className="max-[1040px]:hidden space-y-5">
+            <NameplateFactsCard />
+            <NameplateCustomizationSummary
+              design={design}
+              volumeCm3={estimatedVolumeCm3}
+              quantity={quantity}
+              onQuantityChange={setQuantity}
+              totalPriceRupees={totalRupees}
+              shippingMethod={shippingMethod}
+              shippingOptions={shippingOptions}
+              onShippingChange={setShippingMethod}
+              canAdd={canAdd}
+              busy={cartBusy}
+              phase={PHASE_LABELS[phase]}
+              added={added}
+              error={cartError}
+              onAddToCart={handleAddToCart}
+            />
+          </div>
         </main>
+      </div>
+
+      {/* Mobile-only: Facts + Summary below all controls */}
+      <div className="min-[1041px]:hidden mt-5 space-y-5">
+        <NameplateFactsCard />
+        <NameplateCustomizationSummary
+          design={design}
+          volumeCm3={estimatedVolumeCm3}
+          quantity={quantity}
+          onQuantityChange={setQuantity}
+          totalPriceRupees={totalRupees}
+          shippingMethod={shippingMethod}
+          shippingOptions={shippingOptions}
+          onShippingChange={setShippingMethod}
+          canAdd={canAdd}
+          busy={cartBusy}
+          phase={PHASE_LABELS[phase]}
+          added={added}
+          error={cartError}
+          onAddToCart={handleAddToCart}
+        />
       </div>
     </div>
   )

@@ -17,6 +17,8 @@ import type {
 } from '../types/design';
 import { CATEGORY_META, DESIGN_THEMES, MATERIAL_SWATCHES } from '../core/defaults';
 import { TEMPLATE_LIBRARY } from '../core/templates';
+import VisualDesignCardRail from '../../../components/customiser/VisualDesignCardRail';
+import { getStandTemplatePreview, getStandThemePreview, getStandCategoryPreview } from '../core/standTemplateAssets';
 
 interface StudioLeftPanelProps {
   config: DesignConfig;
@@ -137,6 +139,27 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
     reader.readAsText(file);
   };
 
+  const categoryTemplates = TEMPLATE_LIBRARY.filter(
+    (tpl) => tpl.category === config.category
+  );
+
+  const activeTemplate = TEMPLATE_LIBRARY.find((tpl) => tpl.name === config.name);
+
+  const templateRailItems = categoryTemplates.map((tpl) => ({
+    id: tpl.id,
+    name: tpl.name,
+    description: tpl.tagline,
+    previewSrc: getStandTemplatePreview(tpl.id) ?? getStandCategoryPreview(tpl.category),
+    badge: tpl.themeId,
+  }));
+
+  const themeRailItems = Object.values(DESIGN_THEMES).map((theme) => ({
+    id: theme.id,
+    name: theme.label,
+    description: theme.description,
+    previewSrc: getStandThemePreview(theme.id),
+  }));
+
   return (
     <aside
       aria-label="Design customization controls"
@@ -154,12 +177,16 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
           <select
             id="studio-category-select"
             value={config.category}
-            onChange={(e) =>
-              onChange((prev) => ({
-                ...prev,
-                category: e.target.value as StudioCategory,
-              }))
-            }
+            onChange={(e) => {
+              const newCat = e.target.value as StudioCategory;
+              const matchingTpl = TEMPLATE_LIBRARY.find((tpl) => tpl.category === newCat);
+              if (matchingTpl) {
+                onApplyTemplate(matchingTpl.id);
+              } else {
+                const fresh = createDefaultDesign(newCat, config.appearance.themeId);
+                onChange(fresh);
+              }
+            }}
             className="w-full px-3 py-2 text-sm font-medium rounded-control border border-line bg-alt text-ink focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent"
           >
             {(Object.keys(CATEGORY_META) as StudioCategory[]).map((cat) => (
@@ -170,13 +197,35 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        {/* Template Presets Image Rail */}
+        {templateRailItems.length > 0 && (
+          <div className="pt-1">
+            <VisualDesignCardRail
+              label="Template Presets"
+              items={templateRailItems}
+              value={activeTemplate?.id}
+              onChange={onApplyTemplate}
+            />
+          </div>
+        )}
+
+        {/* Design Themes Image Rail */}
+        <div className="pt-1">
+          <VisualDesignCardRail
+            label="Design Theme & Style"
+            items={themeRailItems}
+            value={config.appearance.themeId}
+            onChange={(id) => onApplyTheme(id as DesignThemeId)}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-line/60">
           <div>
             <label
               htmlFor="design-theme-select"
               className="block text-xs font-medium text-muted mb-1"
             >
-              Design Theme
+              Theme Quick Select
             </label>
             <select
               id="design-theme-select"
@@ -197,7 +246,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
               htmlFor="quick-template-select"
               className="block text-xs font-medium text-muted mb-1"
             >
-              Load Preset
+              Preset Quick Select
             </label>
             <select
               id="quick-template-select"

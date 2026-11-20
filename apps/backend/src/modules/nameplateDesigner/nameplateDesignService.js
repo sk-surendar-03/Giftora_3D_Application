@@ -2,6 +2,7 @@ import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
 import { getStorage } from '../storage/storage.js'
 import { sha256Hex, validateBinaryStl, validatePng, computeSignedVolumeCm3 } from '../customizer/stlValidator.js'
+import { exportThreeMfFromStl } from '../customizer/threeMfExporter.js'
 import { NAMEPLATE_SCHEMA_VERSION, priceForNameplate } from './nameplateDesignOptions.js'
 import { validateNameplateDesignInput } from './nameplateDesignValidator.js'
 
@@ -159,4 +160,32 @@ export async function getPreviewForNameplateOrderItem(orderId, itemId) {
   if (!item || !item.nameplateDesign) throw new HttpError(404, 'Nameplate design not found for this order line.')
   if (!item.nameplateDesign.previewKey) throw new HttpError(404, 'This nameplate design has no stored preview.')
   return getStorage().get(item.nameplateDesign.previewKey)
+}
+
+export async function getThreeMfForNameplateOrderItem(orderId, itemId) {
+  const item = await prisma.orderItem.findFirst({
+    where: { id: itemId, orderId, itemType: 'NAMEPLATE_DESIGN' },
+    include: { nameplateDesign: true, order: true },
+  })
+  if (!item || !item.nameplateDesign) throw new HttpError(404, 'Nameplate design not found for this order line.')
+  if (!item.nameplateDesign.stlKey) throw new HttpError(409, 'This nameplate design has no stored STL file.')
+
+  const buffer = await getStorage().get(item.nameplateDesign.stlKey)
+  const safeTitle = (item.nameplateDesign.title || 'nameplate').replace(/[^a-zA-Z0-9_-]+/g, '_').toLowerCase()
+
+  const cfg = item.nameplateDesign.designConfig || {}
+  const baseColor = cfg.appearance?.baseColor || cfg.baseColor || '#0D0D0D'
+  const textColor = cfg.lines?.[0]?.color || cfg.appearance?.borderColor || '#D9AE4E'
+  const title = item.nameplateDesign.title || 'Nameplate Design'
+
+  const threeMfBuffer = exportThreeMfFromStl(
+    buffer,
+    title,
+    baseColor,
+    null,
+    textColor,
+    'Text'
+  )
+  const filename = `${item.order.orderNumber}-${safeTitle}.3mf`
+  return { buffer: threeMfBuffer, filename, design: item.nameplateDesign }
 }

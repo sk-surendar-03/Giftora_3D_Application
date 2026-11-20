@@ -125,7 +125,7 @@ export default function Hero() {
               <Link to="/products" className="flex-1 min-[761px]:flex-none">
                 <Button variant="hero2" size="lg" className="w-full whitespace-nowrap max-[760px]:!text-[10px] max-[760px]:!py-0 max-[760px]:!px-2 max-[760px]:!h-7 max-[760px]:!leading-7"
                   style={{ borderColor: 'rgba(217,174,78,0.5)', color: '#f0e0b4' }}>
-                  Shop all gifts
+                  Browse Products
                 </Button>
               </Link>
             </div>

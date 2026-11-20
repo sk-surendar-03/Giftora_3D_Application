@@ -3,8 +3,8 @@ import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
 import { listOrdersForAdmin, getOrderForAdmin, updateOrderStatus } from './orderService.js'
 import { getPreviewForOrderItem, getStlForOrderItem, getThreeMfForOrderItem } from '../customizer/designService.js'
-import { getStlForStandOrderItem, getPreviewForStandOrderItem } from '../standDesigner/standDesignService.js'
-import { getStlForNameplateOrderItem, getPreviewForNameplateOrderItem } from '../nameplateDesigner/nameplateDesignService.js'
+import { getStlForStandOrderItem, getPreviewForStandOrderItem, getThreeMfForStandOrderItem } from '../standDesigner/standDesignService.js'
+import { getStlForNameplateOrderItem, getPreviewForNameplateOrderItem, getThreeMfForNameplateOrderItem } from '../nameplateDesigner/nameplateDesignService.js'
 
 const VALID_STATUSES = Object.values(OrderStatus)
 const VALID_TYPES = Object.values(OrderItemType)
@@ -116,10 +116,19 @@ export async function downloadItem3mf(req, res) {
     select: { itemType: true },
   })
   if (!item) throw new HttpError(404, 'Order item not found.')
-  if (item.itemType !== 'CUSTOM_DESIGN') {
-    throw new HttpError(400, '3MF export is currently available for keychain custom designs.')
+
+  let result
+  if (item.itemType === 'STAND_DESIGN') {
+    result = await getThreeMfForStandOrderItem(req.params.orderId, req.params.itemId)
+  } else if (item.itemType === 'NAMEPLATE_DESIGN') {
+    result = await getThreeMfForNameplateOrderItem(req.params.orderId, req.params.itemId)
+  } else if (item.itemType === 'CUSTOM_DESIGN') {
+    result = await getThreeMfForOrderItem(req.params.orderId, req.params.itemId)
+  } else {
+    throw new HttpError(400, '3MF export is not available for this item type.')
   }
-  const { buffer, filename } = await getThreeMfForOrderItem(req.params.orderId, req.params.itemId)
+
+  const { buffer, filename } = result
   res
     .set({
       'Content-Type': 'model/3mf',

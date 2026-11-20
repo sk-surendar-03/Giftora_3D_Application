@@ -62,3 +62,22 @@ test('threeMfExporter: generates valid 3MF ZIP archive with XML model and colors
   assert.ok(modelXml.includes('<vertex x="10.000000"'), 'includes model vertex')
   assert.ok(modelXml.includes('<triangle v1='), 'includes model triangles')
 })
+
+test('threeMfExporter: generates valid dual-color 3MF archive for stand/nameplate/keychain', () => {
+  const baseStl = createSampleBoxStl()
+  const reliefStl = createSampleBoxStl()
+  const title = 'Executive Stand'
+  const baseColor = '#1E293B'
+  const reliefColor = '#F59E0B'
+
+  const threeMfBuffer = exportThreeMfFromStl(baseStl, title, baseColor, reliefStl, reliefColor, 'Accent')
+  assert.ok(Buffer.isBuffer(threeMfBuffer), 'returns a Buffer')
+  assert.ok(threeMfBuffer.length > 100, 'has valid dual-mesh 3MF file size')
+
+  const files = unzipSync(new Uint8Array(threeMfBuffer))
+  assert.ok(files['3D/3dmodel.model'], 'contains 3D model')
+  const modelXml = Buffer.from(files['3D/3dmodel.model']).toString('utf8')
+  assert.ok(modelXml.includes('displaycolor="#1E293B"'), 'includes base color')
+  assert.ok(modelXml.includes('displaycolor="#F59E0B"'), 'includes relief color')
+  assert.ok(modelXml.includes('<metadata name="Title">Executive Stand</metadata>'), 'includes title')
+})

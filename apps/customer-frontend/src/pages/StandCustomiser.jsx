@@ -50,6 +50,8 @@ function StandCustomiserWorkspace() {
     showPensMockup: false,
     explodedAmount: 0,
   })
+  const [frameTrigger, setFrameTrigger] = useState(1)
+  const handleFitCamera = () => setFrameTrigger((c) => c + 1)
 
   // Clear "Added to cart" message if design or quantity changes
   useEffect(() => {
@@ -277,8 +279,18 @@ function StandCustomiserWorkspace() {
             </div>
           </div>
 
+          {/* Viewport Controls Bar */}
+          <ViewportControlsBar
+            viewport={viewport}
+            hasPhone={assembly?.phonePose?.enabled || false}
+            hasPens={(assembly?.penSlots?.length || 0) > 0}
+            hasMultipleParts={(assembly?.parts?.length || 0) > 1}
+            onChange={setViewport}
+            onFitCamera={handleFitCamera}
+          />
+
           {/* 3D Viewport Component */}
-          <div className="relative w-full rounded-card overflow-hidden border border-line bg-surface" style={{ height: '450px' }}>
+          <div className="relative w-full rounded-card overflow-hidden border border-line bg-surface" style={{ height: '480px' }}>
             {assembly ? (
               <StudioViewport
                 ref={viewportRef}
@@ -287,19 +299,11 @@ function StandCustomiserWorkspace() {
                 viewport={viewport}
                 bedLimit={validation.bedLimit || { x: 220, y: 220, z: 250 }}
                 darkMode={true}
-                frameTrigger={1}
+                frameTrigger={frameTrigger}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-muted">Loading 3D preview...</div>
             )}
-            <ViewportControlsBar
-              viewport={viewport}
-              hasPhone={assembly?.phonePose?.enabled || false}
-              hasPens={(assembly?.penSlots?.length || 0) > 0}
-              hasMultipleParts={(assembly?.parts?.length || 0) > 1}
-              onChange={setViewport}
-              onFitCamera={() => {}}
-            />
           </div>
 
           {/* Live Stand Facts Card — desktop only */}

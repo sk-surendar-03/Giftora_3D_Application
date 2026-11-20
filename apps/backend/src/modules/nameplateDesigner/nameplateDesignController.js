@@ -29,7 +29,7 @@ export async function uploadStl(req, res) {
   if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
     throw new HttpError(400, 'An STL file body is required.')
   }
-  const claimedSha256 = req.get('x-stl-sha256')
+  const claimedSha256 = req.get('x-stl-sha256') || req.get('x-content-sha256')
   const design = await storeStl(req.user.id, req.params.id, req.body, claimedSha256)
   res.json({ design: toPublicNameplateDesign(design) })
 }
