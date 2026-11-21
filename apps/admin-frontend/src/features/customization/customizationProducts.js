@@ -22,6 +22,7 @@ export const CUSTOMIZATION_PRODUCTS = [
     ],
     tags: ['Dual Color', 'Articulated', 'Manifold CSG'],
   },
+  /* Phone & Pen Stand commented out per client request
   {
     id: 'phone-pen-stand',
     name: 'Phone & Pen Stand',
@@ -30,7 +31,7 @@ export const CUSTOMIZATION_PRODUCTS = [
     status: 'active',
     statusLabel: 'Active',
     badge: 'New Studio',
-    badgeColor: 'amber',
+    badgeTone: 'amber',
     manageRoute: '/customization/phone-pen-stand',
     customerRoute: 'https://www.jasvel3dmakers.co.in/customise/stand',
     thumbnail: '/hero-2.png',
@@ -41,6 +42,7 @@ export const CUSTOMIZATION_PRODUCTS = [
     ],
     tags: ['Volume Pricing', 'STL Generation', 'Real-time 3D'],
   },
+  */
   {
     id: 'nameplate',
     name: 'Custom Nameplate',

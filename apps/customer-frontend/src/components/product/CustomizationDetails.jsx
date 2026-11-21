@@ -4,6 +4,7 @@ const CUSTOMIZATION_LABELS = {
   material: 'Material',
   color: 'Colour',
   size: 'Size',
+  note: 'Item Note',
 }
 
 // Shared by the Cart and Checkout pages — renders whatever customization

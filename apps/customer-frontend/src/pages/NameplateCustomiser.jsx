@@ -11,6 +11,13 @@ import api from '../services/api'
 import Button from '../components/ui/Button'
 import NameplateFactsCard from '../components/customiser/NameplateFactsCard'
 import NameplateCustomizationSummary from '../components/customiser/NameplateCustomizationSummary'
+import DraftControlsBar from '../components/customiser/DraftControlsBar'
+import { useDraftPersistence } from '../features/customizerDraft/useDraftPersistence'
+import {
+  loadProductDraft,
+  sanitizeNameplateDraft,
+  deleteProductDraft,
+} from '../features/customizerDraft/draftManager'
 
 function createDefaultNameplateDesign() {
   return {
@@ -66,10 +73,18 @@ function createDefaultNameplateDesign() {
 }
 
 export default function NameplateCustomiser() {
-  const [design, setDesign] = useState(createDefaultNameplateDesign)
+  const [design, setDesign] = useState(() => {
+    const saved = loadProductDraft('nameplate')
+    if (saved?.data) {
+      const sanitized = sanitizeNameplateDraft(saved.data, createDefaultNameplateDesign())
+      if (sanitized) return sanitized
+    }
+    return createDefaultNameplateDesign()
+  })
   const [quantity, setQuantity] = useState(1)
   const [shippingOptions, setShippingOptions] = useState([])
   const [shippingMethod, setShippingMethod] = useState(null)
+  const [itemNote, setItemNote] = useState('')
   const [pricingConfig, setPricingConfig] = useState(null)
   const [measurements, setMeasurements] = useState({ textWidthMm: 0, textHeightMm: 0, islandCount: 0 })
 
@@ -77,6 +92,26 @@ export default function NameplateCustomiser() {
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const { addToCart, phase, error: cartError, added, busy: cartBusy, clearAdded } = useAddNameplateToCart()
+
+  const {
+    hasDraft,
+    savedAt,
+    saveStatus,
+    saveDraft: manualSaveDraft,
+    deleteDraft: manualDeleteDraft,
+    getRestoredData,
+  } = useDraftPersistence({
+    productType: 'nameplate',
+    currentData: design,
+    sanitizeFn: (data) => sanitizeNameplateDraft(data, createDefaultNameplateDesign()),
+  })
+
+  function handleRestoreDraft() {
+    const restored = getRestoredData()
+    if (restored) {
+      setDesign(restored)
+    }
+  }
 
   const [cameraPreset, setCameraPreset] = useState('isometric')
   const [projection, setProjection] = useState('perspective')
@@ -157,6 +192,7 @@ export default function NameplateCustomiser() {
     setDesign(createDefaultNameplateDesign())
     setQuantity(1)
     if (shippingOptions.length > 0) setShippingMethod(shippingOptions[0])
+    manualDeleteDraft()
   }
 
   function handleApplyTemplate(templateId) {
@@ -187,6 +223,7 @@ export default function NameplateCustomiser() {
         exportGroup,
         quantity,
         shippingMethod,
+        note: itemNote.trim() || undefined,
         capturePreview: () => canvasRef.current?.capturePngDataUrl(),
       })
     } catch {
@@ -213,6 +250,7 @@ export default function NameplateCustomiser() {
           </svg>
           Name Keychain
         </Link>
+        {/* Phone & Pen Stand commented out per client request
         <Link
           to="/customise/stand"
           className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-1.5 text-[13px] font-medium text-muted hover:border-accent hover:text-accent transition-colors"
@@ -224,6 +262,7 @@ export default function NameplateCustomiser() {
           </svg>
           Phone & Pen Stand
         </Link>
+        */}
         <span className="inline-flex items-center gap-2 rounded-full border-2 border-accent bg-accent/10 px-4 py-1.5 text-[13px] font-semibold text-accent">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -306,6 +345,15 @@ export default function NameplateCustomiser() {
 
           {/* Desktop only: Facts Card and Customization Summary */}
           <div className="max-[1040px]:hidden space-y-5">
+            <DraftControlsBar
+              hasDraft={hasDraft}
+              savedAt={savedAt}
+              saveStatus={saveStatus}
+              onSave={manualSaveDraft}
+              onRestore={handleRestoreDraft}
+              onDelete={manualDeleteDraft}
+              productLabel="Nameplate"
+            />
             <NameplateFactsCard />
             <NameplateCustomizationSummary
               design={design}
@@ -321,6 +369,8 @@ export default function NameplateCustomiser() {
               phase={PHASE_LABELS[phase]}
               added={added}
               error={cartError}
+              note={itemNote}
+              onNoteChange={setItemNote}
               onAddToCart={handleAddToCart}
             />
           </div>
@@ -329,6 +379,15 @@ export default function NameplateCustomiser() {
 
       {/* Mobile-only: Facts + Summary below all controls */}
       <div className="min-[1041px]:hidden mt-5 space-y-5">
+        <DraftControlsBar
+          hasDraft={hasDraft}
+          savedAt={savedAt}
+          saveStatus={saveStatus}
+          onSave={manualSaveDraft}
+          onRestore={handleRestoreDraft}
+          onDelete={manualDeleteDraft}
+          productLabel="Nameplate"
+        />
         <NameplateFactsCard />
         <NameplateCustomizationSummary
           design={design}
@@ -344,6 +403,8 @@ export default function NameplateCustomiser() {
           phase={PHASE_LABELS[phase]}
           added={added}
           error={cartError}
+          note={itemNote}
+          onNoteChange={setItemNote}
           onAddToCart={handleAddToCart}
         />
       </div>

@@ -93,7 +93,7 @@ export default function CustomisationHub() {
             </div>
             <h3 className="font-display text-lg font-bold text-ink">Choose Your Product</h3>
             <p className="text-xs text-muted leading-relaxed">
-              Select between our Name Keychain or Phone &amp; Pen Stand studios based on what you want to create.
+              Select between our Name Keychain or Nameplate studios based on what you want to create.
             </p>
           </div>
 

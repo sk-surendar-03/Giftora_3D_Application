@@ -31,6 +31,8 @@ import { useCustomizerSettings } from '../features/pricing/useCustomizerSettings
 import { countBillableCharacters, calculateTotalCustomizationPriceCents } from '../features/pricing/pricingCalculator.js'
 import { useDesignOptions } from '../features/customDesign/useDesignOptions.js'
 import { clearDraft, loadDraft, restoreChoices } from '../features/customDesign/designDraft.js'
+import { useDraftPersistence } from '../features/customizerDraft/useDraftPersistence.js'
+import DraftControlsBar from '../components/customiser/DraftControlsBar.jsx'
 
 const EXAMPLE_NAMES = ['Jasvel', 'Alex', 'Priya', 'Arjun', 'Meera', 'Ravi', 'Ananya', 'Kiran', 'Divya', 'Rahul', 'Nisha', 'Vikram', 'Pooja']
 const DEFAULT_EXAMPLE_TEXT = EXAMPLE_NAMES[Math.floor(Math.random() * EXAMPLE_NAMES.length)]
@@ -284,6 +286,44 @@ function CustomiserWorkspace({ options }) {
     setTextChoice(undefined)
   }
 
+  const draftPayload = useMemo(
+    () => ({
+      ...design,
+      quantity,
+    }),
+    [design, quantity],
+  )
+
+  const {
+    hasDraft,
+    savedAt,
+    saveStatus,
+    saveDraft: manualSaveDraft,
+    deleteDraft: manualDeleteDraft,
+    getRestoredData,
+  } = useDraftPersistence({
+    productType: 'keychain',
+    currentData: draftPayload,
+    sanitizeFn: (data) => restoreChoices(data, options),
+  })
+
+  function handleRestoreDraft() {
+    const restored = getRestoredData()
+    if (!restored) return
+    if (restored.text != null) setText(restored.text)
+    if (restored.subtitle != null) setSubtitle(restored.subtitle)
+    if (restored.fontId != null) setFontId(restored.fontId)
+    if (restored.templateId != null) setTemplateId(restored.templateId)
+    if (restored.styleId != null) setStyleChoice(restored.styleId)
+    if (restored.size != null) setSizeChoice(restored.size)
+    if (restored.color != null) setBaseChoice(restored.color)
+    if (restored.textColor != null) setTextChoice(restored.textColor)
+    if (restored.quantity != null) setQuantity(restored.quantity)
+    if (restored.keyringPosition != null) setKeyringPosition(restored.keyringPosition)
+    if (restored.thickness != null) setThickness(restored.thickness)
+    if (restored.allowDisconnected != null) setAllowDisconnected(restored.allowDisconnected)
+  }
+
   function resetCustomization() {
     setText(DEFAULT_EXAMPLE_TEXT)
     setSubtitle('')
@@ -296,7 +336,7 @@ function CustomiserWorkspace({ options }) {
     setKeyringPosition(options.defaultKeyringPosition)
     setThickness(adminThicknesses[0]?.name ?? 'standard')
     setAllowDisconnected(false)
-    clearDraft()
+    manualDeleteDraft()
   }
 
   const templateRailItems = options.templates.map((template) => ({
@@ -597,7 +637,16 @@ function CustomiserWorkspace({ options }) {
           />
 
           {/* Live Print Facts Card — desktop only here; repeats below grid on mobile */}
-          <div className="max-[1040px]:hidden">
+          <div className="max-[1040px]:hidden space-y-4">
+            <DraftControlsBar
+              hasDraft={hasDraft}
+              savedAt={savedAt}
+              saveStatus={saveStatus}
+              onSave={manualSaveDraft}
+              onRestore={handleRestoreDraft}
+              onDelete={manualDeleteDraft}
+              productLabel="Keychain"
+            />
             <PrintFactsCard report={preflight} dimensions={preflight.dimensions} />
           </div>
 
@@ -622,6 +671,15 @@ function CustomiserWorkspace({ options }) {
 
       {/* Mobile-only: Print Facts + Summary below all controls */}
       <div className="min-[1041px]:hidden mt-5 space-y-5">
+        <DraftControlsBar
+          hasDraft={hasDraft}
+          savedAt={savedAt}
+          saveStatus={saveStatus}
+          onSave={manualSaveDraft}
+          onRestore={handleRestoreDraft}
+          onDelete={manualDeleteDraft}
+          productLabel="Keychain"
+        />
         <PrintFactsCard report={preflight} dimensions={preflight.dimensions} />
         <CustomizationSummary
           design={design}

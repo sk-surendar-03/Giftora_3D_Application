@@ -5,6 +5,7 @@ import useProducts from '../features/products/useProducts'
 import { colorsForMaterial } from '../data/sampleProducts'
 import { useCart } from '../features/cart/useCart.js'
 import { useAuth } from '../features/auth/useAuth.js'
+import { useWishlist } from '../features/wishlist/WishlistContext.jsx'
 import Button from '../components/ui/Button'
 import ProductGallery from '../components/product/ProductGallery'
 import OptionPicker from '../components/product/OptionPicker'
@@ -27,8 +28,12 @@ function ProductDetailView({ slug }) {
   const { data: allProducts } = useProducts()
   const { isAuthenticated } = useAuth()
   const { addToCart, mutating, mutationError } = useCart()
+  const { isWishlisted, toggleWishlist } = useWishlist()
   const navigate = useNavigate()
   const [addedMessage, setAddedMessage] = useState(null)
+  const [itemNote, setItemNote] = useState('')
+  const [wishlistToggling, setWishlistToggling] = useState(false)
+  const isSaved = product ? isWishlisted(product.id) : false
 
   // Resolve option lists — prefer new structured options over legacy flat arrays
   const materialOptions = Array.isArray(product?.materialOptions) && product.materialOptions.length > 0
@@ -150,6 +155,7 @@ function ProductDetailView({ slug }) {
           color,
           size,
           ...(selectedShipping ? { shippingMethod: { name: selectedShipping.name, priceCents: selectedShipping.priceCents } } : {}),
+          ...(itemNote.trim() ? { note: itemNote.trim().slice(0, 500) } : {}),
         },
       })
       setAddedMessage('Added to cart.')
@@ -369,19 +375,79 @@ function ProductDetailView({ slug }) {
               )}
 
               <QuantitySelector value={quantity} onChange={setQuantity} />
+
+              {/* Item-Level Customer Note */}
+              <div className="pt-2">
+                <label htmlFor="product-item-note" className="block font-sans text-[13px] font-bold tracking-[0.04em] text-ink mb-1.5">
+                  Order note for this item <span className="text-muted font-normal text-xs">(optional)</span>
+                </label>
+                <textarea
+                  id="product-item-note"
+                  rows={2}
+                  maxLength={500}
+                  value={itemNote}
+                  onChange={(e) => setItemNote(e.target.value)}
+                  placeholder="Special instructions? (e.g. Please wrap in gift packaging, engrave initials, shade preference…)"
+                  className="w-full rounded-control border border-line bg-surface px-3.5 py-2 text-[13px] text-ink placeholder:text-muted focus:border-accent focus:outline-none resize-none"
+                />
+                <div className="flex justify-between items-center text-[11px] text-muted mt-1">
+                  {itemNote.trim() ? (
+                    <button
+                      type="button"
+                      onClick={() => setItemNote('')}
+                      className="text-danger hover:underline cursor-pointer"
+                    >
+                      Clear note
+                    </button>
+                  ) : <span />}
+                  <span>{itemNote.length}/500</span>
+                </div>
+              </div>
             </div>
 
             {/* Buy / Add to Cart Action */}
-            <div className="mt-8">
+            <div className="mt-8 flex flex-col sm:flex-row items-stretch gap-3">
               <Button
                 variant="primary"
                 size="lg"
                 onClick={handleAddToCart}
                 disabled={mutating}
-                className="w-full text-base font-semibold"
+                className="flex-1 text-base font-semibold"
               >
                 {mutating ? 'Processing…' : 'Add to Cart'}
               </Button>
+
+              <button
+                type="button"
+                aria-label={isSaved ? 'Remove from wishlist' : 'Save to wishlist'}
+                title={isSaved ? 'Remove from wishlist' : 'Save to wishlist'}
+                disabled={wishlistToggling}
+                onClick={async () => {
+                  if (wishlistToggling || !product) return
+                  setWishlistToggling(true)
+                  try {
+                    await toggleWishlist(product.id)
+                  } catch {
+                    // Handled in context
+                  } finally {
+                    setWishlistToggling(false)
+                  }
+                }}
+                className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-control border text-sm font-semibold transition-all cursor-pointer ${
+                  isSaved
+                    ? 'border-danger/40 bg-danger/10 text-danger hover:bg-danger/15'
+                    : 'border-line bg-surface text-ink hover:border-accent hover:text-accent'
+                } disabled:opacity-60 disabled:cursor-wait`}
+              >
+                <svg
+                  className={`h-5 w-5 transition-transform ${isSaved ? 'fill-current stroke-none scale-105' : 'stroke-current fill-none'}`}
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.6"
+                >
+                  <path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.4-7 10-7 10Z" />
+                </svg>
+                <span>{isSaved ? 'Saved to Wishlist' : 'Save to Wishlist'}</span>
+              </button>
             </div>
 
             {addedMessage && (

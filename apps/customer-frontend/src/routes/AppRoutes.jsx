@@ -17,6 +17,7 @@ import Login from '../pages/Login'
 import Register from '../pages/Register'
 import MyOrders from '../pages/MyOrders'
 import OrderDetails from '../pages/OrderDetails'
+import Wishlist from '../pages/Wishlist'
 import Contact from '../pages/Contact'
 import PolicyPage from '../pages/policies/PolicyPage'
 import NotFound from '../pages/NotFound'
@@ -39,6 +40,7 @@ export default function AppRoutes() {
           <Route path="/customise/nameplate" element={<NameplateCustomiser />} />
           <Route path="/customise/:productId" element={<Navigate to="/customise" replace />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/addresses" element={<Addresses />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order-success/:orderId" element={<OrderSuccess />} />

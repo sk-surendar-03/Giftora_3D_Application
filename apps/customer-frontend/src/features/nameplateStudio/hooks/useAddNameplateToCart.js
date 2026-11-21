@@ -98,6 +98,7 @@ export function useAddNameplateToCart() {
         nameplateDesignId,
         quantity: payload.quantity || 1,
         shippingMethod: payload.shippingMethod,
+        note: payload.note,
       })
 
       if (typeof window !== 'undefined' && cartRes.data?.cart) {

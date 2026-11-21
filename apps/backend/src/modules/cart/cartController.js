@@ -71,37 +71,37 @@ export async function addCartItem(req, res) {
 }
 
 export async function addCustomCartItem(req, res) {
-  const { customDesignId, quantity, shippingMethod } = req.body ?? {}
+  const { customDesignId, quantity, shippingMethod, note } = req.body ?? {}
 
   if (!isNonEmptyString(customDesignId, 50)) throw new HttpError(400, 'customDesignId is required.')
   const qty = quantity ?? 1
   if (!isPositiveInt(qty) || qty > MAX_QUANTITY) throw new HttpError(400, `quantity must be a whole number from 1 to ${MAX_QUANTITY}.`)
 
-  await addCustomItem(req.user.id, { customDesignId, quantity: qty, shippingMethod })
+  await addCustomItem(req.user.id, { customDesignId, quantity: qty, shippingMethod, note })
   const cart = await getOrCreateCart(req.user.id)
   res.status(201).json({ cart: toCartResponse(cart) })
 }
 
 export async function addStandCartItem(req, res) {
-  const { standDesignId, quantity, shippingMethod } = req.body ?? {}
+  const { standDesignId, quantity, shippingMethod, note } = req.body ?? {}
 
   if (!isNonEmptyString(standDesignId, 50)) throw new HttpError(400, 'standDesignId is required.')
   const qty = quantity ?? 1
   if (!isPositiveInt(qty) || qty > MAX_QUANTITY) throw new HttpError(400, `quantity must be a whole number from 1 to ${MAX_QUANTITY}.`)
 
-  await addStandItem(req.user.id, { standDesignId, quantity: qty, shippingMethod })
+  await addStandItem(req.user.id, { standDesignId, quantity: qty, shippingMethod, note })
   const cart = await getOrCreateCart(req.user.id)
   res.status(201).json({ cart: toCartResponse(cart) })
 }
 
 export async function addNameplateCartItem(req, res) {
-  const { nameplateDesignId, quantity, shippingMethod } = req.body ?? {}
+  const { nameplateDesignId, quantity, shippingMethod, note } = req.body ?? {}
 
   if (!isNonEmptyString(nameplateDesignId, 50)) throw new HttpError(400, 'nameplateDesignId is required.')
   const qty = quantity ?? 1
   if (!isPositiveInt(qty) || qty > MAX_QUANTITY) throw new HttpError(400, `quantity must be a whole number from 1 to ${MAX_QUANTITY}.`)
 
-  await addNameplateItem(req.user.id, { nameplateDesignId, quantity: qty, shippingMethod })
+  await addNameplateItem(req.user.id, { nameplateDesignId, quantity: qty, shippingMethod, note })
   const cart = await getOrCreateCart(req.user.id)
   res.status(201).json({ cart: toCartResponse(cart) })
 }

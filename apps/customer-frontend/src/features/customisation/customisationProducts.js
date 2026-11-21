@@ -23,6 +23,7 @@ export const CUSTOMISATION_PRODUCTS = [
     ],
     ctaText: 'Customise Now',
   },
+  /* Phone & Pen Stand commented out per client request
   {
     id: 'phone-pen-stand',
     name: 'Phone & Pen Stand',
@@ -43,6 +44,7 @@ export const CUSTOMISATION_PRODUCTS = [
     ],
     ctaText: 'Customise Now',
   },
+  */
   {
     id: 'nameplate',
     name: 'Custom Nameplate',

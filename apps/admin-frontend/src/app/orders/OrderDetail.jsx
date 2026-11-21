@@ -498,7 +498,7 @@ export default function OrderDetail() {
                     {!isCustom && !isStand && !isNameplate && item.customization && (
                       <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted bg-alt/40 p-3 rounded-control border border-line">
                         {Object.entries(item.customization).map(([key, value]) =>
-                          value ? (
+                          value && key !== 'note' ? (
                             <div key={key} className="flex gap-1.5">
                               <dt className="capitalize font-medium text-muted">{key}:</dt>
                               <dd className="text-ink font-medium">{formatCustomizationValue(value)}</dd>
@@ -506,6 +506,21 @@ export default function OrderDetail() {
                           ) : null,
                         )}
                       </dl>
+                    )}
+
+                    {/* Item-level Customer Special Instructions / Note */}
+                    {item.customization?.note && (
+                      <div className="mt-2.5 rounded-control border border-amber-500/40 bg-amber-500/10 px-3.5 py-2.5 text-xs text-ink">
+                        <div className="flex items-center gap-1.5 font-bold uppercase tracking-wide text-amber-500 text-[11px] mb-1">
+                          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                          </svg>
+                          Item-Specific Customer Note:
+                        </div>
+                        <p className="text-ink font-medium whitespace-pre-wrap leading-relaxed m-0">
+                          {item.customization.note}
+                        </p>
+                      </div>
                     )}
                   </div>
                 )

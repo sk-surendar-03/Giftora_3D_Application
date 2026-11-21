@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth.js'
 import { useCart } from '../../features/cart/useCart.js'
+import { useWishlist } from '../../features/wishlist/WishlistContext.jsx'
 import api from '../../services/api.js'
 
 const navLinks = [
@@ -140,6 +141,11 @@ function ProfileDropdown({ user, updateUser, onLogout }) {
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
                   Saved Addresses
                 </Link>
+                <Link to="/wishlist" onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 py-1.5 text-sm text-ink hover:text-accent">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.4-7 10-7 10Z"/></svg>
+                  My Wishlist
+                </Link>
                 <button type="button" onClick={onLogout}
                   className="flex items-center gap-2 py-1.5 text-sm text-red-500 hover:text-red-600 w-full cursor-pointer">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -160,10 +166,12 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('')
   const { isAuthenticated, user, logout, updateUser } = useAuth()
   const { cart } = useCart()
+  const { wishlistProductIds } = useWishlist()
   const navigate = useNavigate()
   const location = useLocation()
 
   const cartCount = cart?.items?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 0
+  const wishlistCount = wishlistProductIds?.size || 0
 
   function handleLogout() {
     logout()
@@ -296,6 +304,27 @@ export default function Header() {
             </Link>
           )}
 
+          {/* Wishlist Icon Button with Count Chip */}
+          <Link
+            to="/wishlist"
+            className="relative flex h-[42px] w-[42px] items-center justify-center rounded-full text-ink hover:bg-soft"
+            aria-label={`Wishlist (${wishlistCount} saved items)`}
+            title="Wishlist"
+          >
+            <svg
+              className={`h-5 w-5 transition-transform ${wishlistCount > 0 ? 'fill-accent text-accent' : 'stroke-current fill-none'}`}
+              viewBox="0 0 24 24"
+              strokeWidth="1.6"
+            >
+              <path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.4-7 10-7 10Z" />
+            </svg>
+            {wishlistCount > 0 && (
+              <span className="absolute top-[3px] right-[2px] flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[10.5px] font-bold text-on-accent animate-in zoom-in-50 duration-150">
+                {wishlistCount}
+              </span>
+            )}
+          </Link>
+
           {/* Cart Icon Button with Count Chip */}
           <Link
             to="/cart"
@@ -359,6 +388,25 @@ export default function Header() {
               </li>
             ))}
             <li className="my-2 border-t border-border/80" />
+            <li>
+              <Link
+                to="/wishlist"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center justify-between py-2 text-sm text-ink font-medium hover:text-accent"
+              >
+                <span className="flex items-center gap-2">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.4-7 10-7 10Z" />
+                  </svg>
+                  My Wishlist
+                </span>
+                {wishlistCount > 0 && (
+                  <span className="rounded-full bg-accent/20 px-2 py-0.5 text-xs font-bold text-accent">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+            </li>
             {isAuthenticated ? (
               <>
                 <li>

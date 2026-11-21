@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth.js'
 import { PHASE_LABELS, useAddCustomDesignToCart } from '../../features/customDesign/useAddCustomDesignToCart.js'
@@ -22,6 +22,7 @@ export default function CustomizationSummary({
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const { addToCart, phase, error, added, busy, clearAdded } = useAddCustomDesignToCart()
+  const [note, setNote] = useState('')
 
   const rows = [...describeDesign(design), { label: 'Quantity', value: quantity }]
   if (selectedShipping) {
@@ -53,6 +54,7 @@ export default function CustomizationSummary({
       design,
       quantity,
       shippingMethod: selectedShipping ?? undefined,
+      note: note.trim() || undefined,
       capturePreview,
     })
   }
@@ -81,6 +83,34 @@ export default function CustomizationSummary({
           </div>
         ))}
       </dl>
+
+      {/* Item-level Customer Note */}
+      <div className="mt-4 pt-3.5 border-t border-line">
+        <label htmlFor="keychain-note-input" className="block font-sans text-[12px] font-bold tracking-[0.06em] uppercase text-accent mb-1.5">
+          Special Instructions / Note <span className="text-muted font-normal lowercase tracking-normal">(optional)</span>
+        </label>
+        <textarea
+          id="keychain-note-input"
+          rows={2}
+          maxLength={500}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="e.g. Ring hole on top, gift packaging, or specific shade preference…"
+          className="w-full rounded-control border border-line bg-alt px-3 py-2 text-xs text-ink placeholder:text-muted focus:border-accent focus:outline-none resize-none"
+        />
+        <div className="flex justify-between items-center text-[10.5px] text-muted mt-1">
+          {note.trim() ? (
+            <button
+              type="button"
+              onClick={() => setNote('')}
+              className="text-danger hover:underline cursor-pointer"
+            >
+              Clear note
+            </button>
+          ) : <span />}
+          <span>{note.length}/500</span>
+        </div>
+      </div>
 
       {added && (
         <p className="mt-4 text-[13.5px] font-semibold text-[#17683f] bg-[#e3f4ea] px-3.5 py-2 rounded-control">

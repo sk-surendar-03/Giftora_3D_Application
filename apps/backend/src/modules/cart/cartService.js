@@ -84,14 +84,16 @@ export async function addItem(userId, { productId, quantity, customization }) {
   })
 }
 
-export async function addCustomItem(userId, { customDesignId, quantity, shippingMethod }) {
+export async function addCustomItem(userId, { customDesignId, quantity, shippingMethod, note }) {
   const design = await prisma.customDesign.findUnique({ where: { id: customDesignId } })
   if (!design || design.userId !== userId) throw new HttpError(404, 'Design not found.')
   if (design.status !== 'READY') throw new HttpError(409, 'This design is not ready yet ΓÇö its STL file has not been uploaded.')
   if (!(await stlIsAvailable(design))) throw new HttpError(409, 'This design\'s file is missing. Please recreate the design.')
 
+  const cleanNote = typeof note === 'string' && note.trim() ? note.trim().slice(0, 500) : undefined
+
   const cart = await getOrCreateCart(userId)
-  const existingItem = cart.items.find((item) => item.customDesignId === design.id)
+  const existingItem = cart.items.find((item) => item.customDesignId === design.id && (item.customization?.note ?? undefined) === cleanNote)
   if (existingItem) {
     if (existingItem.quantity + quantity > MAX_CUSTOM_QUANTITY) {
       throw new HttpError(400, `You can order at most ${MAX_CUSTOM_QUANTITY} of the same design.`)
@@ -114,6 +116,7 @@ export async function addCustomItem(userId, { customDesignId, quantity, shipping
   const customizationData = {
     ...(sizePriceCents > 0 ? { sizePriceCents } : {}),
     ...(thicknessPriceCents > 0 ? { thicknessPriceCents } : {}),
+    ...(cleanNote ? { note: cleanNote } : {}),
   }
   const resolvedShipping = await resolveShippingMethod(shippingMethod)
   if (resolvedShipping) customizationData.shippingMethod = resolvedShipping
@@ -131,13 +134,15 @@ export async function addCustomItem(userId, { customDesignId, quantity, shipping
   })
 }
 
-export async function addStandItem(userId, { standDesignId, quantity, shippingMethod }) {
+export async function addStandItem(userId, { standDesignId, quantity, shippingMethod, note }) {
   const design = await prisma.standDesign.findUnique({ where: { id: standDesignId } })
   if (!design || design.userId !== userId) throw new HttpError(404, 'Stand design not found.')
   if (design.status !== 'READY') throw new HttpError(409, 'This stand design is not ready yet.')
 
+  const cleanNote = typeof note === 'string' && note.trim() ? note.trim().slice(0, 500) : undefined
+
   const cart = await getOrCreateCart(userId)
-  const existingItem = cart.items.find((item) => item.standDesignId === design.id)
+  const existingItem = cart.items.find((item) => item.standDesignId === design.id && (item.customization?.note ?? undefined) === cleanNote)
   if (existingItem) {
     if (existingItem.quantity + quantity > MAX_CUSTOM_QUANTITY) {
       throw new HttpError(400, `You can order at most ${MAX_CUSTOM_QUANTITY} of the same stand design.`)
@@ -149,7 +154,9 @@ export async function addStandItem(userId, { standDesignId, quantity, shippingMe
     })
   }
 
-  const customizationData = {}
+  const customizationData = {
+    ...(cleanNote ? { note: cleanNote } : {}),
+  }
   const resolvedShipping = await resolveShippingMethod(shippingMethod)
   if (resolvedShipping) customizationData.shippingMethod = resolvedShipping
 
@@ -171,13 +178,15 @@ export async function addStandItem(userId, { standDesignId, quantity, shippingMe
   })
 }
 
-export async function addNameplateItem(userId, { nameplateDesignId, quantity, shippingMethod }) {
+export async function addNameplateItem(userId, { nameplateDesignId, quantity, shippingMethod, note }) {
   const design = await prisma.nameplateDesign.findUnique({ where: { id: nameplateDesignId } })
   if (!design || design.userId !== userId) throw new HttpError(404, 'Nameplate design not found.')
   if (design.status !== 'READY') throw new HttpError(409, 'This nameplate design is not ready yet.')
 
+  const cleanNote = typeof note === 'string' && note.trim() ? note.trim().slice(0, 500) : undefined
+
   const cart = await getOrCreateCart(userId)
-  const existingItem = cart.items.find((item) => item.nameplateDesignId === design.id)
+  const existingItem = cart.items.find((item) => item.nameplateDesignId === design.id && (item.customization?.note ?? undefined) === cleanNote)
   if (existingItem) {
     if (existingItem.quantity + quantity > MAX_CUSTOM_QUANTITY) {
       throw new HttpError(400, `You can order at most ${MAX_CUSTOM_QUANTITY} of the same nameplate design.`)
@@ -189,7 +198,9 @@ export async function addNameplateItem(userId, { nameplateDesignId, quantity, sh
     })
   }
 
-  const customizationData = {}
+  const customizationData = {
+    ...(cleanNote ? { note: cleanNote } : {}),
+  }
   const resolvedShipping = await resolveShippingMethod(shippingMethod)
   if (resolvedShipping) customizationData.shippingMethod = resolvedShipping
 

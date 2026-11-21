@@ -70,7 +70,7 @@ export function useAddCustomDesignToCart() {
       }
 
       setPhase('adding')
-      await addCustomDesignToCart({ customDesignId: record.id, quantity, shippingMethod })
+      await addCustomDesignToCart({ customDesignId: record.id, quantity, shippingMethod, note: payload.note })
       clearDraft()
       setAdded(true)
     } catch (err) {
