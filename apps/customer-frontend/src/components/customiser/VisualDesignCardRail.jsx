@@ -7,11 +7,13 @@ export default function VisualDesignCardRail({
   onChange,
   previewName,
   layout = 'rail',
-  cardWidth = 'w-32',
+  cardWidth,
 }) {
   if (!items || items.length === 0) return null
 
   const isGrid = layout === 'grid'
+  const hasAnyImages = items.some((item) => Boolean(item.previewSrc))
+  const resolvedCardWidth = cardWidth || (hasAnyImages ? 'w-32' : 'w-36')
 
   return (
     <div>
@@ -35,7 +37,7 @@ export default function VisualDesignCardRail({
               item={item}
               isSelected={isSelected}
               isGrid={isGrid}
-              cardWidth={cardWidth}
+              cardWidth={resolvedCardWidth}
               onClick={() => onChange(item.id)}
             />
           )
@@ -47,6 +49,7 @@ export default function VisualDesignCardRail({
 
 function CardItem({ item, isSelected, isGrid, cardWidth, onClick }) {
   const [imgError, setImgError] = useState(false)
+  const hasImage = Boolean(item.previewSrc && !imgError)
 
   return (
     <button
@@ -61,9 +64,9 @@ function CardItem({ item, isSelected, isGrid, cardWidth, onClick }) {
           : 'border-line bg-surface hover:border-accent/40'
       }`}
     >
-      {/* Image thumbnail */}
-      <div className="relative aspect-4/3 w-full overflow-hidden bg-alt">
-        {item.previewSrc && !imgError ? (
+      {/* Image thumbnail - only rendered when an authentic image source exists */}
+      {hasImage && (
+        <div className="relative aspect-4/3 w-full overflow-hidden bg-alt">
           <img
             src={item.previewSrc}
             alt={item.name}
@@ -71,37 +74,40 @@ function CardItem({ item, isSelected, isGrid, cardWidth, onClick }) {
             loading="lazy"
             onError={() => setImgError(true)}
           />
-        ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center text-xs text-muted">
-            <span className="font-medium text-ink/70 line-clamp-2">{item.name}</span>
-            {item.badge && (
-              <span className="mt-1 text-[9px] uppercase tracking-wider text-accent/80 font-bold">
-                {item.badge}
-              </span>
-            )}
-          </div>
-        )}
-        {isSelected && (
-          <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-on-accent shadow-xs">
+          {isSelected && (
+            <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-on-accent shadow-xs">
+              ✓
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Content - clean single typography presentation */}
+      <div className={`p-2.5 flex-1 flex flex-col justify-between ${!hasImage ? 'relative' : ''}`}>
+        {!hasImage && isSelected && (
+          <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-on-accent shadow-xs">
             ✓
           </span>
         )}
-      </div>
-
-      {/* Title & Description */}
-      <div className="p-2">
-        <span
-          className={`block truncate text-[12px] font-semibold transition-colors ${
-            isSelected ? 'text-accent' : 'text-ink group-hover:text-accent'
-          }`}
-        >
-          {item.name}
-        </span>
-        {item.description && (
-          <span className="mt-0.5 block line-clamp-1 text-[10.5px] text-muted">
-            {item.description}
+        <div>
+          {item.badge && !hasImage && (
+            <span className="mb-1 inline-block text-[9px] uppercase tracking-wider text-accent font-bold">
+              {item.badge}
+            </span>
+          )}
+          <span
+            className={`block text-[12px] font-semibold leading-tight transition-colors ${
+              isSelected ? 'text-accent' : 'text-ink group-hover:text-accent'
+            } ${!hasImage ? 'pr-5' : 'truncate'}`}
+          >
+            {item.name}
           </span>
-        )}
+          {item.description && (
+            <span className="mt-1 block line-clamp-2 text-[10.5px] leading-snug text-muted">
+              {item.description}
+            </span>
+          )}
+        </div>
       </div>
     </button>
   )
