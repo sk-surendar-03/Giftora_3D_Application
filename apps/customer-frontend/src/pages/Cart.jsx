@@ -140,6 +140,11 @@ export default function Cart() {
                         <div className="mt-1 text-[13px] text-muted">
                           <DesignDetails params={item.design?.params} />
                         </div>
+                        {item.customization?.note && (
+                          <div className="mt-1 text-[12px] text-amber-500 font-medium">
+                            <span className="text-muted">Note:</span> "{item.customization.note}"
+                          </div>
+                        )}
                         <div className="mt-2 text-xs">
                           {(() => {
                             const sm = item.customization?.shippingMethod
@@ -194,6 +199,11 @@ export default function Cart() {
                         <div className="mt-1 text-[13px] text-muted">
                           <NameplateDetails config={nameplate?.designConfig} nameplateType={nameplate?.nameplateType} />
                         </div>
+                        {item.customization?.note && (
+                          <div className="mt-1 text-[12px] text-amber-500 font-medium">
+                            <span className="text-muted">Note:</span> "{item.customization.note}"
+                          </div>
+                        )}
                         <div className="mt-2 text-xs">
                           {(() => {
                             const sm = item.customization?.shippingMethod

@@ -301,6 +301,11 @@ export default function Checkout() {
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-ink truncate m-0">{item.title}</p>
                           <p className="text-[12px] text-muted m-0">Qty {item.quantity}</p>
+                          {item.customization?.note && (
+                            <p className="text-[11.5px] text-amber-500 font-medium m-0 mt-0.5 truncate">
+                              <span className="text-muted">Note:</span> "{item.customization.note}"
+                            </p>
+                          )}
                           {issue && <p className={`text-[11.5px] mt-1 ${issue.blocking ? 'text-danger font-semibold' : 'text-accent'}`}>{issue.message}</p>}
                         </div>
                         <div className="text-right font-semibold text-ink">
