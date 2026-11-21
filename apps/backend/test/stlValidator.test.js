@@ -33,7 +33,7 @@ test('rejects non-finite numbers, out-of-range coordinates, flat or oversized mo
   rejects(makeBoxStl({ offset: 5000 }), /outside the printable range/)
   rejects(makeBoxStl({ z: 0.05 }), /too thin or flat/)
   rejects(makeBoxStl({ x: 700 }), /larger than the maximum/)
-  rejects(makeBoxStl({ z: 150 }), /larger than the maximum/)
+  rejects(makeBoxStl({ z: 450 }), /larger than the maximum/)
 })
 
 test('a tampered triangle count is detected', () => {

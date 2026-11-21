@@ -2,12 +2,12 @@ import { createHash } from 'node:crypto'
 import { HttpError } from '../../utils/httpError.js'
 
 // Bounds are deliberately generous sanity limits (the largest product is a
-// ~20 cm door nameplate), not a manufacturing spec. [Estimated, tunable.]
+// ~35 cm door nameplate or desk organizer), not a manufacturing spec.
 const MAX_TRIANGLES = 1_000_000
 const MIN_TRIANGLES = 4
 const MAX_COORDINATE_MM = 2000
 const MAX_SIZE_XY_MM = 600
-const MAX_SIZE_Z_MM = 100
+const MAX_SIZE_Z_MM = 400
 const MIN_SIZE_MM = 0.4
 
 function bad(message) {
