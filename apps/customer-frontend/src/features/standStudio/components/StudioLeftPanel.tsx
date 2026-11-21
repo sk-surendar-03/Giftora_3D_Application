@@ -18,7 +18,7 @@ import type {
 import { CATEGORY_META, DESIGN_THEMES, MATERIAL_SWATCHES } from '../core/defaults';
 import { TEMPLATE_LIBRARY } from '../core/templates';
 import VisualDesignCardRail from '../../../components/customiser/VisualDesignCardRail';
-import { getStandTemplatePreview, getStandThemePreview, getStandCategoryPreview } from '../core/standTemplateAssets';
+import { getStandTemplatePreview, getStandThemePreview } from '../core/standTemplateAssets';
 
 interface StudioLeftPanelProps {
   config: DesignConfig;
@@ -149,7 +149,7 @@ export const StudioLeftPanel: React.FC<StudioLeftPanelProps> = ({
     id: tpl.id,
     name: tpl.name,
     description: tpl.tagline,
-    previewSrc: getStandTemplatePreview(tpl.id) ?? getStandCategoryPreview(tpl.category),
+    previewSrc: getStandTemplatePreview(tpl.id),
     badge: tpl.themeId,
   }));
 

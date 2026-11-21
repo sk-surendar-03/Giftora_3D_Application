@@ -7,42 +7,15 @@
  */
 
 export const NAMEPLATE_TEMPLATE_PREVIEWS: Record<string, string> = {
-  'tpl-minimalist': '/showcase/templates/nameplate.png',
-  'tpl-luxury': '/hero-4.png',
-  'tpl-royal': '/showcase/styles/name-keychain-soft-tag.png',
-  'tpl-floral': '/showcase/styles/name-keychain-arch.png',
-  'tpl-cartoon': '/showcase/styles/name-keychain-bubble.png',
-  'tpl-superhero': '/showcase/styles/name-keychain-soft-tag.png',
-  'tpl-gaming': '/showcase/styles/magnet-capsule.png',
-  'tpl-corporate': '/showcase/templates/nameplate.png',
-  'tpl-nature': '/showcase/styles/magnet-soft-tag.png',
-  'tpl-wedding': '/showcase/styles/name-keychain-heart-split.png',
-  'tpl-tamil-traditional': '/hero-3.png',
+  // All nameplate templates return undefined to render clean typography fallback cards
 };
 
 export const NAMEPLATE_TYPE_PREVIEWS: Record<string, string> = {
-  desk: '/showcase/templates/nameplate.png',
-  door: '/showcase/styles/name-keychain-arch.png',
-  wall: '/showcase/templates/nameplate.png',
-  kids: '/showcase/styles/name-keychain-bubble.png',
-  business: '/showcase/templates/nameplate.png',
-  led: '/showcase/templates/nameplate.png',
-  'decorative-3d': '/showcase/styles/name-keychain-contour.png',
-  wedding: '/showcase/styles/name-keychain-heart-split.png',
-  'house-number': '/showcase/templates/nameplate.png',
-  gaming: '/showcase/templates/nameplate.png',
+  // All nameplate types return undefined to render clean typography fallback cards
 };
 
 export const NAMEPLATE_SHAPE_PREVIEWS: Record<string, string> = {
-  rectangle: '/showcase/templates/nameplate.png',
-  'rounded-rectangle': '/showcase/templates/nameplate.png',
-  arch: '/showcase/styles/name-keychain-arch.png',
-  cloud: '/showcase/styles/name-keychain-bubble.png',
-  heart: '/showcase/styles/name-keychain-heart-split.png',
-  'ribbon-banner': '/showcase/styles/name-keychain-ribbon.png',
-  'chamfer-plate': '/showcase/styles/name-keychain-soft-tag.png',
-  'ticket-notch': '/showcase/styles/magnet-soft-tag.png',
-  'text-outline': '/showcase/styles/name-keychain-contour.png',
+  // All nameplate shapes return undefined to render clean typography fallback cards
 };
 
 export const MISSING_NAMEPLATE_IMAGES = [
@@ -61,11 +34,11 @@ export const MISSING_NAMEPLATE_IMAGES = [
 ];
 
 export function getNameplateTemplatePreview(templateId: string): string | undefined {
-  return NAMEPLATE_TEMPLATE_PREVIEWS[templateId] ?? '/showcase/templates/nameplate.png';
+  return NAMEPLATE_TEMPLATE_PREVIEWS[templateId];
 }
 
 export function getNameplateTypePreview(typeId: string): string | undefined {
-  return NAMEPLATE_TYPE_PREVIEWS[typeId] ?? '/showcase/templates/nameplate.png';
+  return NAMEPLATE_TYPE_PREVIEWS[typeId];
 }
 
 export function getNameplateShapePreview(shapeId: string): string | undefined {

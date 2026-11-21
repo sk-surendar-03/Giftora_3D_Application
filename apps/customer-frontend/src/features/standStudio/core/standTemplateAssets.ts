@@ -8,29 +8,15 @@
  */
 
 export const STAND_CATEGORY_PREVIEWS: Record<string, string> = {
-  'phone-stand': '/hero-2.png',
-  'pen-holder': '/hero-2.png',
-  combined: '/hero-2.png',
+  // All stand categories return undefined to render clean typography fallback cards
 };
 
 export const STAND_THEME_PREVIEWS: Record<string, string> = {
-  minimalist: '/hero-2.png',
-  'corporate-gift': '/hero-2.png',
-  'executive-marble': '/hero-4.png',
-  // Missing dedicated artwork:
-  // 'nature-inspired', 'gaming-rgb', 'kids-playful'
+  // All stand themes return undefined to render clean typography fallback cards
 };
 
 export const STAND_TEMPLATE_PREVIEWS: Record<string, string> = {
-  'executive-desk-station': '/hero-2.png',
-  'minimal-phone-dock': '/hero-2.png',
-  'minimalist-duo-stand': '/hero-2.png',
-  'executive-pen-tray': '/hero-4.png',
-  // Missing dedicated artwork:
-  // 'curved-phone-rest', 'gamer-phone-stand', 'personalized-charging-stand',
-  // 'compact-travel-stand', 'sculptural-wave-cradle', 'hex-honeycomb-cup',
-  // 'zen-wave-pen-holder', 'modular-pen-dock', 'gaming-battlestation-dock',
-  // 'corner-desk-organizer'
+  // All stand templates return undefined to render clean typography fallback cards
 };
 
 export const MISSING_STAND_IMAGES = [
