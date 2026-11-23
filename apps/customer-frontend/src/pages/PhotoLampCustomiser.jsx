@@ -25,6 +25,23 @@ import {
   FileDown,
 } from 'lucide-react'
 
+// Authoritative mapping from frontend studio shape IDs to backend pricing template IDs
+const SHAPE_TO_TEMPLATE_ID = {
+  cylinder: 'cylinder',
+  rectangle: 'rectangle',
+  four_sided: 'prism_4',
+  prism_4: 'prism_4',
+  heart: 'heart',
+  curved: 'curved',
+  moon: 'moon',
+  hexagonal: 'lantern_6',
+  lantern_6: 'lantern_6',
+  circular: 'medallion',
+  medallion: 'medallion',
+  rotating: 'carousel_3',
+  carousel_3: 'carousel_3',
+}
+
 function createDefaultProject() {
   return {
     id: 'giftora-lamp-' + Date.now(),
@@ -181,7 +198,10 @@ export default function PhotoLampCustomiser() {
 
   // Live Unit Price in ₹
   const unitPriceRupees = useMemo(() => {
-    const tplOpt = pricingConfig?.templates?.find((t) => t.id === project.shape)
+    const templateId = SHAPE_TO_TEMPLATE_ID[project.shape] || project.shape
+    const tplOpt = pricingConfig?.templates?.find(
+      (t) => t.id === templateId || t.id === project.shape
+    )
     const basePriceCents = tplOpt?.basePriceCents ?? 45000
     const ratePerCm3 = pricingConfig?.volumetricRatePerCm3Cents ?? 40
     const volumeCents = Math.round(estimatedVolumeCm3 * ratePerCm3)
@@ -235,9 +255,10 @@ export default function PhotoLampCustomiser() {
   // Execute Add to Cart via hook
   const handleAddToCart = async () => {
     try {
+      const templateId = SHAPE_TO_TEMPLATE_ID[project.shape] || project.shape
       await addToCart({
         title: project.name,
-        templateId: project.shape,
+        templateId,
         shape: project.shape,
         printSettings: project.printSettings,
         baseSettings: project.baseSettings,
@@ -301,7 +322,7 @@ export default function PhotoLampCustomiser() {
       </header>
 
       {/* Main Studio CAD Workspace */}
-      <div className="flex-1 min-h-0 relative">
+      <div className="flex-1 min-h-0 relative flex flex-col">
         <StudioLayout
           project={project}
           onChangeProject={handleChangeProject}

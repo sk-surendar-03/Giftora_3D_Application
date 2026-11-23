@@ -265,16 +265,16 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
   };
 
   return (
-    <div className="w-full h-[calc(100vh-65px)] flex flex-col bg-stone-950 text-white overflow-hidden">
+    <div className="w-full h-[calc(100vh-56px)] lg:h-[calc(100vh-65px)] flex flex-col bg-stone-950 text-white overflow-hidden">
       {/* Top Studio Action Bar */}
-      <div className="border-b border-stone-800 bg-stone-900/60 px-4 py-2.5 flex items-center justify-between gap-3 shrink-0">
+      <div className="border-b border-stone-800 bg-stone-900/60 px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-3 shrink-0">
         {/* Left: Design Title & Dimensions chip */}
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
           <input
             type="text"
             value={project.name}
             onChange={(e) => onChangeProject({ name: e.target.value })}
-            className="bg-transparent border-b border-transparent hover:border-stone-700 focus:border-amber-500 text-sm font-extrabold text-white px-1 py-0.5 focus:outline-none truncate max-w-[200px] sm:max-w-xs"
+            className="bg-transparent border-b border-transparent hover:border-stone-700 focus:border-amber-500 text-xs sm:text-sm font-extrabold text-white px-1 py-0.5 focus:outline-none truncate max-w-[130px] sm:max-w-[200px] md:max-w-xs"
             title="Click to rename project"
           />
           <span className="hidden sm:inline-block text-[11px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full font-semibold">
@@ -283,10 +283,11 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             onClick={onOpenEstimator}
-            className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+            title="Cost Estimator"
+            className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
           >
             <Calculator className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden md:inline">Cost Estimator</span>
@@ -294,7 +295,7 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
 
           <button
             onClick={onAddToCart}
-            className="px-3.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+            className="px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
           >
             <ShoppingBag className="w-3.5 h-3.5 text-amber-400" />
             <span>Order</span>
@@ -302,20 +303,21 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
 
           <button
             onClick={onOpenExport}
-            className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all active:scale-95"
+            className="px-3 sm:px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all active:scale-95"
           >
             <Download className="w-4 h-4" />
-            <span>Export 3D Files</span>
+            <span className="hidden sm:inline">Export 3D Files</span>
+            <span className="sm:hidden">Export</span>
           </button>
         </div>
       </div>
 
-      {/* Main Studio Body: Left Configuration Drawer, Right 3D Viewport */}
+      {/* Main Studio Body: Split Screen on Mobile/Tablet (<1024px), Side-by-Side on Desktop (>=1024px) */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
-        {/* Left Side: Navigation Stepper & Active Tab Panel */}
-        <div className="w-full lg:w-[420px] xl:w-[460px] shrink-0 border-r border-stone-800 flex flex-col bg-stone-900/40 min-h-0 h-full overflow-hidden">
+        {/* Configuration Drawer: Placed BELOW the 3D preview on mobile (<1024px) via order-2, on the LEFT on desktop (>=1024px) via lg:order-1 */}
+        <div className="order-2 lg:order-1 w-full flex-1 min-h-0 lg:flex-none lg:w-[420px] xl:w-[460px] lg:h-full shrink-0 lg:shrink-0 border-t lg:border-t-0 lg:border-r border-stone-800 flex flex-col bg-stone-900/40 overflow-hidden">
           {/* Stepper Tabs Bar */}
-          <div className="border-b border-stone-800 bg-stone-950/80 p-2 overflow-x-auto flex items-center gap-1.5">
+          <div className="border-b border-stone-800 bg-stone-950/80 p-2 overflow-x-auto flex items-center gap-1.5 shrink-0">
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const isSelected = activeTab === tab.id;
@@ -323,7 +325,7 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as StudioTab)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap transition-all shrink-0 ${
                     isSelected
                       ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20'
                       : 'text-stone-400 hover:text-white hover:bg-stone-800'
@@ -336,7 +338,7 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
             })}
           </div>
 
-          {/* Active Tab Panel Body */}
+          {/* Active Tab Panel Body - Independently vertically scrollable */}
           <div className="flex-1 min-h-0 p-4 sm:p-5 overflow-y-auto">
             {activeTab === 'template' && (
               <TemplateSelector
@@ -408,7 +410,7 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
           </div>
 
           {/* Bottom Step Navigation Bar */}
-          <div className="p-3 border-t border-stone-800 bg-stone-950/90 flex items-center justify-between">
+          <div className="p-3 border-t border-stone-800 bg-stone-950/90 flex items-center justify-between shrink-0">
             <button
               onClick={() => {
                 const curIdx = TABS.findIndex((t) => t.id === activeTab);
@@ -439,8 +441,8 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
           </div>
         </div>
 
-        {/* Right Side: Central Unobstructed Three.js 3D Viewport */}
-        <div className="flex-1 min-w-0 relative h-[480px] lg:h-full min-h-0 bg-stone-950 flex flex-col overflow-hidden">
+        {/* Central Unobstructed Three.js 3D Viewport: Placed at TOP on mobile (<1024px) via order-1, on the RIGHT on desktop (>=1024px) via lg:order-2 */}
+        <div className="order-1 lg:order-2 w-full h-[40vh] sm:h-[42vh] min-h-[260px] max-h-[46vh] lg:h-full lg:min-h-0 lg:max-h-none lg:flex-1 min-w-0 relative bg-stone-950 flex flex-col shrink-0 lg:shrink overflow-hidden border-b lg:border-b-0 border-stone-800">
           <LithophaneViewer
             lithophaneGeometry={lithophaneGeometry}
             baseGeometry={baseGeometry}

@@ -91,8 +91,8 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
   useEffect(() => {
     if (!mountRef.current) return;
     const container = mountRef.current;
-    const width = container.clientWidth || 600;
-    const height = container.clientHeight || 500;
+    const initialWidth = container.clientWidth > 0 ? container.clientWidth : 600;
+    const initialHeight = container.clientHeight > 0 ? container.clientHeight : 500;
 
     // Detect software GL
     const isSoftwareGl = (() => {
@@ -111,7 +111,7 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
       powerPreference: 'high-performance',
       preserveDrawingBuffer: true,
     });
-    renderer.setSize(width, height);
+    renderer.setSize(initialWidth, initialHeight);
     renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -130,7 +130,7 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
     sceneRef.current = scene;
 
     // 3. Camera
-    const camera = new THREE.PerspectiveCamera(38, width / height, 1, 2000);
+    const camera = new THREE.PerspectiveCamera(38, initialWidth / initialHeight, 1, 2000);
     camera.position.set(0, 6, 345);
     cameraRef.current = camera;
 
@@ -214,11 +214,14 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
     scene.add(gridHelper);
     gridHelperRef.current = gridHelper;
 
-    // 9. Resize observer
+    // 9. Robust ResizeObserver & Window Resize Handling
     const handleResize = () => {
       if (!container || !rendererRef.current || !cameraRef.current) return;
-      const w = container.clientWidth || 600;
-      const h = container.clientHeight || 500;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      // Ignore invalid zero-sized measurements (e.g. element hidden, unrendered, or mid-transition)
+      if (w <= 0 || h <= 0) return;
+
       cameraRef.current.aspect = w / h;
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(w, h);
@@ -226,13 +229,25 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
         rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
     };
+
     window.addEventListener('resize', handleResize);
-    const resizeObserver = new ResizeObserver(handleResize);
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width: w, height: h } = entry.contentRect;
+        if (w > 0 && h > 0) {
+          handleResize();
+        }
+      }
+    });
     resizeObserver.observe(container);
+
+    // Initial check in case layout settled right after mount
+    const rafId = requestAnimationFrame(handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
       resizeObserver.disconnect();
+      cancelAnimationFrame(rafId);
       cancelAnimationFrame(animationFrameId.current);
       clearTimeout(animationFrameId.current);
       renderer.dispose();
@@ -592,25 +607,25 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
       <div ref={mountRef} className="w-full flex-1 min-h-0 relative overflow-hidden cursor-grab active:cursor-grabbing" />
 
       {/* Top Floating Controls Bar */}
-      <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-10">
-        <div className="pointer-events-auto flex items-center gap-1.5 bg-stone-900/85 border border-stone-700/60 rounded-xl px-2.5 py-1.5 shadow-xl">
-          <span className="text-[11px] font-mono font-medium text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+      <div className="absolute top-2 left-2 right-2 sm:top-3 sm:left-3 sm:right-3 flex items-center justify-between pointer-events-none z-10 gap-2">
+        <div className="pointer-events-auto flex items-center gap-1.5 bg-stone-900/85 border border-stone-700/60 rounded-xl px-2 sm:px-2.5 py-1 sm:py-1.5 shadow-xl shrink-0">
+          <span className="text-[10px] sm:text-[11px] font-mono font-medium text-amber-400 uppercase tracking-wider flex items-center gap-1 sm:gap-1.5">
+            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-400 inline-block" />
             3D Studio View
           </span>
           <span className="text-stone-600">|</span>
-          <span className="text-[11px] text-stone-300 font-medium capitalize">
+          <span className="text-[10px] sm:text-[11px] text-stone-300 font-medium capitalize truncate max-w-[90px] sm:max-w-none">
             {shape.replace('_', ' ')} Lamp
           </span>
         </div>
 
         {/* Action icons right */}
-        <div className="pointer-events-auto flex items-center gap-2">
+        <div className="pointer-events-auto flex items-center gap-1 sm:gap-2">
           {/* Base & Housing Visibility Toggle */}
           <button
             onClick={handleCycleHousing}
             title="Cycle Base & Cap Display (Solid / X-Ray / Lithophane Only)"
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${
+            className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${
               housingDisplay !== 'solid'
                 ? 'bg-amber-500 text-stone-950 font-semibold'
                 : 'bg-stone-900/85 hover:bg-stone-800 text-stone-300 border border-stone-700/60'
@@ -621,7 +636,7 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
             ) : (
               <Boxes className="w-3.5 h-3.5" />
             )}
-            <span className="hidden sm:inline">
+            <span className="hidden md:inline">
               {housingDisplay === 'solid'
                 ? 'Base: Solid'
                 : housingDisplay === 'ghost'
@@ -634,21 +649,21 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
           <button
             onClick={() => setWireframe(!wireframe)}
             title="Toggle Wireframe Inspection"
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-all ${
+            className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-all ${
               wireframe
                 ? 'bg-amber-500 text-stone-950 font-semibold'
                 : 'bg-stone-900/85 hover:bg-stone-800 text-stone-300 border border-stone-700/60'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Wireframe</span>
+            <span className="hidden md:inline">Wireframe</span>
           </button>
 
           {/* Auto Rotate toggle */}
           <button
             onClick={() => setAutoRotate(!autoRotate)}
             title="Auto-Rotate Camera"
-            className={`p-2 rounded-lg text-xs font-medium flex items-center gap-1 transition-all ${
+            className={`p-1.5 sm:p-2 rounded-lg text-xs font-medium flex items-center gap-1 transition-all ${
               autoRotate
                 ? 'bg-amber-500 text-stone-950'
                 : 'bg-stone-900/85 hover:bg-stone-800 text-stone-300 border border-stone-700/60'
@@ -661,7 +676,7 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
           <button
             onClick={handleCaptureSnapshot}
             title="Capture High-Res Photo Snapshot"
-            className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-stone-900/85 hover:bg-stone-800 text-stone-200 border border-stone-700/60 flex items-center gap-1.5 transition-all active:scale-95 shadow-md"
+            className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium bg-stone-900/85 hover:bg-stone-800 text-stone-200 border border-stone-700/60 flex items-center gap-1.5 transition-all active:scale-95 shadow-md"
           >
             <Camera className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden sm:inline">Snapshot</span>
@@ -670,11 +685,11 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
       </div>
 
       {/* Bottom Floating Camera View Dock */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none z-10">
-        <div className="pointer-events-auto flex items-center gap-1 bg-stone-900/90 border border-stone-800 rounded-xl p-1 shadow-2xl">
+      <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 pointer-events-none z-10 max-w-[96%]">
+        <div className="pointer-events-auto flex items-center gap-1 bg-stone-900/90 border border-stone-800 rounded-xl p-1 shadow-2xl overflow-x-auto scrollbar-none">
           <button
             onClick={() => applyViewPreset('persp')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-medium whitespace-nowrap transition-all ${
               activeViewPreset === 'persp'
                 ? 'bg-amber-500 text-stone-950 font-bold shadow'
                 : 'text-stone-300 hover:text-white hover:bg-stone-800'
@@ -684,7 +699,7 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
           </button>
           <button
             onClick={() => applyViewPreset('front')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-medium whitespace-nowrap transition-all ${
               activeViewPreset === 'front'
                 ? 'bg-amber-500 text-stone-950 font-bold shadow'
                 : 'text-stone-300 hover:text-white hover:bg-stone-800'
@@ -694,7 +709,7 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
           </button>
           <button
             onClick={() => applyViewPreset('side')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-medium whitespace-nowrap transition-all ${
               activeViewPreset === 'side'
                 ? 'bg-amber-500 text-stone-950 font-bold shadow'
                 : 'text-stone-300 hover:text-white hover:bg-stone-800'
@@ -704,7 +719,7 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
           </button>
           <button
             onClick={() => applyViewPreset('top')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-medium whitespace-nowrap transition-all ${
               activeViewPreset === 'top'
                 ? 'bg-amber-500 text-stone-950 font-bold shadow'
                 : 'text-stone-300 hover:text-white hover:bg-stone-800'
@@ -714,7 +729,7 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
           </button>
           <button
             onClick={() => applyViewPreset('inside')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-medium whitespace-nowrap transition-all ${
               activeViewPreset === 'inside'
                 ? 'bg-amber-500 text-stone-950 font-bold shadow'
                 : 'text-stone-300 hover:text-white hover:bg-stone-800'
