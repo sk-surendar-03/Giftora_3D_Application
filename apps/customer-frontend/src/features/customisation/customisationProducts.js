@@ -14,7 +14,7 @@ export const CUSTOMISATION_PRODUCTS = [
     badgeTone: 'gold',
     status: 'active',
     route: '/customise',
-    image: '/hero-products.png',
+    image: '/customisation/keychain.png',
     features: [
       'Interactive 3D geometry engine',
       'Dual-color print combinations',
@@ -56,7 +56,7 @@ export const CUSTOMISATION_PRODUCTS = [
     badgeTone: 'gold',
     status: 'active',
     route: '/customise/nameplate',
-    image: '/hero-3.png',
+    image: '/customisation/nameplate.png',
     features: [
       '10 Plate types & 20 silhouette shapes',
       'Multi-line text & 70+ fonts with Tamil support',
@@ -76,7 +76,7 @@ export const CUSTOMISATION_PRODUCTS = [
     badgeTone: 'emerald',
     status: 'active',
     route: '/customise/qr-stand',
-    image: '/hero-qr-stand.png',
+    image: '/customisation/qr.png',
     features: [
       '12 Display templates (Desk, Wedge, Wall, Counter)',
       'UPI, Wi-Fi, WhatsApp, Social & URL payloads',
@@ -96,7 +96,7 @@ export const CUSTOMISATION_PRODUCTS = [
     badgeTone: 'gold',
     status: 'active',
     route: '/customise/photo-lamp',
-    image: '/hero-photo-lamp.png',
+    image: '/customisation/lamp.png',
     features: [
       '9 Lamp archetypes (Cylinder, Heart, Moon, Lantern, Carousel)',
       'Multi-photo slot management & pro image tuning',
