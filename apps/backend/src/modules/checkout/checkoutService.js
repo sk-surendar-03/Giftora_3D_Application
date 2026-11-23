@@ -144,7 +144,6 @@ export async function reviewCheckout(userId, addressId) {
       qrStandDesignSnapshot = null
       lithophaneDesignSnapshot = null
     }
-    }
 
     const priceChanged = currentUnitPriceCents !== item.unitPriceCents
     const lineTotalCents = available ? currentUnitPriceCents * item.quantity : 0
