@@ -16,6 +16,7 @@ import { settingsRouter, adminSettingsRouter } from './modules/settings/settings
 import { customizerRouter, customDesignRouter } from './modules/customizer/customizerRoutes.js'
 import { standDesignerRouter, standDesignRouter } from './modules/standDesigner/standDesignRoutes.js'
 import { nameplateDesignerRouter, nameplateDesignRouter } from './modules/nameplateDesigner/nameplateDesignRoutes.js'
+import { qrStandDesignerRouter, qrStandDesignRouter } from './modules/qrStandDesigner/qrStandDesignRoutes.js'
 import { wishlistRouter } from './modules/wishlist/wishlistRoutes.js'
 import { contactRouter } from './modules/contact/contactRoutes.js'
 import { adminInquiryRouter } from './modules/contact/adminInquiryRoutes.js'
@@ -60,6 +61,8 @@ app.use('/api/v1/stand-designer', standDesignerRouter)
 app.use('/api/v1/stand-designs', standDesignRouter)
 app.use('/api/v1/nameplate-designer', nameplateDesignerRouter)
 app.use('/api/v1/nameplate-designs', nameplateDesignRouter)
+app.use('/api/v1/qr-stand-designer', qrStandDesignerRouter)
+app.use('/api/v1/qr-stand-designs', qrStandDesignRouter)
 app.use('/api/v1/wishlist', wishlistRouter)
 app.use('/api/v1/contact', contactRouter)
 

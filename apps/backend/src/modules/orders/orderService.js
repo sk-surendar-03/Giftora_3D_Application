@@ -5,15 +5,17 @@ import { parsePagination, buildMeta } from '../../utils/pagination.js'
 import { stlIsAvailable, toPublicDesign } from '../customizer/designService.js'
 import { stlIsAvailable as standStlIsAvailable, toPublicStandDesign } from '../standDesigner/standDesignService.js'
 import { stlIsAvailable as nameplateStlIsAvailable, toPublicNameplateDesign } from '../nameplateDesigner/nameplateDesignService.js'
-import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig, getNameplatePricingConfig } from '../settings/settingsService.js'
+import { stlIsAvailable as qrStandStlIsAvailable, toPublicQrStandDesign } from '../qrStandDesigner/qrStandDesignService.js'
+import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig, getNameplatePricingConfig, getQrStandPricingConfig } from '../settings/settingsService.js'
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { priceForDesign } from '../customizer/designService.js'
 import { priceForStand } from '../standDesigner/standDesignOptions.js'
 import { priceForNameplate } from '../nameplateDesigner/nameplateDesignOptions.js'
+import { priceForQrStand } from '../qrStandDesigner/qrStandDesignOptions.js'
 import { resolveTrackingUrl } from './carrierTracking.js'
 
-const CART_INCLUDE = { items: { include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true }, orderBy: { createdAt: 'asc' } } }
-const ORDER_INCLUDE = { items: { include: { customDesign: true, standDesign: true, nameplateDesign: true } } }
+const CART_INCLUDE = { items: { include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true, qrStandDesign: true }, orderBy: { createdAt: 'asc' } } }
+const ORDER_INCLUDE = { items: { include: { customDesign: true, standDesign: true, nameplateDesign: true, qrStandDesign: true } } }
 
 /**
  * Shapes an order for the API: each custom-design line carries a `design`
@@ -24,11 +26,12 @@ export function serializeOrder(order, { admin = false } = {}) {
   if (!order) return order
   return {
     ...order,
-    items: order.items.map(({ customDesign, standDesign, nameplateDesign, ...item }) => ({
+    items: order.items.map(({ customDesign, standDesign, nameplateDesign, qrStandDesign, ...item }) => ({
       ...item,
       ...(customDesign !== undefined ? { design: toPublicDesign(customDesign, { admin }) } : {}),
       ...(standDesign !== undefined ? { stand: toPublicStandDesign(standDesign, { admin }) } : {}),
       ...(nameplateDesign !== undefined ? { nameplate: toPublicNameplateDesign(nameplateDesign, { admin }) } : {}),
+      ...(qrStandDesign !== undefined ? { qrStand: toPublicQrStandDesign(qrStandDesign, { admin }) } : {}),
     })),
   }
 }
@@ -87,6 +90,8 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
             if (!(await standStlIsAvailable(item.standDesign))) unavailable.push({ name: item.standDesign.title })
           } else if (item.itemType === 'NAMEPLATE_DESIGN') {
             if (!(await nameplateStlIsAvailable(item.nameplateDesign))) unavailable.push({ name: item.nameplateDesign.title })
+          } else if (item.itemType === 'QR_STAND_DESIGN') {
+            if (!(await qrStandStlIsAvailable(item.qrStandDesign))) unavailable.push({ name: item.qrStandDesign.title })
           } else if (!item.product?.isActive) {
             unavailable.push({ name: item.product?.name ?? 'An item' })
           }
@@ -99,13 +104,14 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
         // cart snapshot alone. If any price has changed since the item was
         // added to the cart, refuse the order so the customer can refresh
         // checkout instead of being silently charged a different amount.
-        const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }, standPricingConfig, nameplatePricingConfig, { methods: shippingMethods }] =
+        const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }, standPricingConfig, nameplatePricingConfig, qrStandPricingConfig, { methods: shippingMethods }] =
           await Promise.all([
             getPricingConfig(),
             getCustomizerSizes(),
             getCustomizerThicknesses(),
             getStandPricingConfig(),
             getNameplatePricingConfig(),
+            getQrStandPricingConfig(),
             getCustomizerShipping(),
           ])
 
@@ -122,6 +128,8 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
             currentUnitPriceCents = priceForStand(item.standDesign.category, item.standDesign.solidVolumeCm3 ?? 0, standPricingConfig)
           } else if (item.itemType === 'NAMEPLATE_DESIGN') {
             currentUnitPriceCents = priceForNameplate(item.nameplateDesign.nameplateType, item.nameplateDesign.solidVolumeCm3 ?? 0, item.nameplateDesign.designConfig, nameplatePricingConfig)
+          } else if (item.itemType === 'QR_STAND_DESIGN') {
+            currentUnitPriceCents = priceForQrStand(item.qrStandDesign.templateId, item.qrStandDesign.solidVolumeCm3 ?? 0, item.qrStandDesign.designConfig, qrStandPricingConfig)
           } else {
             const matOpts = Array.isArray(item.product?.materialOptions) ? item.product.materialOptions : []
             const sizeOpts = Array.isArray(item.product?.sizeOptions) ? item.product.sizeOptions : []
@@ -138,7 +146,7 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
           }
           recomputedPrices.set(item.id, currentUnitPriceCents)
           if (currentUnitPriceCents !== item.unitPriceCents) {
-            priceChangedItems.push(item.customDesign?.title || item.standDesign?.title || item.product?.name || 'An item')
+            priceChangedItems.push(item.customDesign?.title || item.standDesign?.title || item.nameplateDesign?.title || item.qrStandDesign?.title || item.product?.name || 'An item')
           }
         }
 
@@ -217,6 +225,18 @@ export async function createOrder(userId, { addressId, idempotencyKey, customerN
                     unitPriceCents: currentPrice,
                   }
                 }
+                if (item.itemType === 'QR_STAND_DESIGN') {
+                  return {
+                    itemType: 'QR_STAND_DESIGN',
+                    qrStandDesignId: item.qrStandDesignId,
+                    productName: item.qrStandDesign.title,
+                    productSlug: null,
+                    productImage: null,
+                    quantity: item.quantity,
+                    customization: { ...item.qrStandDesign.designConfig, ...(item.customization ?? {}) },
+                    unitPriceCents: currentPrice,
+                  }
+                }
                 return {
                   itemType: 'PRODUCT',
                   productId: item.productId,
@@ -275,7 +295,7 @@ export async function getOrder(userId, orderId) {
 // status-update responses include the full design record (admin view).
 const USER_SELECT = { select: { id: true, name: true, email: true } }
 const ADMIN_ORDER_LIST_INCLUDE = { items: true, user: USER_SELECT }
-const ADMIN_ORDER_INCLUDE = { items: { include: { customDesign: true, standDesign: true, nameplateDesign: true } }, user: USER_SELECT }
+const ADMIN_ORDER_INCLUDE = { items: { include: { customDesign: true, standDesign: true, nameplateDesign: true, qrStandDesign: true } }, user: USER_SELECT }
 
 /**
  * Unlike `listOrders`/`getOrder` above (scoped to the calling customer),

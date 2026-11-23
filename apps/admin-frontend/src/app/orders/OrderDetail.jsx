@@ -174,6 +174,28 @@ function describeAdminNameplateDesign(nameplate) {
   ].filter(Boolean)
 }
 
+function describeAdminQrStandDesign(qrStand) {
+  if (!qrStand) return []
+  const cfg = qrStand.designConfig || {}
+  const primary = cfg.primaryQr || {}
+  const colors = cfg.colors || {}
+  const dim = cfg.dimensions || {}
+
+  return [
+    { label: 'Template', value: qrStand.templateId ? qrStand.templateId.replace(/_/g, ' ') : 'Standard' },
+    qrStand.printMode && { label: 'Print Mode', value: qrStand.printMode },
+    qrStand.qrType && { label: 'QR Type', value: qrStand.qrType.toUpperCase() },
+    qrStand.qrPayload && { label: 'QR Payload', value: qrStand.qrPayload },
+    qrStand.qrVersion && { label: 'QR Version', value: `v${qrStand.qrVersion} (${qrStand.errorCorrection || 'H'})` },
+    primary.hasCenterLogo && { label: 'Center Logo', value: 'Yes' },
+    colors.standHex && { label: 'Stand colour', value: colors.standHex, hex: colors.standHex },
+    colors.qrDarkHex && { label: 'QR Modules colour', value: colors.qrDarkHex, hex: colors.qrDarkHex },
+    colors.qrLightHex && { label: 'QR Base colour', value: colors.qrLightHex, hex: colors.qrLightHex },
+    dim.widthMm && dim.heightMm && { label: 'Dimensions', value: `${dim.widthMm} × ${dim.heightMm} mm` },
+    qrStand.solidVolumeCm3 !== undefined && { label: 'Volume', value: `${qrStand.solidVolumeCm3} cm³` },
+  ].filter(Boolean)
+}
+
 export default function OrderDetail() {
   const { id } = useParams()
   const toast = useToast()
@@ -352,18 +374,22 @@ export default function OrderDetail() {
                 const isCustom = item.itemType === 'CUSTOM_DESIGN' && item.design
                 const isStand = item.itemType === 'STAND_DESIGN' && (item.stand || item.standDesign)
                 const isNameplate = item.itemType === 'NAMEPLATE_DESIGN' && (item.nameplate || item.nameplateDesign)
+                const isQrStand = item.itemType === 'QR_STAND_DESIGN' && (item.qrStand || item.qrStandDesign)
                 const design = item.design
                 const stand = item.stand || item.standDesign
                 const nameplate = item.nameplate || item.nameplateDesign
-                const stlMeta = isCustom ? design?.stl : isStand ? stand?.stl : isNameplate ? nameplate?.stl : null
-                const hasStl = isCustom ? design?.hasStl : isStand ? stand?.hasStl : isNameplate ? nameplate?.hasStl : false
-                const hasPreview = isCustom ? design?.hasPreview : isStand ? stand?.hasPreview : isNameplate ? nameplate?.hasPreview : false
+                const qrStand = item.qrStand || item.qrStandDesign
+                const stlMeta = isCustom ? design?.stl : isStand ? stand?.stl : isNameplate ? nameplate?.stl : isQrStand ? qrStand?.stl : null
+                const hasStl = isCustom ? design?.hasStl : isStand ? stand?.hasStl : isNameplate ? nameplate?.hasStl : isQrStand ? qrStand?.hasStl : false
+                const hasPreview = isCustom ? design?.hasPreview : isStand ? stand?.hasPreview : isNameplate ? nameplate?.hasPreview : isQrStand ? qrStand?.hasPreview : false
                 const designRows = isCustom
                   ? describeAdminDesign(design?.params)
                   : isStand
                   ? describeAdminStandDesign(stand)
                   : isNameplate
                   ? describeAdminNameplateDesign(nameplate)
+                  : isQrStand
+                  ? describeAdminQrStandDesign(qrStand)
                   : []
 
                 return (
@@ -371,7 +397,7 @@ export default function OrderDetail() {
                     <div className="flex gap-4 items-start">
                       {/* Image or 3D Preview Thumbnail */}
                       <div className="h-20 w-20 shrink-0 overflow-hidden rounded-control border border-line bg-soft flex items-center justify-center">
-                        {isCustom || isStand || isNameplate ? (
+                        {isCustom || isStand || isNameplate || isQrStand ? (
                           <AdminDesignPreview orderId={order.id} itemId={item.id} hasPreview={hasPreview} alt={item.productName} />
                         ) : resolveImage(item.productImage) ? (
                           <img src={resolveImage(item.productImage)} alt={item.productName} className="h-full w-full object-cover" />
@@ -398,6 +424,10 @@ export default function OrderDetail() {
                                 <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
                                   Nameplate 3D
                                 </span>
+                              ) : isQrStand ? (
+                                <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
+                                  QR Stand 3D
+                                </span>
                               ) : (
                                 <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium bg-soft text-muted border border-line">
                                   Catalog
@@ -413,8 +443,8 @@ export default function OrderDetail() {
                       </div>
                     </div>
 
-                    {/* Custom Design, Stand Design, or Nameplate Design Details Card */}
-                    {(isCustom || isStand || isNameplate) && (
+                    {/* Custom Design, Stand Design, Nameplate Design, or QR Stand Details Card */}
+                    {(isCustom || isStand || isNameplate || isQrStand) && (
                       <div className="rounded-control border border-line/80 bg-alt/60 p-4 space-y-3.5">
                         <div className="flex items-center justify-between border-b border-line/60 pb-2.5">
                           <span className="text-xs font-bold uppercase tracking-wider text-accent">
@@ -433,7 +463,7 @@ export default function OrderDetail() {
                               </svg>
                               {downloadingStlId === item.id ? 'Downloading…' : 'Download STL'}
                             </button>
-                            {(isCustom || isStand || isNameplate) && (
+                            {(isCustom || isStand || isNameplate || isQrStand) && (
                               <button
                                 type="button"
                                 onClick={() => handleDownload3mf(item.id, `${item.productName.replace(/[^a-z0-9_-]/gi, '_')}.3mf`)}
@@ -495,7 +525,7 @@ export default function OrderDetail() {
                     )}
 
                     {/* Standard Catalog Customization (e.g. engraving) */}
-                    {!isCustom && !isStand && !isNameplate && item.customization && (
+                    {!isCustom && !isStand && !isNameplate && !isQrStand && item.customization && (
                       <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted bg-alt/40 p-3 rounded-control border border-line">
                         {Object.entries(item.customization).map(([key, value]) =>
                           value && key !== 'note' ? (

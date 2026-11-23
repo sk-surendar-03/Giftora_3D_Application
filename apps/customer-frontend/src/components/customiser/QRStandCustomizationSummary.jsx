@@ -1,0 +1,180 @@
+import React from 'react'
+import { Link } from 'react-router-dom'
+import Button from '../ui/Button'
+import QuantitySelector from '../product/QuantitySelector'
+
+export default function QRStandCustomizationSummary({
+  design,
+  volumeCm3 = 0,
+  quantity = 1,
+  onQuantityChange,
+  totalPriceRupees,
+  shippingMethod,
+  shippingOptions = [],
+  onShippingChange,
+  canAdd = true,
+  busy = false,
+  phase,
+  added = false,
+  error,
+  note = '',
+  onNoteChange,
+  onAddToCart,
+}) {
+  const primaryQr = design?.qrCodes?.[0]
+  const templateName = design?.name || 'Classic Upright QR Stand'
+  const qrTypeLabel = (primaryQr?.type || 'url').toUpperCase().replace('_', ' ')
+  const calculatedTotal = totalPriceRupees != null ? `₹${totalPriceRupees.toFixed(2)}` : null
+
+  return (
+    <div className="rounded-card border border-line bg-surface p-6 shadow-sm">
+      <div className="flex items-center justify-between pb-3.5 border-b border-line">
+        <h3 className="font-sans text-[12px] font-bold uppercase tracking-[0.16em] text-accent m-0">
+          Your QR Stand Summary
+        </h3>
+        {calculatedTotal && (
+          <span className="font-sans text-[22px] font-bold text-ink">
+            {calculatedTotal}
+          </span>
+        )}
+      </div>
+
+      <dl className="mt-4 space-y-2">
+        <div className="flex justify-between gap-4 text-[13.5px]">
+          <dt className="text-muted">Template</dt>
+          <dd className="font-medium text-ink capitalize">{templateName}</dd>
+        </div>
+        <div className="flex justify-between gap-4 text-[13.5px]">
+          <dt className="text-muted">QR Type</dt>
+          <dd className="font-medium text-ink font-mono">{qrTypeLabel}</dd>
+        </div>
+        <div className="flex justify-between gap-4 text-[13.5px]">
+          <dt className="text-muted">Printing Mode</dt>
+          <dd className="font-medium text-ink capitalize">{design?.printingMode || 'raised'}</dd>
+        </div>
+        <div className="flex justify-between gap-4 text-[13.5px]">
+          <dt className="text-muted">Material</dt>
+          <dd className="font-medium text-ink uppercase">{design?.colors?.materialType || 'PLA'}</dd>
+        </div>
+        <div className="flex justify-between gap-4 text-[13.5px]">
+          <dt className="text-muted">Dimensions</dt>
+          <dd className="font-medium text-ink font-mono">
+            {design?.dimensions?.widthMm ?? 96} × {design?.dimensions?.heightMm ?? 126} mm
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4 text-[13.5px]">
+          <dt className="text-muted">Estimated Volume</dt>
+          <dd className="font-medium text-ink font-mono">
+            {(volumeCm3 || 38).toFixed(1)} cm³
+          </dd>
+        </div>
+        {design?.logo?.enabled && (
+          <div className="flex justify-between gap-4 text-[13.5px]">
+            <dt className="text-muted">Center Logo</dt>
+            <dd className="font-medium text-ink text-emerald-600 font-semibold">Included (Verified)</dd>
+          </div>
+        )}
+        <div className="flex justify-between items-center gap-4 text-[13.5px] pt-1">
+          <dt className="text-muted">Quantity</dt>
+          <dd>
+            <QuantitySelector value={quantity} onChange={onQuantityChange} />
+          </dd>
+        </div>
+        {shippingOptions.length > 0 && (
+          <div className="flex justify-between items-center gap-4 text-[13.5px] pt-2 border-t border-line">
+            <dt className="text-muted">Shipping</dt>
+            <dd>
+              <select
+                value={shippingMethod?.name ?? ''}
+                onChange={(e) => {
+                  const m = shippingOptions.find((x) => x.name === e.target.value)
+                  if (m) onShippingChange(m)
+                }}
+                className="rounded-control border border-line bg-alt px-2.5 py-1 text-[12.5px] text-ink focus:border-accent focus:outline-none"
+              >
+                {shippingOptions.map((m) => (
+                  <option key={m.name} value={m.name}>
+                    {m.name} {m.priceCents === 0 ? '(FREE)' : `(₹${(m.priceCents / 100).toFixed(2).replace(/\.00$/, '')})`}
+                  </option>
+                ))}
+              </select>
+            </dd>
+          </div>
+        )}
+      </dl>
+
+      {/* Item-level Customer Note */}
+      <div className="mt-4 pt-3.5 border-t border-line">
+        <label htmlFor="qrstand-note-input" className="block font-sans text-[12px] font-bold tracking-[0.06em] uppercase text-accent mb-1.5">
+          Special Instructions / Note <span className="text-muted font-normal lowercase tracking-normal">(optional)</span>
+        </label>
+        <textarea
+          id="qrstand-note-input"
+          rows={2}
+          maxLength={500}
+          value={note}
+          onChange={(e) => onNoteChange && onNoteChange(e.target.value)}
+          placeholder="e.g. Include counter adhesive pad, desk stand rubber feet, specific color shade note…"
+          className="w-full rounded-control border border-line bg-alt px-3 py-2 text-xs text-ink placeholder:text-muted focus:border-accent focus:outline-none resize-none"
+        />
+        <div className="flex justify-between items-center text-[10.5px] text-muted mt-1">
+          {note.trim() ? (
+            <button
+              type="button"
+              onClick={() => onNoteChange && onNoteChange('')}
+              className="text-danger hover:underline cursor-pointer"
+            >
+              Clear note
+            </button>
+          ) : <span />}
+          <span>{note.length}/500</span>
+        </div>
+      </div>
+
+      {added && (
+        <p className="mt-4 text-[13.5px] font-semibold text-[#17683f] bg-[#e3f4ea] px-3.5 py-2 rounded-control">
+          ✓ Added to cart.{' '}
+          <Link to="/cart" className="underline">
+            View cart
+          </Link>
+        </p>
+      )}
+
+      {error && (
+        <p className="mt-4 text-[13.5px] font-semibold text-danger bg-[#fbe6e2] px-3.5 py-2 rounded-control">
+          {error}
+        </p>
+      )}
+
+      {!canAdd && !busy && (
+        <p className="mt-4 text-[12.5px] text-muted">
+          Please check that your QR payload and dimensions are valid before adding to cart.
+        </p>
+      )}
+
+      <div className="mt-6 flex flex-col gap-3">
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={onAddToCart}
+          disabled={busy || !canAdd}
+          className="w-full text-base font-semibold"
+        >
+          {busy ? (phase || 'Adding to cart...') : 'Add QR Stand to Cart'}
+        </Button>
+        <div className="flex gap-3">
+          <Link to="/cart" className="flex-1">
+            <Button variant="secondary" size="md" className="w-full">
+              View Cart
+            </Button>
+          </Link>
+          <Link to="/products" className="flex-1">
+            <Button variant="ghost" size="md" className="w-full">
+              Shop All
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}

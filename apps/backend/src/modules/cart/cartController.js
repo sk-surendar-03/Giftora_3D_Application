@@ -1,9 +1,10 @@
 import { HttpError } from '../../utils/httpError.js'
 import { isNonEmptyString, isPositiveInt } from '../../utils/validation.js'
-import { getOrCreateCart, addItem, addCustomItem, addStandItem, addNameplateItem, updateItemQuantity, removeItem } from './cartService.js'
+import { getOrCreateCart, addItem, addCustomItem, addStandItem, addNameplateItem, addQrStandItem, updateItemQuantity, removeItem } from './cartService.js'
 import { toPublicDesign } from '../customizer/designService.js'
 import { toPublicStandDesign } from '../standDesigner/standDesignService.js'
 import { toPublicNameplateDesign } from '../nameplateDesigner/nameplateDesignService.js'
+import { toPublicQrStandDesign } from '../qrStandDesigner/qrStandDesignService.js'
 
 const MAX_QUANTITY = 10
 
@@ -34,6 +35,7 @@ function toCartResponse(cart) {
     design: item.customDesign ? toPublicDesign(item.customDesign) : null,
     stand: item.standDesign ? toPublicStandDesign(item.standDesign) : null,
     nameplate: item.nameplateDesign ? toPublicNameplateDesign(item.nameplateDesign) : null,
+    qrStand: item.qrStandDesign ? toPublicQrStandDesign(item.qrStandDesign) : null,
   }))
   const subtotalCents = items.reduce((sum, item) => sum + item.lineTotalCents, 0)
   return { id: cart.id, items, subtotalCents, totalCents: subtotalCents }
@@ -102,6 +104,18 @@ export async function addNameplateCartItem(req, res) {
   if (!isPositiveInt(qty) || qty > MAX_QUANTITY) throw new HttpError(400, `quantity must be a whole number from 1 to ${MAX_QUANTITY}.`)
 
   await addNameplateItem(req.user.id, { nameplateDesignId, quantity: qty, shippingMethod, note })
+  const cart = await getOrCreateCart(req.user.id)
+  res.status(201).json({ cart: toCartResponse(cart) })
+}
+
+export async function addQrStandCartItem(req, res) {
+  const { qrStandDesignId, quantity, shippingMethod, note } = req.body ?? {}
+
+  if (!isNonEmptyString(qrStandDesignId, 50)) throw new HttpError(400, 'qrStandDesignId is required.')
+  const qty = quantity ?? 1
+  if (!isPositiveInt(qty) || qty > MAX_QUANTITY) throw new HttpError(400, `quantity must be a whole number from 1 to ${MAX_QUANTITY}.`)
+
+  await addQrStandItem(req.user.id, { qrStandDesignId, quantity: qty, shippingMethod, note })
   const cart = await getOrCreateCart(req.user.id)
   res.status(201).json({ cart: toCartResponse(cart) })
 }

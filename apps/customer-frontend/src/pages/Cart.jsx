@@ -8,6 +8,8 @@ import StandDetails from '../components/design/StandDetails.jsx'
 import StandPreviewImage from '../components/design/StandPreviewImage.jsx'
 import NameplateDetails from '../components/design/NameplateDetails.jsx'
 import NameplatePreviewImage from '../components/design/NameplatePreviewImage.jsx'
+import QrStandDetails from '../components/design/QrStandDetails.jsx'
+import QrStandPreviewImage from '../components/design/QrStandPreviewImage.jsx'
 import Button from '../components/ui/Button'
 import { resolveImageUrl } from '../utils/imageUrl.js'
 
@@ -77,7 +79,7 @@ export default function Cart() {
   }
 
   const totalShippingCents = cart.items.reduce((sum, item) => {
-    if (item.itemType === 'CUSTOM_DESIGN' || item.itemType === 'STAND_DESIGN' || item.itemType === 'NAMEPLATE_DESIGN') {
+    if (item.itemType === 'CUSTOM_DESIGN' || item.itemType === 'STAND_DESIGN' || item.itemType === 'NAMEPLATE_DESIGN' || item.itemType === 'QR_STAND_DESIGN') {
       return sum + (item.customization?.shippingMethod?.priceCents ?? 0)
     }
     return sum + (item.customization?.shippingMethod?.priceCents ?? item.product?.shippingCents ?? 0)
@@ -107,12 +109,14 @@ export default function Cart() {
           {/* Cart items list */}
           <div className="rounded-card border border-line bg-surface divide-y divide-line p-6">
             {cart.items.map((item) => {
-              // A line is either a catalog product, a keychain custom design, a stand design, or a nameplate design.
+              // A line is either a catalog product, a keychain custom design, a stand design, a nameplate design, or a qr stand design.
               const isCustom = item.itemType === 'CUSTOM_DESIGN'
               const isStand = item.itemType === 'STAND_DESIGN'
               const isNameplate = item.itemType === 'NAMEPLATE_DESIGN'
+              const isQrStand = item.itemType === 'QR_STAND_DESIGN'
               const stand = item.stand || item.standDesign
               const nameplate = item.nameplate || item.nameplateDesign
+              const qrStand = item.qrStand || item.qrStandDesign
               return (
               <div key={item.id} className="grid grid-cols-[80px_1fr] min-[761px]:grid-cols-[104px_1fr_auto] gap-5 py-5 first:pt-0 last:pb-0">
                 <div className="h-20 w-20 min-[761px]:h-[104px] min-[761px]:w-[104px] shrink-0 overflow-hidden rounded-control bg-soft border border-line flex items-center justify-center">
@@ -122,6 +126,8 @@ export default function Cart() {
                     <StandPreviewImage designId={stand?.id} hasPreview={stand?.hasPreview} alt={stand?.title || 'Stand design'} />
                   ) : isNameplate ? (
                     <NameplatePreviewImage designId={nameplate?.id} hasPreview={nameplate?.hasPreview} alt={nameplate?.title || 'Nameplate design'} />
+                  ) : isQrStand ? (
+                    <QrStandPreviewImage designId={qrStand?.id} hasPreview={qrStand?.hasPreview} alt={qrStand?.title || 'QR Stand design'} />
                   ) : item.product?.images?.[0] ? (
                     <img src={resolveImageUrl(item.product.images[0])} alt={item.product.name} className="h-full w-full object-cover" />
                   ) : (
@@ -198,6 +204,38 @@ export default function Cart() {
                         <span className="ml-2 align-middle rounded-full bg-soft px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-accent">Nameplate</span>
                         <div className="mt-1 text-[13px] text-muted">
                           <NameplateDetails config={nameplate?.designConfig} nameplateType={nameplate?.nameplateType} />
+                        </div>
+                        {item.customization?.note && (
+                          <div className="mt-1 text-[12px] text-amber-500 font-medium">
+                            <span className="text-muted">Note:</span> "{item.customization.note}"
+                          </div>
+                        )}
+                        <div className="mt-2 text-xs">
+                          {(() => {
+                            const sm = item.customization?.shippingMethod
+                            const shipCents = sm?.priceCents ?? 0
+                            if (shipCents > 0) {
+                              return (
+                                <span className="font-medium text-muted bg-soft px-2 py-0.5 rounded-full border border-line">
+                                  {sm.name}: <span className="font-semibold text-ink">₹{(shipCents / 100).toFixed(2).replace(/\.00$/, '')}</span>
+                                  {sm.estimatedDays && <span className="ml-1 text-muted">{sm.estimatedDays}</span>}
+                                </span>
+                              )
+                            }
+                            return (
+                              <span className="font-semibold text-[#17683f] bg-[#e3f4ea] px-2 py-0.5 rounded-full">
+                                Free Shipping
+                              </span>
+                            )
+                          })()}
+                        </div>
+                      </>
+                    ) : isQrStand ? (
+                      <>
+                        <span className="font-sans text-[16px] font-semibold text-ink">{qrStand?.title || 'Custom QR Stand'}</span>
+                        <span className="ml-2 align-middle rounded-full bg-soft px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-emerald-600">QR Stand</span>
+                        <div className="mt-1 text-[13px] text-muted">
+                          <QrStandDetails config={qrStand?.designConfig} templateId={qrStand?.templateId} qrType={qrStand?.qrType} />
                         </div>
                         {item.customization?.note && (
                           <div className="mt-1 text-[12px] text-amber-500 font-medium">

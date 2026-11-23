@@ -16,6 +16,8 @@ import {
   updateStandPricingConfig,
   getNameplatePricingConfig,
   updateNameplatePricingConfig,
+  getQrStandPricingConfig,
+  updateQrStandPricingConfig,
 } from './settingsService.js'
 
 export async function getPricing(req, res) {
@@ -134,3 +136,42 @@ export async function updateNameplatePricing(req, res) {
     }),
   })
 }
+
+export async function getQrStandPricing(req, res) {
+  const pricing = await getQrStandPricingConfig()
+  res.json({ qrStandPricing: pricing, pricing })
+}
+
+export async function updateQrStandPricing(req, res) {
+  const { pricePerCm3Cents, templates, addOns } = req.body ?? {}
+  if (pricePerCm3Cents !== undefined && (!Number.isInteger(pricePerCm3Cents) || pricePerCm3Cents < 0)) {
+    throw new HttpError(400, 'pricePerCm3Cents must be a non-negative whole number.')
+  }
+  if (templates !== undefined && (typeof templates !== 'object' || templates === null || Array.isArray(templates))) {
+    throw new HttpError(400, 'templates must be an object.')
+  }
+  if (templates) {
+    for (const [id, entry] of Object.entries(templates)) {
+      if (entry?.basePriceCents !== undefined && (!Number.isInteger(entry.basePriceCents) || entry.basePriceCents < 0)) {
+        throw new HttpError(400, `Template ${id} basePriceCents must be a non-negative whole number.`)
+      }
+    }
+  }
+  if (addOns !== undefined && (typeof addOns !== 'object' || addOns === null || Array.isArray(addOns))) {
+    throw new HttpError(400, 'addOns must be an object.')
+  }
+  if (addOns) {
+    if (addOns.centerLogoSurchargeCents !== undefined && (!Number.isInteger(addOns.centerLogoSurchargeCents) || addOns.centerLogoSurchargeCents < 0)) {
+      throw new HttpError(400, 'centerLogoSurchargeCents must be a non-negative whole number.')
+    }
+    if (addOns.inlayModeSurchargeCents !== undefined && (!Number.isInteger(addOns.inlayModeSurchargeCents) || addOns.inlayModeSurchargeCents < 0)) {
+      throw new HttpError(400, 'inlayModeSurchargeCents must be a non-negative whole number.')
+    }
+    if (addOns.multiQrSurchargeCents !== undefined && (!Number.isInteger(addOns.multiQrSurchargeCents) || addOns.multiQrSurchargeCents < 0)) {
+      throw new HttpError(400, 'multiQrSurchargeCents must be a non-negative whole number.')
+    }
+  }
+  const updated = await updateQrStandPricingConfig({ pricePerCm3Cents, templates, addOns })
+  res.json({ qrStandPricing: updated, pricing: updated })
+}
+

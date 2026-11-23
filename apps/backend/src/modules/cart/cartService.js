@@ -1,12 +1,15 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
-import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig, getNameplatePricingConfig } from '../settings/settingsService.js'
+import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig, getNameplatePricingConfig, getQrStandPricingConfig } from '../settings/settingsService.js'
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { priceForDesign, stlIsAvailable } from '../customizer/designService.js'
 import { priceForStand } from '../standDesigner/standDesignOptions.js'
 import { priceForNameplate } from '../nameplateDesigner/nameplateDesignOptions.js'
+import { priceForQrStand } from '../qrStandDesigner/qrStandDesignOptions.js'
+import { stlIsAvailable as qrStandStlIsAvailable } from '../qrStandDesigner/qrStandDesignService.js'
 
-const CART_INCLUDE = { items: { include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true }, orderBy: { createdAt: 'asc' } } }
+const CART_ITEM_INCLUDE = { product: true, customDesign: true, standDesign: true, nameplateDesign: true, qrStandDesign: true }
+const CART_INCLUDE = { items: { include: CART_ITEM_INCLUDE, orderBy: { createdAt: 'asc' } } }
 
 const MAX_CUSTOM_QUANTITY = 10
 
@@ -47,7 +50,7 @@ export async function addItem(userId, { productId, quantity, customization }) {
     return prisma.cartItem.update({
       where: { id: existingItem.id },
       data: { quantity: existingItem.quantity + quantity },
-      include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
+      include: CART_ITEM_INCLUDE,
     })
   }
 
@@ -80,7 +83,7 @@ export async function addItem(userId, { productId, quantity, customization }) {
       customization: Object.keys(safeCustomization).length > 0 ? safeCustomization : undefined,
       unitPriceCents,
     },
-    include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
+    include: CART_ITEM_INCLUDE,
   })
 }
 
@@ -101,7 +104,7 @@ export async function addCustomItem(userId, { customDesignId, quantity, shipping
     return prisma.cartItem.update({
       where: { id: existingItem.id },
       data: { quantity: existingItem.quantity + quantity },
-      include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
+      include: CART_ITEM_INCLUDE,
     })
   }
 
@@ -130,7 +133,7 @@ export async function addCustomItem(userId, { customDesignId, quantity, shipping
       unitPriceCents,
       ...(Object.keys(customizationData).length > 0 ? { customization: customizationData } : {}),
     },
-    include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
+    include: CART_ITEM_INCLUDE,
   })
 }
 
@@ -150,7 +153,7 @@ export async function addStandItem(userId, { standDesignId, quantity, shippingMe
     return prisma.cartItem.update({
       where: { id: existingItem.id },
       data: { quantity: existingItem.quantity + quantity },
-      include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
+      include: CART_ITEM_INCLUDE,
     })
   }
 
@@ -174,7 +177,7 @@ export async function addStandItem(userId, { standDesignId, quantity, shippingMe
       unitPriceCents,
       ...(Object.keys(customizationData).length > 0 ? { customization: customizationData } : {}),
     },
-    include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
+    include: CART_ITEM_INCLUDE,
   })
 }
 
@@ -194,7 +197,7 @@ export async function addNameplateItem(userId, { nameplateDesignId, quantity, sh
     return prisma.cartItem.update({
       where: { id: existingItem.id },
       data: { quantity: existingItem.quantity + quantity },
-      include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
+      include: CART_ITEM_INCLUDE,
     })
   }
 
@@ -218,7 +221,52 @@ export async function addNameplateItem(userId, { nameplateDesignId, quantity, sh
       unitPriceCents,
       ...(Object.keys(customizationData).length > 0 ? { customization: customizationData } : {}),
     },
-    include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true },
+    include: CART_ITEM_INCLUDE,
+  })
+}
+
+export async function addQrStandItem(userId, { qrStandDesignId, quantity, shippingMethod, note }) {
+  const design = await prisma.qrStandDesign.findUnique({ where: { id: qrStandDesignId } })
+  if (!design || design.userId !== userId) throw new HttpError(404, 'QR Stand design not found.')
+  if (design.status !== 'READY') throw new HttpError(409, 'This QR Stand design is not ready yet.')
+  if (!(await qrStandStlIsAvailable(design))) throw new HttpError(409, 'This QR Stand design\'s file is missing. Please recreate the design.')
+
+  const cleanNote = typeof note === 'string' && note.trim() ? note.trim().slice(0, 500) : undefined
+
+  const cart = await getOrCreateCart(userId)
+  const existingItem = cart.items.find((item) => item.qrStandDesignId === design.id && (item.customization?.note ?? undefined) === cleanNote)
+  if (existingItem) {
+    if (existingItem.quantity + quantity > MAX_CUSTOM_QUANTITY) {
+      throw new HttpError(400, `You can order at most ${MAX_CUSTOM_QUANTITY} of the same QR Stand design.`)
+    }
+    return prisma.cartItem.update({
+      where: { id: existingItem.id },
+      data: { quantity: existingItem.quantity + quantity },
+      include: CART_ITEM_INCLUDE,
+    })
+  }
+
+  const customizationData = {
+    ...(cleanNote ? { note: cleanNote } : {}),
+  }
+  const resolvedShipping = await resolveShippingMethod(shippingMethod)
+  if (resolvedShipping) customizationData.shippingMethod = resolvedShipping
+
+  // Recompute price server-side from stored volume + current admin config.
+  // Never trust client prices or stale design prices.
+  const qrStandConfig = await getQrStandPricingConfig()
+  const unitPriceCents = priceForQrStand(design.templateId, design.solidVolumeCm3 ?? 0, design.designConfig, qrStandConfig)
+
+  return prisma.cartItem.create({
+    data: {
+      cartId: cart.id,
+      itemType: 'QR_STAND_DESIGN',
+      qrStandDesignId: design.id,
+      quantity,
+      unitPriceCents,
+      ...(Object.keys(customizationData).length > 0 ? { customization: customizationData } : {}),
+    },
+    include: CART_ITEM_INCLUDE,
   })
 }
 
@@ -232,7 +280,7 @@ async function findOwnedItem(userId, itemId) {
 
 export async function updateItemQuantity(userId, itemId, quantity) {
   await findOwnedItem(userId, itemId)
-  return prisma.cartItem.update({ where: { id: itemId }, data: { quantity }, include: { product: true, customDesign: true, standDesign: true, nameplateDesign: true } })
+  return prisma.cartItem.update({ where: { id: itemId }, data: { quantity }, include: CART_ITEM_INCLUDE })
 }
 
 export async function removeItem(userId, itemId) {

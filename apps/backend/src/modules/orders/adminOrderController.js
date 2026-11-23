@@ -5,6 +5,7 @@ import { listOrdersForAdmin, getOrderForAdmin, updateOrderStatus } from './order
 import { getPreviewForOrderItem, getStlForOrderItem, getThreeMfForOrderItem } from '../customizer/designService.js'
 import { getStlForStandOrderItem, getPreviewForStandOrderItem, getThreeMfForStandOrderItem } from '../standDesigner/standDesignService.js'
 import { getStlForNameplateOrderItem, getPreviewForNameplateOrderItem, getThreeMfForNameplateOrderItem } from '../nameplateDesigner/nameplateDesignService.js'
+import { getStlForQrStandOrderItem, getPreviewForQrStandOrderItem, getThreeMfForQrStandOrderItem } from '../qrStandDesigner/qrStandDesignService.js'
 
 const VALID_STATUSES = Object.values(OrderStatus)
 const VALID_TYPES = Object.values(OrderItemType)
@@ -32,6 +33,8 @@ export async function list(req, res) {
     normalizedType = 'STAND_DESIGN'
   } else if (normalizedType === 'NAMEPLATE') {
     normalizedType = 'NAMEPLATE_DESIGN'
+  } else if (normalizedType === 'QR_STAND' || normalizedType === 'QRSTAND') {
+    normalizedType = 'QR_STAND_DESIGN'
   }
 
   let normalizedStatus = req.query.status
@@ -93,6 +96,8 @@ export async function downloadItemStl(req, res) {
     result = await getStlForStandOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'NAMEPLATE_DESIGN') {
     result = await getStlForNameplateOrderItem(req.params.orderId, req.params.itemId)
+  } else if (item.itemType === 'QR_STAND_DESIGN') {
+    result = await getStlForQrStandOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'CUSTOM_DESIGN') {
     result = await getStlForOrderItem(req.params.orderId, req.params.itemId)
   } else {
@@ -122,6 +127,8 @@ export async function downloadItem3mf(req, res) {
     result = await getThreeMfForStandOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'NAMEPLATE_DESIGN') {
     result = await getThreeMfForNameplateOrderItem(req.params.orderId, req.params.itemId)
+  } else if (item.itemType === 'QR_STAND_DESIGN') {
+    result = await getThreeMfForQrStandOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'CUSTOM_DESIGN') {
     result = await getThreeMfForOrderItem(req.params.orderId, req.params.itemId)
   } else {
@@ -151,6 +158,8 @@ export async function itemPreview(req, res) {
     buffer = await getPreviewForStandOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'NAMEPLATE_DESIGN') {
     buffer = await getPreviewForNameplateOrderItem(req.params.orderId, req.params.itemId)
+  } else if (item.itemType === 'QR_STAND_DESIGN') {
+    buffer = await getPreviewForQrStandOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'CUSTOM_DESIGN') {
     buffer = await getPreviewForOrderItem(req.params.orderId, req.params.itemId)
   } else {

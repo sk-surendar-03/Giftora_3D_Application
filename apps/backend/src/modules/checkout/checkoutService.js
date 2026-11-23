@@ -1,13 +1,15 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
 import { getOrCreateCart } from '../cart/cartService.js'
-import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig, getNameplatePricingConfig } from '../settings/settingsService.js'
+import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig, getNameplatePricingConfig, getQrStandPricingConfig } from '../settings/settingsService.js'
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { priceForDesign, stlIsAvailable, toPublicDesign } from '../customizer/designService.js'
 import { stlIsAvailable as standStlIsAvailable, toPublicDesign as toPublicStandDesign } from '../standDesigner/standDesignService.js'
 import { priceForStand } from '../standDesigner/standDesignOptions.js'
 import { stlIsAvailable as nameplateStlIsAvailable, toPublicNameplateDesign } from '../nameplateDesigner/nameplateDesignService.js'
 import { priceForNameplate } from '../nameplateDesigner/nameplateDesignOptions.js'
+import { stlIsAvailable as qrStandStlIsAvailable, toPublicQrStandDesign } from '../qrStandDesigner/qrStandDesignService.js'
+import { priceForQrStand } from '../qrStandDesigner/qrStandDesignOptions.js'
 
 export async function reviewCheckout(userId, addressId) {
   const cart = await getOrCreateCart(userId)
@@ -21,8 +23,8 @@ export async function reviewCheckout(userId, addressId) {
     throw new HttpError(404, 'Address not found.')
   }
 
-  const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }, standPricingConfig, nameplatePricingConfig, { methods: shippingMethods }] =
-    await Promise.all([getPricingConfig(), getCustomizerSizes(), getCustomizerThicknesses(), getStandPricingConfig(), getNameplatePricingConfig(), getCustomizerShipping()])
+  const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }, standPricingConfig, nameplatePricingConfig, qrStandPricingConfig, { methods: shippingMethods }] =
+    await Promise.all([getPricingConfig(), getCustomizerSizes(), getCustomizerThicknesses(), getStandPricingConfig(), getNameplatePricingConfig(), getQrStandPricingConfig(), getCustomizerShipping()])
 
   let subtotalCents = 0
   const items = []
@@ -30,14 +32,31 @@ export async function reviewCheckout(userId, addressId) {
     const isCustom = item.itemType === 'CUSTOM_DESIGN'
     const isStand = item.itemType === 'STAND_DESIGN'
     const isNameplate = item.itemType === 'NAMEPLATE_DESIGN'
+    const isQrStand = item.itemType === 'QR_STAND_DESIGN'
     const design = item.customDesign
     const standDesign = item.standDesign
     const nameplateDesign = item.nameplateDesign
+    const qrStandDesign = item.qrStandDesign
     const product = item.product
 
-    let available, currentUnitPriceCents, title, productSnapshot, designSnapshot, standDesignSnapshot, nameplateDesignSnapshot
+    let available, currentUnitPriceCents, title, productSnapshot, designSnapshot, standDesignSnapshot, nameplateDesignSnapshot, qrStandDesignSnapshot
 
-    if (isNameplate) {
+    if (isQrStand) {
+      // ─── QR_STAND_DESIGN ──────────────────────────────────────────────
+      available = qrStandDesign ? await qrStandStlIsAvailable(qrStandDesign) : false
+      currentUnitPriceCents = priceForQrStand(
+        qrStandDesign?.templateId,
+        qrStandDesign?.solidVolumeCm3 ?? 0,
+        qrStandDesign?.designConfig ?? {},
+        qrStandPricingConfig
+      )
+      title = qrStandDesign?.title ?? 'QR Stand design'
+      productSnapshot = null
+      designSnapshot = null
+      standDesignSnapshot = null
+      nameplateDesignSnapshot = null
+      qrStandDesignSnapshot = qrStandDesign ? toPublicQrStandDesign(qrStandDesign) : null
+    } else if (isNameplate) {
       // ─── NAMEPLATE_DESIGN ─────────────────────────────────────────────
       available = nameplateDesign ? await nameplateStlIsAvailable(nameplateDesign) : false
       currentUnitPriceCents = priceForNameplate(
@@ -51,6 +70,7 @@ export async function reviewCheckout(userId, addressId) {
       designSnapshot = null
       standDesignSnapshot = null
       nameplateDesignSnapshot = nameplateDesign ? toPublicNameplateDesign(nameplateDesign) : null
+      qrStandDesignSnapshot = null
     } else if (isStand) {
       // ─── STAND_DESIGN ─────────────────────────────────────────────────
       available = standDesign ? await standStlIsAvailable(standDesign) : false
@@ -61,6 +81,7 @@ export async function reviewCheckout(userId, addressId) {
       designSnapshot = null
       standDesignSnapshot = standDesign ? toPublicStandDesign(standDesign) : null
       nameplateDesignSnapshot = null
+      qrStandDesignSnapshot = null
     } else if (isCustom) {
       // ─── CUSTOM_DESIGN ────────────────────────────────────────────────
       available = await stlIsAvailable(design)
@@ -73,6 +94,7 @@ export async function reviewCheckout(userId, addressId) {
       designSnapshot = toPublicDesign(design)
       standDesignSnapshot = null
       nameplateDesignSnapshot = null
+      qrStandDesignSnapshot = null
     } else {
       // ─── PRODUCT ──────────────────────────────────────────────────────
       available = product?.isActive ?? false
@@ -95,6 +117,7 @@ export async function reviewCheckout(userId, addressId) {
       designSnapshot = null
       standDesignSnapshot = null
       nameplateDesignSnapshot = null
+      qrStandDesignSnapshot = null
     }
 
     const priceChanged = currentUnitPriceCents !== item.unitPriceCents
@@ -112,6 +135,8 @@ export async function reviewCheckout(userId, addressId) {
       standDesign: standDesignSnapshot,
       nameplate: nameplateDesignSnapshot,
       nameplateDesign: nameplateDesignSnapshot,
+      qrStand: qrStandDesignSnapshot,
+      qrStandDesign: qrStandDesignSnapshot,
       quantity: item.quantity,
       customization: item.customization,
       cartUnitPriceCents: item.unitPriceCents,

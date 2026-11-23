@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 import { authenticate } from '../auth/authMiddleware.js'
-import { getCart, addCartItem, addCustomCartItem, addStandCartItem, addNameplateCartItem, updateCartItem, deleteCartItem } from './cartController.js'
+import { getCart, addCartItem, addCustomCartItem, addStandCartItem, addNameplateCartItem, addQrStandCartItem, updateCartItem, deleteCartItem } from './cartController.js'
 
 export const cartRouter = Router()
 
@@ -15,5 +15,7 @@ cartRouter.post('/items', asyncHandler(addCartItem))
 cartRouter.post('/custom-items', asyncHandler(addCustomCartItem))
 cartRouter.post('/stand-items', asyncHandler(addStandCartItem))
 cartRouter.post('/nameplate-items', asyncHandler(addNameplateCartItem))
+cartRouter.post('/qr-stand', asyncHandler(addQrStandCartItem))
+cartRouter.post('/qr-stand-items', asyncHandler(addQrStandCartItem))
 cartRouter.patch('/items/:itemId', asyncHandler(updateCartItem))
 cartRouter.delete('/items/:itemId', asyncHandler(deleteCartItem))

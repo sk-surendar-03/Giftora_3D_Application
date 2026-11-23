@@ -31,3 +31,4 @@ Admin Portal Login Credentials.txt
 .vercel
 .env*
 !.env.example
+scratch/

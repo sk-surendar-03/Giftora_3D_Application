@@ -84,3 +84,18 @@ export async function updateNameplatePricing({ pricePerCm3Cents, ledGlowSurcharg
   })
   return data.nameplatePricing
 }
+
+export async function fetchQrStandPricing() {
+  const { data } = await api.get('/settings/qr-stand-pricing')
+  return data.qrStandPricing ?? data.pricing
+}
+
+export async function updateQrStandPricing({ pricePerCm3Cents, templates, addOns }) {
+  const { data } = await api.patch('/admin/settings/qr-stand-pricing', {
+    pricePerCm3Cents,
+    templates,
+    addOns,
+  })
+  return data.qrStandPricing ?? data.pricing
+}
+

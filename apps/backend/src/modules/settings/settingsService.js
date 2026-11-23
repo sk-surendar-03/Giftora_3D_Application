@@ -8,6 +8,7 @@ const SIZES_KEY = 'customizer_sizes'
 const THICKNESSES_KEY = 'customizer_thicknesses'
 const STAND_PRICING_KEY = 'stand_pricing'
 const NAMEPLATE_PRICING_KEY = 'nameplate_pricing'
+const QR_STAND_PRICING_KEY = 'qr_stand_pricing'
 
 export const DEFAULT_PER_CHARACTER_PRICE_CENTS = 500
 export const DEFAULT_BASE_CHARACTERS = 10
@@ -139,6 +140,89 @@ export async function updateNameplatePricingConfig({ pricePerCm3Cents, ledGlowSu
   await prisma.setting.upsert({
     where: { key: NAMEPLATE_PRICING_KEY },
     create: { key: NAMEPLATE_PRICING_KEY, value: next },
+    update: { value: next },
+  })
+  return next
+}
+
+export async function getQrStandPricingConfig() {
+  let row = null
+  try {
+    row = await prisma.setting.findUnique({ where: { key: QR_STAND_PRICING_KEY } })
+  } catch {
+    row = null
+  }
+  const v = row?.value ?? {}
+  const {
+    DEFAULT_QR_STAND_PRICE_PER_CM3_CENTS,
+    DEFAULT_QR_STAND_TEMPLATE_BASE_PRICES,
+    DEFAULT_QR_STAND_ADDON_PRICES,
+  } = await import('../qrStandDesigner/qrStandDesignOptions.js')
+
+  const pricePerCm3Cents =
+    Number.isInteger(v.pricePerCm3Cents) && v.pricePerCm3Cents >= 0
+      ? v.pricePerCm3Cents
+      : DEFAULT_QR_STAND_PRICE_PER_CM3_CENTS
+
+  const templates = {}
+  for (const [id, defaultBase] of Object.entries(DEFAULT_QR_STAND_TEMPLATE_BASE_PRICES)) {
+    const entry = v.templates?.[id]
+    const basePriceCents =
+      entry && Number.isInteger(entry.basePriceCents) && entry.basePriceCents >= 0
+        ? entry.basePriceCents
+        : defaultBase
+    templates[id] = { basePriceCents }
+  }
+
+  const addOns = {
+    centerLogoSurchargeCents:
+      Number.isInteger(v.addOns?.centerLogoSurchargeCents) && v.addOns.centerLogoSurchargeCents >= 0
+        ? v.addOns.centerLogoSurchargeCents
+        : DEFAULT_QR_STAND_ADDON_PRICES.centerLogoSurchargeCents,
+    inlayModeSurchargeCents:
+      Number.isInteger(v.addOns?.inlayModeSurchargeCents) && v.addOns.inlayModeSurchargeCents >= 0
+        ? v.addOns.inlayModeSurchargeCents
+        : DEFAULT_QR_STAND_ADDON_PRICES.inlayModeSurchargeCents,
+    multiQrSurchargeCents:
+      Number.isInteger(v.addOns?.multiQrSurchargeCents) && v.addOns.multiQrSurchargeCents >= 0
+        ? v.addOns.multiQrSurchargeCents
+        : DEFAULT_QR_STAND_ADDON_PRICES.multiQrSurchargeCents,
+  }
+
+  return { pricePerCm3Cents, templates, addOns }
+}
+
+export async function updateQrStandPricingConfig({ pricePerCm3Cents, templates, addOns }) {
+  const current = await getQrStandPricingConfig()
+  const next = {
+    pricePerCm3Cents:
+      Number.isInteger(pricePerCm3Cents) && pricePerCm3Cents >= 0
+        ? pricePerCm3Cents
+        : current.pricePerCm3Cents,
+    templates: { ...current.templates },
+    addOns: { ...current.addOns },
+  }
+  if (templates && typeof templates === 'object') {
+    for (const [id, entry] of Object.entries(templates)) {
+      if (entry && Number.isInteger(entry.basePriceCents) && entry.basePriceCents >= 0) {
+        next.templates[id] = { basePriceCents: entry.basePriceCents }
+      }
+    }
+  }
+  if (addOns && typeof addOns === 'object') {
+    if (Number.isInteger(addOns.centerLogoSurchargeCents) && addOns.centerLogoSurchargeCents >= 0) {
+      next.addOns.centerLogoSurchargeCents = addOns.centerLogoSurchargeCents
+    }
+    if (Number.isInteger(addOns.inlayModeSurchargeCents) && addOns.inlayModeSurchargeCents >= 0) {
+      next.addOns.inlayModeSurchargeCents = addOns.inlayModeSurchargeCents
+    }
+    if (Number.isInteger(addOns.multiQrSurchargeCents) && addOns.multiQrSurchargeCents >= 0) {
+      next.addOns.multiQrSurchargeCents = addOns.multiQrSurchargeCents
+    }
+  }
+  await prisma.setting.upsert({
+    where: { key: QR_STAND_PRICING_KEY },
+    create: { key: QR_STAND_PRICING_KEY, value: next },
     update: { value: next },
   })
   return next

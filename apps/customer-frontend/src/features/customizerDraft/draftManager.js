@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   keychain: 'giftora_draft_keychain_v1',
   legacy_keychain: 'giftora_custom_design_draft',
   nameplate: 'giftora_draft_nameplate_v1',
+  qrstand: 'giftora_draft_qrstand_v1',
 }
 
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000 // 7 days draft persistence
@@ -247,4 +248,181 @@ export function sanitizeNameplateDraft(draftData, defaultFallback) {
   }
 
   return sanitized
+}
+
+const VALID_TEMPLATES = [
+  'classic_upright',
+  'angled_desk',
+  'rounded_rect',
+  'arch_shaped',
+  'circular_display',
+  'square_block',
+  'double_sided',
+  'triple_display',
+  'restaurant_tent',
+  'social_media',
+  'business_plaque',
+  'mini_keychain',
+]
+
+const VALID_QR_TYPES = [
+  'url',
+  'upi',
+  'google_review',
+  'instagram',
+  'whatsapp',
+  'facebook',
+  'youtube',
+  'wifi',
+  'vcard',
+  'menu',
+  'email',
+  'phone',
+  'text',
+]
+
+/**
+ * Validates and safely sanitizes a QR Stand draft against valid bounds and schema.
+ */
+export function sanitizeQrStandDraft(draftData, defaultFallback) {
+  if (!draftData || typeof draftData !== 'object') return null
+  const fallback = defaultFallback || {}
+
+  const isString = (v) => typeof v === 'string' && v.trim().length > 0
+  const isNum = (v) => typeof v === 'number' && Number.isFinite(v)
+
+  const templateId = VALID_TEMPLATES.includes(draftData.templateId)
+    ? draftData.templateId
+    : fallback.templateId || 'classic_upright'
+
+  const printingMode = ['raised', 'recessed', 'inlay'].includes(draftData.printingMode)
+    ? draftData.printingMode
+    : fallback.printingMode || 'raised'
+
+  const dims = draftData.dimensions && typeof draftData.dimensions === 'object' ? draftData.dimensions : {}
+  const fbDims = fallback.dimensions || {}
+
+  const dimensions = {
+    widthMm: isNum(dims.widthMm) ? Math.min(250, Math.max(50, dims.widthMm)) : fbDims.widthMm || 100,
+    heightMm: isNum(dims.heightMm) ? Math.min(250, Math.max(50, dims.heightMm)) : fbDims.heightMm || 140,
+    depthMm: isNum(dims.depthMm) ? Math.min(100, Math.max(10, dims.depthMm)) : fbDims.depthMm || 60,
+    baseThicknessMm: isNum(dims.baseThicknessMm) ? Math.min(30, Math.max(2, dims.baseThicknessMm)) : fbDims.baseThicknessMm || 8,
+    plateThicknessMm: isNum(dims.plateThicknessMm) ? Math.min(20, Math.max(2, dims.plateThicknessMm)) : fbDims.plateThicknessMm || 4,
+    cornerRadiusMm: isNum(dims.cornerRadiusMm) ? Math.min(40, Math.max(0, dims.cornerRadiusMm)) : fbDims.cornerRadiusMm || 10,
+    inclinationDeg: isNum(dims.inclinationDeg) ? Math.min(45, Math.max(0, dims.inclinationDeg)) : fbDims.inclinationDeg || 15,
+    baseWidthMm: isNum(dims.baseWidthMm) ? Math.min(300, Math.max(50, dims.baseWidthMm)) : fbDims.baseWidthMm || 110,
+    baseDepthMm: isNum(dims.baseDepthMm) ? Math.min(150, Math.max(30, dims.baseDepthMm)) : fbDims.baseDepthMm || 65,
+    borderThicknessMm: isNum(dims.borderThicknessMm) ? Math.min(20, Math.max(0, dims.borderThicknessMm)) : fbDims.borderThicknessMm || 3,
+    frameDepthMm: isNum(dims.frameDepthMm) ? Math.min(15, Math.max(0, dims.frameDepthMm)) : fbDims.frameDepthMm || 2,
+    roundedEdges: typeof dims.roundedEdges === 'boolean' ? dims.roundedEdges : fbDims.roundedEdges ?? true,
+    frontAndRearLayout: typeof dims.frontAndRearLayout === 'boolean' ? dims.frontAndRearLayout : fbDims.frontAndRearLayout ?? false,
+    wallMountHoles: typeof dims.wallMountHoles === 'boolean' ? dims.wallMountHoles : fbDims.wallMountHoles ?? false,
+    qrReliefDepthMm: isNum(dims.qrReliefDepthMm) ? Math.min(5, Math.max(0.4, dims.qrReliefDepthMm)) : fbDims.qrReliefDepthMm || 1.6,
+    inlayClearanceMm: isNum(dims.inlayClearanceMm) ? Math.min(1, Math.max(0.05, dims.inlayClearanceMm)) : fbDims.inlayClearanceMm || 0.2,
+  }
+
+  const qrCodes = Array.isArray(draftData.qrCodes) && draftData.qrCodes.length > 0
+    ? draftData.qrCodes.map((qr, idx) => {
+        const fbQr = fallback.qrCodes?.[idx] || fallback.qrCodes?.[0] || {}
+        return {
+          id: isString(qr.id) ? qr.id : fbQr.id || `qr-${idx + 1}`,
+          label: typeof qr.label === 'string' ? qr.label.slice(0, 50) : fbQr.label || 'Primary QR',
+          type: VALID_QR_TYPES.includes(qr.type) ? qr.type : fbQr.type || 'url',
+          fields: qr.fields && typeof qr.fields === 'object' ? { ...qr.fields } : fbQr.fields || { url: 'https://giftora.in' },
+          sizeMm: isNum(qr.sizeMm) ? Math.min(200, Math.max(25, qr.sizeMm)) : fbQr.sizeMm || 65,
+          errorCorrection: ['L', 'M', 'Q', 'H'].includes(qr.errorCorrection) ? qr.errorCorrection : fbQr.errorCorrection || 'H',
+          quietZone: isNum(qr.quietZone) ? Math.min(8, Math.max(1, qr.quietZone)) : fbQr.quietZone || 4,
+          fgColor: isString(qr.fgColor) ? qr.fgColor : fbQr.fgColor || '#111827',
+          bgColor: isString(qr.bgColor) ? qr.bgColor : fbQr.bgColor || '#FFFFFF',
+          positionX: isNum(qr.positionX) ? qr.positionX : fbQr.positionX || 0,
+          positionY: isNum(qr.positionY) ? qr.positionY : fbQr.positionY || 10,
+          face: ['front', 'back', 'left', 'right'].includes(qr.face) ? qr.face : fbQr.face || 'front',
+          visible: typeof qr.visible === 'boolean' ? qr.visible : fbQr.visible ?? true,
+        }
+      })
+    : fallback.qrCodes || []
+
+  const texts = Array.isArray(draftData.texts)
+    ? draftData.texts.map((t, idx) => {
+        const fbT = fallback.texts?.[idx] || {}
+        return {
+          id: isString(t.id) ? t.id : fbT.id || `text-${idx + 1}`,
+          content: typeof t.content === 'string' ? t.content.slice(0, 60) : fbT.content || '',
+          presetRole: t.presetRole || fbT.presetRole || 'business_name',
+          category: t.category || fbT.category || 'Modern',
+          fontSizeMm: isNum(t.fontSizeMm) ? Math.min(30, Math.max(3, t.fontSizeMm)) : fbT.fontSizeMm || 8,
+          letterSpacing: isNum(t.letterSpacing) ? Math.min(5, Math.max(-1, t.letterSpacing)) : fbT.letterSpacing || 0.5,
+          align: ['left', 'center', 'right'].includes(t.align) ? t.align : fbT.align || 'center',
+          xMm: isNum(t.xMm) ? t.xMm : fbT.xMm || 0,
+          yMm: isNum(t.yMm) ? t.yMm : fbT.yMm || -40,
+          rotationDeg: isNum(t.rotationDeg) ? t.rotationDeg : fbT.rotationDeg || 0,
+          color: isString(t.color) ? t.color : fbT.color || '#D9AE4E',
+          mode: ['raised', 'engraved'].includes(t.mode) ? t.mode : fbT.mode || 'raised',
+          depthMm: isNum(t.depthMm) ? Math.min(5, Math.max(0.4, t.depthMm)) : fbT.depthMm || 1.2,
+          face: ['front', 'back'].includes(t.face) ? t.face : fbT.face || 'front',
+          visible: typeof t.visible === 'boolean' ? t.visible : fbT.visible ?? true,
+        }
+      })
+    : fallback.texts || []
+
+  const logoData = draftData.logo && typeof draftData.logo === 'object' ? draftData.logo : {}
+  const fbLogo = fallback.logo || {}
+  const logo = {
+    enabled: typeof logoData.enabled === 'boolean' ? logoData.enabled : fbLogo.enabled ?? false,
+    dataUrl: typeof logoData.dataUrl === 'string' && logoData.dataUrl.startsWith('data:') ? logoData.dataUrl : null,
+    fileName: typeof logoData.fileName === 'string' ? logoData.fileName.slice(0, 100) : null,
+    isSvg: typeof logoData.isSvg === 'boolean' ? logoData.isSvg : false,
+    svgText: typeof logoData.svgText === 'string' ? logoData.svgText.slice(0, 50000) : null,
+    placement: ['center', 'above', 'below', 'custom'].includes(logoData.placement) ? logoData.placement : fbLogo.placement || 'center',
+    sizeMm: isNum(logoData.sizeMm) ? Math.min(30, Math.max(5, logoData.sizeMm)) : fbLogo.sizeMm || 14,
+    xMm: isNum(logoData.xMm) ? logoData.xMm : fbLogo.xMm || 0,
+    yMm: isNum(logoData.yMm) ? logoData.yMm : fbLogo.yMm || 0,
+    frameStyle: ['none', 'circle', 'rounded', 'badge'].includes(logoData.frameStyle) ? logoData.frameStyle : fbLogo.frameStyle || 'rounded',
+    frameColor: isString(logoData.frameColor) ? logoData.frameColor : fbLogo.frameColor || '#D9AE4E',
+    backingColor: isString(logoData.backingColor) ? logoData.backingColor : fbLogo.backingColor || '#FFFFFF',
+    mode: ['raised', 'engraved', 'preview'].includes(logoData.mode) ? logoData.mode : fbLogo.mode || 'raised',
+    depthMm: isNum(logoData.depthMm) ? Math.min(5, Math.max(0.4, logoData.depthMm)) : fbLogo.depthMm || 1.2,
+  }
+
+  const clrs = draftData.colors && typeof draftData.colors === 'object' ? draftData.colors : {}
+  const fbClrs = fallback.colors || {}
+  const colors = {
+    presetId: isString(clrs.presetId) ? clrs.presetId : fbClrs.presetId || 'default',
+    standColor: isString(clrs.standColor) ? clrs.standColor : fbClrs.standColor || '#0F172A',
+    baseColor: isString(clrs.baseColor) ? clrs.baseColor : fbClrs.baseColor || '#1E293B',
+    frameColor: isString(clrs.frameColor) ? clrs.frameColor : fbClrs.frameColor || '#D9AE4E',
+    qrColor: isString(clrs.qrColor) ? clrs.qrColor : fbClrs.qrColor || '#FFFFFF',
+    textColor: isString(clrs.textColor) ? clrs.textColor : fbClrs.textColor || '#D9AE4E',
+    accentColor: isString(clrs.accentColor) ? clrs.accentColor : fbClrs.accentColor || '#38BDF8',
+    materialType: ['pla', 'petg', 'matte', 'metallic', 'silk'].includes(clrs.materialType) ? clrs.materialType : fbClrs.materialType || 'pla',
+    rainbowPreview: typeof clrs.rainbowPreview === 'boolean' ? clrs.rainbowPreview : fbClrs.rainbowPreview ?? false,
+  }
+
+  const vis = draftData.visibility && typeof draftData.visibility === 'object' ? draftData.visibility : {}
+  const fbVis = fallback.visibility || {}
+  const visibility = {
+    base: typeof vis.base === 'boolean' ? vis.base : fbVis.base ?? true,
+    body: typeof vis.body === 'boolean' ? vis.body : fbVis.body ?? true,
+    frame: typeof vis.frame === 'boolean' ? vis.frame : fbVis.frame ?? true,
+    qr: typeof vis.qr === 'boolean' ? vis.qr : fbVis.qr ?? true,
+    text: typeof vis.text === 'boolean' ? vis.text : fbVis.text ?? true,
+    logo: typeof vis.logo === 'boolean' ? vis.logo : fbVis.logo ?? true,
+    decorations: typeof vis.decorations === 'boolean' ? vis.decorations : fbVis.decorations ?? true,
+  }
+
+  return {
+    id: isString(draftData.id) ? draftData.id : fallback.id || `qr-stand-${Date.now()}`,
+    name: isString(draftData.name) ? draftData.name : fallback.name || 'Custom QR Stand',
+    templateId,
+    presetId: draftData.presetId || fallback.presetId,
+    dimensions,
+    printingMode,
+    qrCodes,
+    texts,
+    logo,
+    decorations: Array.isArray(draftData.decorations) ? draftData.decorations : (fallback.decorations || []),
+    colors,
+    visibility,
+    updatedAt: isNum(draftData.updatedAt) ? draftData.updatedAt : Date.now(),
+  }
 }

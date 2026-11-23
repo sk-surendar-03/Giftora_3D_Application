@@ -62,4 +62,23 @@ export const CUSTOMIZATION_PRODUCTS = [
     ],
     tags: ['Multi-line 3D', 'Volume Pricing', 'Desk & Wall'],
   },
+  {
+    id: 'qr-stand',
+    name: 'Custom QR Stand',
+    subtitle: 'Business, Payment & Social QR Displays',
+    description: 'Design commercial-grade freestanding and angled 3D QR code stands with optical scannability verification, embedded multi-color inlays, center logos, and volume pricing.',
+    status: 'active',
+    statusLabel: 'Active',
+    badge: 'New Studio',
+    badgeColor: 'sky',
+    manageRoute: '/customization/qr-stand',
+    customerRoute: 'https://www.jasvel3dmakers.co.in/customise/qr-stand',
+    thumbnail: '/hero-qr-stand.png',
+    stats: [
+      { label: 'Templates', value: '12 Studio Styles' },
+      { label: 'Pricing Model', value: 'Base + Volume (cm³)' },
+      { label: 'Payloads', value: 'UPI, URL, Wi-Fi, Social' },
+    ],
+    tags: ['Scannable QR', 'Multi-color Inlay', 'Center Logo'],
+  },
 ]

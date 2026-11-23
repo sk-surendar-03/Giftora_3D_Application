@@ -7,6 +7,7 @@ import ProductDetail from '../pages/ProductDetail'
 import Customiser from '../pages/Customiser'
 import StandCustomiser from '../pages/StandCustomiser'
 import NameplateCustomiser from '../pages/NameplateCustomiser'
+import QRStandCustomiser from '../pages/QRStandCustomiser'
 import CustomisationHub from '../pages/CustomisationHub'
 import Cart from '../pages/Cart'
 import Addresses from '../pages/Addresses'
@@ -38,6 +39,7 @@ export default function AppRoutes() {
           <Route path="/customise/name-keychain" element={<Customiser />} />
           <Route path="/customise/stand" element={<StandCustomiser />} />
           <Route path="/customise/nameplate" element={<NameplateCustomiser />} />
+          <Route path="/customise/qr-stand" element={<QRStandCustomiser />} />
           <Route path="/customise/:productId" element={<Navigate to="/customise" replace />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/wishlist" element={<Wishlist />} />

@@ -19,6 +19,7 @@ import CustomizationHub from './app/customization/CustomizationHub.jsx'
 import CustomizationSettings from './app/customization/CustomizationSettings.jsx'
 import StandCustomizationSettings from './app/customization/StandCustomizationSettings.jsx'
 import NameplateCustomizationSettings from './app/customization/NameplateCustomizationSettings.jsx'
+import QrStandCustomizationSettings from './app/customization/QrStandCustomizationSettings.jsx'
 
 function App() {
   return (
@@ -51,6 +52,8 @@ function App() {
           <Route path="/customization/phone-pen-stand" element={<StandCustomizationSettings />} />
           <Route path="/customization/stand" element={<StandCustomizationSettings />} />
           <Route path="/customization/nameplate" element={<NameplateCustomizationSettings />} />
+          <Route path="/customization/qr-stand" element={<QrStandCustomizationSettings />} />
+          <Route path="/customization/qrstand" element={<QrStandCustomizationSettings />} />
         </Route>
       </Routes>
       </ToastProvider>
