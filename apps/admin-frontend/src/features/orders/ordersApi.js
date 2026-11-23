@@ -24,6 +24,14 @@ export async function fetchOrderItemStlBlob(orderId, itemId, signal) {
   return data
 }
 
+export async function fetchOrderItemBaseStlBlob(orderId, itemId, signal) {
+  const { data } = await api.get(`/admin/orders/${orderId}/items/${itemId}/base-stl`, {
+    responseType: 'blob',
+    signal,
+  })
+  return data
+}
+
 export async function fetchOrderItem3mfBlob(orderId, itemId, signal) {
   const { data } = await api.get(`/admin/orders/${orderId}/items/${itemId}/3mf`, {
     responseType: 'blob',
@@ -39,3 +47,12 @@ export async function fetchOrderItemPreviewBlob(orderId, itemId, signal) {
   })
   return data
 }
+
+export async function fetchOrderItemPhotoBlob(orderId, itemId, slotIndex = 0, signal) {
+  const { data } = await api.get(`/admin/orders/${orderId}/items/${itemId}/photo/${slotIndex}`, {
+    responseType: 'blob',
+    signal,
+  })
+  return data
+}
+

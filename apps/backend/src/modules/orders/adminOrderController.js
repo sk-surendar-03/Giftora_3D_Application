@@ -6,6 +6,13 @@ import { getPreviewForOrderItem, getStlForOrderItem, getThreeMfForOrderItem } fr
 import { getStlForStandOrderItem, getPreviewForStandOrderItem, getThreeMfForStandOrderItem } from '../standDesigner/standDesignService.js'
 import { getStlForNameplateOrderItem, getPreviewForNameplateOrderItem, getThreeMfForNameplateOrderItem } from '../nameplateDesigner/nameplateDesignService.js'
 import { getStlForQrStandOrderItem, getPreviewForQrStandOrderItem, getThreeMfForQrStandOrderItem } from '../qrStandDesigner/qrStandDesignService.js'
+import {
+  getStlForLithophaneOrderItem,
+  getBaseStlForLithophaneOrderItem,
+  getPreviewForLithophaneOrderItem,
+  getThreeMfForLithophaneOrderItem,
+  getPhotoForLithophaneOrderItem,
+} from '../lithophaneDesigner/lithophaneDesignService.js'
 
 const VALID_STATUSES = Object.values(OrderStatus)
 const VALID_TYPES = Object.values(OrderItemType)
@@ -35,6 +42,8 @@ export async function list(req, res) {
     normalizedType = 'NAMEPLATE_DESIGN'
   } else if (normalizedType === 'QR_STAND' || normalizedType === 'QRSTAND') {
     normalizedType = 'QR_STAND_DESIGN'
+  } else if (normalizedType === 'LITHOPHANE' || normalizedType === 'PHOTO_LAMP' || normalizedType === 'LITHOPHANE_DESIGN') {
+    normalizedType = 'LITHOPHANE_DESIGN'
   }
 
   let normalizedStatus = req.query.status
@@ -98,6 +107,8 @@ export async function downloadItemStl(req, res) {
     result = await getStlForNameplateOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'QR_STAND_DESIGN') {
     result = await getStlForQrStandOrderItem(req.params.orderId, req.params.itemId)
+  } else if (item.itemType === 'LITHOPHANE_DESIGN') {
+    result = await getStlForLithophaneOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'CUSTOM_DESIGN') {
     result = await getStlForOrderItem(req.params.orderId, req.params.itemId)
   } else {
@@ -105,6 +116,27 @@ export async function downloadItemStl(req, res) {
   }
 
   const { buffer, filename } = result
+  res
+    .set({
+      'Content-Type': 'model/stl',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
+    })
+    .send(buffer)
+}
+
+export async function downloadItemBaseStl(req, res) {
+  const item = await prisma.orderItem.findFirst({
+    where: { id: req.params.itemId, orderId: req.params.orderId },
+    select: { itemType: true },
+  })
+  if (!item) throw new HttpError(404, 'Order item not found.')
+  if (item.itemType !== 'LITHOPHANE_DESIGN') {
+    throw new HttpError(400, 'This item type does not have a downloadable base STL.')
+  }
+
+  const { buffer, filename } = await getBaseStlForLithophaneOrderItem(req.params.orderId, req.params.itemId)
   res
     .set({
       'Content-Type': 'model/stl',
@@ -129,6 +161,8 @@ export async function downloadItem3mf(req, res) {
     result = await getThreeMfForNameplateOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'QR_STAND_DESIGN') {
     result = await getThreeMfForQrStandOrderItem(req.params.orderId, req.params.itemId)
+  } else if (item.itemType === 'LITHOPHANE_DESIGN') {
+    result = await getThreeMfForLithophaneOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'CUSTOM_DESIGN') {
     result = await getThreeMfForOrderItem(req.params.orderId, req.params.itemId)
   } else {
@@ -160,10 +194,32 @@ export async function itemPreview(req, res) {
     buffer = await getPreviewForNameplateOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'QR_STAND_DESIGN') {
     buffer = await getPreviewForQrStandOrderItem(req.params.orderId, req.params.itemId)
+  } else if (item.itemType === 'LITHOPHANE_DESIGN') {
+    buffer = await getPreviewForLithophaneOrderItem(req.params.orderId, req.params.itemId)
   } else if (item.itemType === 'CUSTOM_DESIGN') {
     buffer = await getPreviewForOrderItem(req.params.orderId, req.params.itemId)
   } else {
     throw new HttpError(400, 'This item type does not have a 3D preview.')
   }
   res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'private, max-age=300', 'X-Content-Type-Options': 'nosniff' }).send(buffer)
+}
+
+export async function itemPhoto(req, res) {
+  const item = await prisma.orderItem.findFirst({
+    where: { id: req.params.itemId, orderId: req.params.orderId },
+    select: { itemType: true },
+  })
+  if (!item) throw new HttpError(404, 'Order item not found.')
+  if (item.itemType !== 'LITHOPHANE_DESIGN') {
+    throw new HttpError(400, 'Photo retrieval is only supported for Photo Lamp items.')
+  }
+  const photoIndex = parseInt(req.params.slotIndex ?? '0', 10) || 0
+  const buffer = await getPhotoForLithophaneOrderItem(req.params.orderId, req.params.itemId, photoIndex)
+  res
+    .set({
+      'Content-Type': 'image/jpeg',
+      'Cache-Control': 'private, max-age=3600',
+      'X-Content-Type-Options': 'nosniff',
+    })
+    .send(buffer)
 }

@@ -18,6 +18,8 @@ import {
   updateNameplatePricingConfig,
   getQrStandPricingConfig,
   updateQrStandPricingConfig,
+  getPhotoLampPricingConfig,
+  updatePhotoLampPricingConfig,
 } from './settingsService.js'
 
 export async function getPricing(req, res) {
@@ -173,5 +175,46 @@ export async function updateQrStandPricing(req, res) {
   }
   const updated = await updateQrStandPricingConfig({ pricePerCm3Cents, templates, addOns })
   res.json({ qrStandPricing: updated, pricing: updated })
+}
+
+export async function getPhotoLampPricing(req, res) {
+  const pricing = await getPhotoLampPricingConfig()
+  res.json({ photoLampPricing: pricing, pricing })
+}
+
+export async function updatePhotoLampPricing(req, res) {
+  const { pricePerCm3Cents, templates, addOns } = req.body ?? {}
+  if (pricePerCm3Cents !== undefined && (!Number.isInteger(pricePerCm3Cents) || pricePerCm3Cents < 0)) {
+    throw new HttpError(400, 'pricePerCm3Cents must be a non-negative whole number.')
+  }
+  if (templates !== undefined && (typeof templates !== 'object' || templates === null || Array.isArray(templates))) {
+    throw new HttpError(400, 'templates must be an object.')
+  }
+  if (templates) {
+    for (const [id, entry] of Object.entries(templates)) {
+      if (entry?.basePriceCents !== undefined && (!Number.isInteger(entry.basePriceCents) || entry.basePriceCents < 0)) {
+        throw new HttpError(400, `Template ${id} basePriceCents must be a non-negative whole number.`)
+      }
+    }
+  }
+  if (addOns !== undefined && (typeof addOns !== 'object' || addOns === null || Array.isArray(addOns))) {
+    throw new HttpError(400, 'addOns must be an object.')
+  }
+  if (addOns) {
+    for (const key of [
+      'ledPuckWarmWhiteCents',
+      'ledPuckCoolWhiteCents',
+      'ledPuckRgbRemoteCents',
+      'woodenBaseSurchargeCents',
+      'baseEngravingSurchargeCents',
+      'premiumGiftBoxCents',
+    ]) {
+      if (addOns[key] !== undefined && (!Number.isInteger(addOns[key]) || addOns[key] < 0)) {
+        throw new HttpError(400, `${key} must be a non-negative whole number.`)
+      }
+    }
+  }
+  const updated = await updatePhotoLampPricingConfig({ pricePerCm3Cents, templates, addOns })
+  res.json({ photoLampPricing: updated, pricing: updated })
 }
 

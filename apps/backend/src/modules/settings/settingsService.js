@@ -9,6 +9,13 @@ const THICKNESSES_KEY = 'customizer_thicknesses'
 const STAND_PRICING_KEY = 'stand_pricing'
 const NAMEPLATE_PRICING_KEY = 'nameplate_pricing'
 const QR_STAND_PRICING_KEY = 'qr_stand_pricing'
+const PHOTO_LAMP_PRICING_KEY = 'photo_lamp_pricing'
+
+import {
+  DEFAULT_LITHOPHANE_PRICE_PER_CM3_CENTS,
+  DEFAULT_LITHOPHANE_TEMPLATE_BASE_PRICES,
+  DEFAULT_LITHOPHANE_ADDON_PRICES,
+} from '../lithophaneDesigner/lithophaneDesignOptions.js'
 
 export const DEFAULT_PER_CHARACTER_PRICE_CENTS = 500
 export const DEFAULT_BASE_CHARACTERS = 10
@@ -223,6 +230,99 @@ export async function updateQrStandPricingConfig({ pricePerCm3Cents, templates, 
   await prisma.setting.upsert({
     where: { key: QR_STAND_PRICING_KEY },
     create: { key: QR_STAND_PRICING_KEY, value: next },
+    update: { value: next },
+  })
+  return next
+}
+
+export async function getPhotoLampPricingConfig() {
+  let row = null
+  try {
+    row = await prisma.setting.findUnique({ where: { key: PHOTO_LAMP_PRICING_KEY } })
+  } catch {
+    row = null
+  }
+  const v = row?.value ?? {}
+
+  const pricePerCm3Cents =
+    Number.isInteger(v.pricePerCm3Cents) && v.pricePerCm3Cents >= 0
+      ? v.pricePerCm3Cents
+      : DEFAULT_LITHOPHANE_PRICE_PER_CM3_CENTS
+
+  const templates = {}
+  for (const [id, defaultBase] of Object.entries(DEFAULT_LITHOPHANE_TEMPLATE_BASE_PRICES)) {
+    const entry = v.templates?.[id]
+    const basePriceCents =
+      entry && Number.isInteger(entry.basePriceCents) && entry.basePriceCents >= 0
+        ? entry.basePriceCents
+        : defaultBase
+    templates[id] = { basePriceCents }
+  }
+
+  const addOns = {
+    ledPuckWarmWhiteCents:
+      Number.isInteger(v.addOns?.ledPuckWarmWhiteCents) && v.addOns.ledPuckWarmWhiteCents >= 0
+        ? v.addOns.ledPuckWarmWhiteCents
+        : DEFAULT_LITHOPHANE_ADDON_PRICES.ledPuckWarmWhiteCents,
+    ledPuckCoolWhiteCents:
+      Number.isInteger(v.addOns?.ledPuckCoolWhiteCents) && v.addOns.ledPuckCoolWhiteCents >= 0
+        ? v.addOns.ledPuckCoolWhiteCents
+        : DEFAULT_LITHOPHANE_ADDON_PRICES.ledPuckCoolWhiteCents,
+    ledPuckRgbRemoteCents:
+      Number.isInteger(v.addOns?.ledPuckRgbRemoteCents) && v.addOns.ledPuckRgbRemoteCents >= 0
+        ? v.addOns.ledPuckRgbRemoteCents
+        : DEFAULT_LITHOPHANE_ADDON_PRICES.ledPuckRgbRemoteCents,
+    woodenBaseSurchargeCents:
+      Number.isInteger(v.addOns?.woodenBaseSurchargeCents) && v.addOns.woodenBaseSurchargeCents >= 0
+        ? v.addOns.woodenBaseSurchargeCents
+        : DEFAULT_LITHOPHANE_ADDON_PRICES.woodenBaseSurchargeCents,
+    baseEngravingSurchargeCents:
+      Number.isInteger(v.addOns?.baseEngravingSurchargeCents) && v.addOns.baseEngravingSurchargeCents >= 0
+        ? v.addOns.baseEngravingSurchargeCents
+        : DEFAULT_LITHOPHANE_ADDON_PRICES.baseEngravingSurchargeCents,
+    premiumGiftBoxCents:
+      Number.isInteger(v.addOns?.premiumGiftBoxCents) && v.addOns.premiumGiftBoxCents >= 0
+        ? v.addOns.premiumGiftBoxCents
+        : DEFAULT_LITHOPHANE_ADDON_PRICES.premiumGiftBoxCents,
+  }
+
+  return { pricePerCm3Cents, templates, addOns }
+}
+
+export async function updatePhotoLampPricingConfig({ pricePerCm3Cents, templates, addOns }) {
+  const current = await getPhotoLampPricingConfig()
+  const next = {
+    pricePerCm3Cents:
+      Number.isInteger(pricePerCm3Cents) && pricePerCm3Cents >= 0
+        ? pricePerCm3Cents
+        : current.pricePerCm3Cents,
+    templates: { ...current.templates },
+    addOns: { ...current.addOns },
+  }
+  if (templates && typeof templates === 'object') {
+    for (const [id, entry] of Object.entries(templates)) {
+      if (entry && Number.isInteger(entry.basePriceCents) && entry.basePriceCents >= 0) {
+        next.templates[id] = { basePriceCents: entry.basePriceCents }
+      }
+    }
+  }
+  if (addOns && typeof addOns === 'object') {
+    for (const key of [
+      'ledPuckWarmWhiteCents',
+      'ledPuckCoolWhiteCents',
+      'ledPuckRgbRemoteCents',
+      'woodenBaseSurchargeCents',
+      'baseEngravingSurchargeCents',
+      'premiumGiftBoxCents',
+    ]) {
+      if (Number.isInteger(addOns[key]) && addOns[key] >= 0) {
+        next.addOns[key] = addOns[key]
+      }
+    }
+  }
+  await prisma.setting.upsert({
+    where: { key: PHOTO_LAMP_PRICING_KEY },
+    create: { key: PHOTO_LAMP_PRICING_KEY, value: next },
     update: { value: next },
   })
   return next

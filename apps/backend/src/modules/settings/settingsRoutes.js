@@ -20,6 +20,8 @@ import {
   updateNameplatePricing,
   getQrStandPricing,
   updateQrStandPricing,
+  getPhotoLampPricing,
+  updatePhotoLampPricing,
 } from './settingsController.js'
 
 // Public — customer frontend needs these without auth
@@ -34,6 +36,8 @@ settingsRouter.get('/stand-pricing', asyncHandler(getStandPricing))
 settingsRouter.get('/nameplate-pricing', asyncHandler(getNameplatePricing))
 settingsRouter.get('/qr-stand-pricing', asyncHandler(getQrStandPricing))
 settingsRouter.get('/customizer/qr-stand', asyncHandler(getQrStandPricing))
+settingsRouter.get('/photo-lamp-pricing', asyncHandler(getPhotoLampPricing))
+settingsRouter.get('/customizer/photo-lamp', asyncHandler(getPhotoLampPricing))
 
 // Admin-only
 export const adminSettingsRouter = Router()
@@ -49,3 +53,7 @@ adminSettingsRouter.patch('/qr-stand-pricing', authenticate, authorize('ADMIN'),
 adminSettingsRouter.put('/qr-stand-pricing', authenticate, authorize('ADMIN'), asyncHandler(updateQrStandPricing))
 adminSettingsRouter.patch('/customizer/qr-stand', authenticate, authorize('ADMIN'), asyncHandler(updateQrStandPricing))
 adminSettingsRouter.put('/customizer/qr-stand', authenticate, authorize('ADMIN'), asyncHandler(updateQrStandPricing))
+adminSettingsRouter.patch('/photo-lamp-pricing', authenticate, authorize('ADMIN'), asyncHandler(updatePhotoLampPricing))
+adminSettingsRouter.put('/photo-lamp-pricing', authenticate, authorize('ADMIN'), asyncHandler(updatePhotoLampPricing))
+adminSettingsRouter.patch('/customizer/photo-lamp', authenticate, authorize('ADMIN'), asyncHandler(updatePhotoLampPricing))
+adminSettingsRouter.put('/customizer/photo-lamp', authenticate, authorize('ADMIN'), asyncHandler(updatePhotoLampPricing))

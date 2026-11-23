@@ -99,3 +99,18 @@ export async function updateQrStandPricing({ pricePerCm3Cents, templates, addOns
   return data.qrStandPricing ?? data.pricing
 }
 
+export async function fetchPhotoLampPricing() {
+  const { data } = await api.get('/settings/photo-lamp-pricing')
+  return data.photoLampPricing ?? data.pricing
+}
+
+export async function updatePhotoLampPricing({ pricePerCm3Cents, templates, addOns }) {
+  const { data } = await api.patch('/admin/settings/photo-lamp-pricing', {
+    pricePerCm3Cents,
+    templates,
+    addOns,
+  })
+  return data.photoLampPricing ?? data.pricing
+}
+
+

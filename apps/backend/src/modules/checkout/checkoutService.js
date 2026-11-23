@@ -1,7 +1,7 @@
 import { prisma } from '../../config/db.js'
 import { HttpError } from '../../utils/httpError.js'
 import { getOrCreateCart } from '../cart/cartService.js'
-import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig, getNameplatePricingConfig, getQrStandPricingConfig } from '../settings/settingsService.js'
+import { getPricingConfig, getCustomizerSizes, getCustomizerThicknesses, getCustomizerShipping, getStandPricingConfig, getNameplatePricingConfig, getQrStandPricingConfig, getPhotoLampPricingConfig } from '../settings/settingsService.js'
 import { calculateTotalCustomizationPriceCents } from '../settings/pricingCalculator.js'
 import { priceForDesign, stlIsAvailable, toPublicDesign } from '../customizer/designService.js'
 import { stlIsAvailable as standStlIsAvailable, toPublicDesign as toPublicStandDesign } from '../standDesigner/standDesignService.js'
@@ -10,6 +10,8 @@ import { stlIsAvailable as nameplateStlIsAvailable, toPublicNameplateDesign } fr
 import { priceForNameplate } from '../nameplateDesigner/nameplateDesignOptions.js'
 import { stlIsAvailable as qrStandStlIsAvailable, toPublicQrStandDesign } from '../qrStandDesigner/qrStandDesignService.js'
 import { priceForQrStand } from '../qrStandDesigner/qrStandDesignOptions.js'
+import { stlIsAvailable as photoLampStlIsAvailable, toPublicLithophaneDesign } from '../lithophaneDesigner/lithophaneDesignService.js'
+import { priceForLithophane } from '../lithophaneDesigner/lithophaneDesignOptions.js'
 
 export async function reviewCheckout(userId, addressId) {
   const cart = await getOrCreateCart(userId)
@@ -23,8 +25,8 @@ export async function reviewCheckout(userId, addressId) {
     throw new HttpError(404, 'Address not found.')
   }
 
-  const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }, standPricingConfig, nameplatePricingConfig, qrStandPricingConfig, { methods: shippingMethods }] =
-    await Promise.all([getPricingConfig(), getCustomizerSizes(), getCustomizerThicknesses(), getStandPricingConfig(), getNameplatePricingConfig(), getQrStandPricingConfig(), getCustomizerShipping()])
+  const [{ perCharacterPriceCents, baseCharacters, basePriceCents }, { sizes: adminSizes }, { thicknesses: adminThicknesses }, standPricingConfig, nameplatePricingConfig, qrStandPricingConfig, photoLampPricingConfig, { methods: shippingMethods }] =
+    await Promise.all([getPricingConfig(), getCustomizerSizes(), getCustomizerThicknesses(), getStandPricingConfig(), getNameplatePricingConfig(), getQrStandPricingConfig(), getPhotoLampPricingConfig(), getCustomizerShipping()])
 
   let subtotalCents = 0
   const items = []
@@ -33,15 +35,33 @@ export async function reviewCheckout(userId, addressId) {
     const isStand = item.itemType === 'STAND_DESIGN'
     const isNameplate = item.itemType === 'NAMEPLATE_DESIGN'
     const isQrStand = item.itemType === 'QR_STAND_DESIGN'
+    const isLithophane = item.itemType === 'LITHOPHANE_DESIGN'
     const design = item.customDesign
     const standDesign = item.standDesign
     const nameplateDesign = item.nameplateDesign
     const qrStandDesign = item.qrStandDesign
+    const lithophaneDesign = item.lithophaneDesign
     const product = item.product
 
-    let available, currentUnitPriceCents, title, productSnapshot, designSnapshot, standDesignSnapshot, nameplateDesignSnapshot, qrStandDesignSnapshot
+    let available, currentUnitPriceCents, title, productSnapshot, designSnapshot, standDesignSnapshot, nameplateDesignSnapshot, qrStandDesignSnapshot, lithophaneDesignSnapshot
 
-    if (isQrStand) {
+    if (isLithophane) {
+      // ─── LITHOPHANE_DESIGN ────────────────────────────────────────────
+      available = lithophaneDesign ? await photoLampStlIsAvailable(lithophaneDesign) : false
+      currentUnitPriceCents = priceForLithophane(
+        lithophaneDesign?.templateId,
+        lithophaneDesign?.solidVolumeCm3 ?? 0,
+        lithophaneDesign?.designConfig ?? {},
+        photoLampPricingConfig
+      )
+      title = lithophaneDesign?.title ?? 'Lithophane Photo Lamp'
+      productSnapshot = null
+      designSnapshot = null
+      standDesignSnapshot = null
+      nameplateDesignSnapshot = null
+      qrStandDesignSnapshot = null
+      lithophaneDesignSnapshot = lithophaneDesign ? toPublicLithophaneDesign(lithophaneDesign) : null
+    } else if (isQrStand) {
       // ─── QR_STAND_DESIGN ──────────────────────────────────────────────
       available = qrStandDesign ? await qrStandStlIsAvailable(qrStandDesign) : false
       currentUnitPriceCents = priceForQrStand(
@@ -56,6 +76,7 @@ export async function reviewCheckout(userId, addressId) {
       standDesignSnapshot = null
       nameplateDesignSnapshot = null
       qrStandDesignSnapshot = qrStandDesign ? toPublicQrStandDesign(qrStandDesign) : null
+      lithophaneDesignSnapshot = null
     } else if (isNameplate) {
       // ─── NAMEPLATE_DESIGN ─────────────────────────────────────────────
       available = nameplateDesign ? await nameplateStlIsAvailable(nameplateDesign) : false
@@ -71,6 +92,7 @@ export async function reviewCheckout(userId, addressId) {
       standDesignSnapshot = null
       nameplateDesignSnapshot = nameplateDesign ? toPublicNameplateDesign(nameplateDesign) : null
       qrStandDesignSnapshot = null
+      lithophaneDesignSnapshot = null
     } else if (isStand) {
       // ─── STAND_DESIGN ─────────────────────────────────────────────────
       available = standDesign ? await standStlIsAvailable(standDesign) : false
@@ -82,6 +104,7 @@ export async function reviewCheckout(userId, addressId) {
       standDesignSnapshot = standDesign ? toPublicStandDesign(standDesign) : null
       nameplateDesignSnapshot = null
       qrStandDesignSnapshot = null
+      lithophaneDesignSnapshot = null
     } else if (isCustom) {
       // ─── CUSTOM_DESIGN ────────────────────────────────────────────────
       available = await stlIsAvailable(design)
@@ -95,6 +118,7 @@ export async function reviewCheckout(userId, addressId) {
       standDesignSnapshot = null
       nameplateDesignSnapshot = null
       qrStandDesignSnapshot = null
+      lithophaneDesignSnapshot = null
     } else {
       // ─── PRODUCT ──────────────────────────────────────────────────────
       available = product?.isActive ?? false
@@ -118,6 +142,8 @@ export async function reviewCheckout(userId, addressId) {
       standDesignSnapshot = null
       nameplateDesignSnapshot = null
       qrStandDesignSnapshot = null
+      lithophaneDesignSnapshot = null
+    }
     }
 
     const priceChanged = currentUnitPriceCents !== item.unitPriceCents
@@ -137,6 +163,8 @@ export async function reviewCheckout(userId, addressId) {
       nameplateDesign: nameplateDesignSnapshot,
       qrStand: qrStandDesignSnapshot,
       qrStandDesign: qrStandDesignSnapshot,
+      lithophane: lithophaneDesignSnapshot,
+      lithophaneDesign: lithophaneDesignSnapshot,
       quantity: item.quantity,
       customization: item.customization,
       cartUnitPriceCents: item.unitPriceCents,

@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import Banner from '../../components/Banner.jsx'
 import { useToast } from '../../components/Toast.jsx'
 import AdminDesignPreview from '../../components/AdminDesignPreview.jsx'
-import { fetchOrder, updateOrderStatus, fetchOrderItemStlBlob, fetchOrderItem3mfBlob } from '../../features/orders/ordersApi.js'
+import { fetchOrder, updateOrderStatus, fetchOrderItemStlBlob, fetchOrderItemBaseStlBlob, fetchOrderItem3mfBlob, fetchOrderItemPhotoBlob } from '../../features/orders/ordersApi.js'
 import { CARRIER_PRESETS, computeTrackingUrl } from '../../utils/carrierTracking.js'
 
 const STATUS_OPTIONS = ['PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED']
@@ -196,6 +196,101 @@ function describeAdminQrStandDesign(qrStand) {
   ].filter(Boolean)
 }
 
+const PHOTO_LAMP_ARCHETYPE_LABELS = {
+  cylinder: 'Cylinder (Seamless)',
+  lightbox: 'Rectangular Light Box',
+  prism4: 'Four-Sided Lamp (4 Photos)',
+  heart: 'Heart-Shaped Lamp',
+  curved_panel: 'Curved Lithophane Portrait',
+  moon_lamp: 'Full Spherical Moon Lamp',
+  hex_lantern: 'Hexagonal Lantern (6 Photos)',
+  medallion: 'Circular Medallion Ornament',
+  carousel: 'Rotating Carousel (3 Photos)',
+}
+
+function describeAdminPhotoLampDesign(lithophane) {
+  if (!lithophane) return []
+  const cfg = lithophane.designConfig || {}
+  const dim = cfg.dimensions || {}
+  const led = cfg.lighting || {}
+  const engraving = cfg.engraving || {}
+
+  return [
+    { label: 'Archetype', value: PHOTO_LAMP_ARCHETYPE_LABELS[lithophane.archetype] || lithophane.archetype },
+    lithophane.lithophaneMaterial && { label: 'Panel Material', value: lithophane.lithophaneMaterial.toUpperCase() },
+    lithophane.baseMaterial && { label: 'Base Material', value: lithophane.baseMaterial.toUpperCase() },
+    (dim.heightMm || dim.widthMm || dim.diameterMm) && {
+      label: 'Dimensions',
+      value: dim.diameterMm
+        ? `Ø${dim.diameterMm} × H${dim.heightMm} mm`
+        : `${dim.widthMm || dim.diameterMm || 0} × ${dim.depthMm || dim.widthMm || 0} × ${dim.heightMm || 0} mm`,
+    },
+    dim.wallMinMm && { label: 'Wall Thickness', value: `${dim.wallMinMm} – ${dim.wallMaxMm} mm` },
+    lithophane.ledOption && { label: 'Lighting Kit', value: lithophane.ledOption.replace(/_/g, ' ') },
+    lithophane.photosCount && { label: 'Photos Loaded', value: `${lithophane.photosCount} slot(s)` },
+    engraving.text && { label: 'Base Engraving', value: `"${engraving.text}" (${engraving.font || 'Standard'})` },
+    lithophane.solidVolumeCm3 !== undefined && { label: 'Panel Volume', value: `${lithophane.solidVolumeCm3} cm³` },
+    lithophane.baseSolidVolumeCm3 !== undefined && { label: 'Base Volume', value: `${lithophane.baseSolidVolumeCm3} cm³` },
+  ].filter(Boolean)
+}
+
+function AdminPhotoThumbnail({ orderId, itemId, slotIndex }) {
+  const [imgUrl, setImgUrl] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    let blobUrl = null
+    fetchOrderItemPhotoBlob(orderId, itemId, slotIndex)
+      .then((blob) => {
+        if (!active) return
+        blobUrl = URL.createObjectURL(blob)
+        setImgUrl(blobUrl)
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => {
+      active = false
+      if (blobUrl) URL.revokeObjectURL(blobUrl)
+    }
+  }, [orderId, itemId, slotIndex])
+
+  if (loading) {
+    return (
+      <div className="h-16 w-16 rounded border border-line bg-soft flex items-center justify-center text-[10px] text-muted animate-pulse">
+        Slot {slotIndex + 1}
+      </div>
+    )
+  }
+
+  if (!imgUrl) {
+    return (
+      <div className="h-16 w-16 rounded border border-line bg-soft flex items-center justify-center text-[10px] text-muted">
+        Slot {slotIndex + 1}
+      </div>
+    )
+  }
+
+  return (
+    <a
+      href={imgUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      download={`photo_slot_${slotIndex + 1}.jpg`}
+      title={`Slot ${slotIndex + 1} - Click to download customer photo`}
+      className="group relative block h-16 w-16 rounded overflow-hidden border border-line hover:border-accent shadow-sm"
+    >
+      <img src={imgUrl} alt={`Customer Photo ${slotIndex + 1}`} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+      <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] text-center py-0.5 font-medium">
+        Slot {slotIndex + 1}
+      </span>
+    </a>
+  )
+}
+
+
 export default function OrderDetail() {
   const { id } = useParams()
   const toast = useToast()
@@ -211,6 +306,7 @@ export default function OrderDetail() {
   const [updating, setUpdating] = useState(false)
   const [successMessage, setSuccessMessage] = useState(null)
   const [downloadingStlId, setDownloadingStlId] = useState(null)
+  const [downloadingBaseStlId, setDownloadingBaseStlId] = useState(null)
   const [downloading3mfId, setDownloading3mfId] = useState(null)
   const [downloadError, setDownloadError] = useState(null)
 
@@ -304,6 +400,26 @@ export default function OrderDetail() {
     }
   }
 
+  async function handleDownloadBaseStl(itemId, filename = 'base.stl') {
+    setDownloadError(null)
+    setDownloadingBaseStlId(itemId)
+    try {
+      const blob = await fetchOrderItemBaseStlBlob(id, itemId)
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(downloadUrl)
+    } catch (err) {
+      setDownloadError(extractError(err))
+    } finally {
+      setDownloadingBaseStlId(null)
+    }
+  }
+
   async function handleDownload3mf(itemId, filename = 'design.3mf') {
     setDownloadError(null)
     setDownloading3mfId(itemId)
@@ -375,13 +491,19 @@ export default function OrderDetail() {
                 const isStand = item.itemType === 'STAND_DESIGN' && (item.stand || item.standDesign)
                 const isNameplate = item.itemType === 'NAMEPLATE_DESIGN' && (item.nameplate || item.nameplateDesign)
                 const isQrStand = item.itemType === 'QR_STAND_DESIGN' && (item.qrStand || item.qrStandDesign)
+                const isPhotoLamp = item.itemType === 'LITHOPHANE_DESIGN' && (item.lithophane || item.lithophaneDesign)
+                const isAny3D = isCustom || isStand || isNameplate || isQrStand || isPhotoLamp
+
                 const design = item.design
                 const stand = item.stand || item.standDesign
                 const nameplate = item.nameplate || item.nameplateDesign
                 const qrStand = item.qrStand || item.qrStandDesign
-                const stlMeta = isCustom ? design?.stl : isStand ? stand?.stl : isNameplate ? nameplate?.stl : isQrStand ? qrStand?.stl : null
-                const hasStl = isCustom ? design?.hasStl : isStand ? stand?.hasStl : isNameplate ? nameplate?.hasStl : isQrStand ? qrStand?.hasStl : false
-                const hasPreview = isCustom ? design?.hasPreview : isStand ? stand?.hasPreview : isNameplate ? nameplate?.hasPreview : isQrStand ? qrStand?.hasPreview : false
+                const lithophane = item.lithophane || item.lithophaneDesign
+
+                const stlMeta = isCustom ? design?.stl : isStand ? stand?.stl : isNameplate ? nameplate?.stl : isQrStand ? qrStand?.stl : isPhotoLamp ? lithophane?.stl : null
+                const hasStl = isCustom ? design?.hasStl : isStand ? stand?.hasStl : isNameplate ? nameplate?.hasStl : isQrStand ? qrStand?.hasStl : isPhotoLamp ? lithophane?.hasStl : false
+                const hasBaseStl = isPhotoLamp ? Boolean(lithophane?.hasBaseStl || lithophane?.baseStlFile) : false
+                const hasPreview = isCustom ? design?.hasPreview : isStand ? stand?.hasPreview : isNameplate ? nameplate?.hasPreview : isQrStand ? qrStand?.hasPreview : isPhotoLamp ? lithophane?.hasPreview : false
                 const designRows = isCustom
                   ? describeAdminDesign(design?.params)
                   : isStand
@@ -390,6 +512,8 @@ export default function OrderDetail() {
                   ? describeAdminNameplateDesign(nameplate)
                   : isQrStand
                   ? describeAdminQrStandDesign(qrStand)
+                  : isPhotoLamp
+                  ? describeAdminPhotoLampDesign(lithophane)
                   : []
 
                 return (
@@ -397,7 +521,7 @@ export default function OrderDetail() {
                     <div className="flex gap-4 items-start">
                       {/* Image or 3D Preview Thumbnail */}
                       <div className="h-20 w-20 shrink-0 overflow-hidden rounded-control border border-line bg-soft flex items-center justify-center">
-                        {isCustom || isStand || isNameplate || isQrStand ? (
+                        {isAny3D ? (
                           <AdminDesignPreview orderId={order.id} itemId={item.id} hasPreview={hasPreview} alt={item.productName} />
                         ) : resolveImage(item.productImage) ? (
                           <img src={resolveImage(item.productImage)} alt={item.productName} className="h-full w-full object-cover" />
@@ -428,6 +552,10 @@ export default function OrderDetail() {
                                 <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30">
                                   QR Stand 3D
                                 </span>
+                              ) : isPhotoLamp ? (
+                                <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                                  Photo Lamp 3D
+                                </span>
                               ) : (
                                 <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium bg-soft text-muted border border-line">
                                   Catalog
@@ -443,8 +571,8 @@ export default function OrderDetail() {
                       </div>
                     </div>
 
-                    {/* Custom Design, Stand Design, Nameplate Design, or QR Stand Details Card */}
-                    {(isCustom || isStand || isNameplate || isQrStand) && (
+                    {/* Custom Design, Stand Design, Nameplate Design, QR Stand or Photo Lamp Details Card */}
+                    {isAny3D && (
                       <div className="rounded-control border border-line/80 bg-alt/60 p-4 space-y-3.5">
                         <div className="flex items-center justify-between border-b border-line/60 pb-2.5">
                           <span className="text-xs font-bold uppercase tracking-wider text-accent">
@@ -454,28 +582,39 @@ export default function OrderDetail() {
                             <div className="flex flex-wrap items-center gap-2">
                             <button
                               type="button"
-                              onClick={() => handleDownloadStl(item.id, `${item.productName.replace(/[^a-z0-9_-]/gi, '_')}.stl`)}
-                              disabled={downloadingStlId === item.id || downloading3mfId === item.id}
+                              onClick={() => handleDownloadStl(item.id, `${item.productName.replace(/[^a-z0-9_-]/gi, '_')}${isPhotoLamp ? '_panel' : ''}.stl`)}
+                              disabled={downloadingStlId === item.id || downloadingBaseStlId === item.id || downloading3mfId === item.id}
                               className="inline-flex items-center gap-1.5 rounded-control bg-accent px-3 py-1.5 text-xs font-bold text-on-accent hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer shadow-sm"
                             >
                               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
                               </svg>
-                              {downloadingStlId === item.id ? 'Downloading…' : 'Download STL'}
+                              {downloadingStlId === item.id ? 'Downloading…' : (isPhotoLamp ? 'Download Panel STL' : 'Download STL')}
                             </button>
-                            {(isCustom || isStand || isNameplate || isQrStand) && (
+                            {hasBaseStl && (
                               <button
                                 type="button"
-                                onClick={() => handleDownload3mf(item.id, `${item.productName.replace(/[^a-z0-9_-]/gi, '_')}.3mf`)}
-                                disabled={downloadingStlId === item.id || downloading3mfId === item.id}
-                                className="inline-flex items-center gap-1.5 rounded-control bg-alt border border-line px-3 py-1.5 text-xs font-bold text-ink hover:border-accent hover:text-accent transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+                                onClick={() => handleDownloadBaseStl(item.id, `${item.productName.replace(/[^a-z0-9_-]/gi, '_')}_base.stl`)}
+                                disabled={downloadingStlId === item.id || downloadingBaseStlId === item.id || downloading3mfId === item.id}
+                                className="inline-flex items-center gap-1.5 rounded-control bg-accent/85 px-3 py-1.5 text-xs font-bold text-on-accent hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer shadow-sm"
                               >
                                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
                                 </svg>
-                                {downloading3mfId === item.id ? 'Downloading…' : 'Download 3MF'}
+                                {downloadingBaseStlId === item.id ? 'Downloading…' : 'Download Base STL'}
                               </button>
                             )}
+                            <button
+                              type="button"
+                              onClick={() => handleDownload3mf(item.id, `${item.productName.replace(/[^a-z0-9_-]/gi, '_')}.3mf`)}
+                              disabled={downloadingStlId === item.id || downloadingBaseStlId === item.id || downloading3mfId === item.id}
+                              className="inline-flex items-center gap-1.5 rounded-control bg-alt border border-line px-3 py-1.5 text-xs font-bold text-ink hover:border-accent hover:text-accent transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+                            >
+                              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                              </svg>
+                              {downloading3mfId === item.id ? 'Downloading…' : (isPhotoLamp ? 'Download Assembly 3MF' : 'Download 3MF')}
+                            </button>
                           </div>
                           ) : (
                             <span className="text-xs text-muted/80 italic">File unavailable</span>
@@ -499,6 +638,25 @@ export default function OrderDetail() {
                             </div>
                           ))}
                         </div>
+
+                        {/* Lithophane Customer Photos */}
+                        {isPhotoLamp && (lithophane?.photosCount > 0 || (lithophane?.photos && lithophane.photos.length > 0)) && (
+                          <div className="pt-3 border-t border-line/60">
+                            <span className="text-[11px] font-semibold text-muted uppercase tracking-wider block mb-2">
+                              Customer Uploaded Photos ({lithophane?.photosCount || lithophane?.photos?.length})
+                            </span>
+                            <div className="flex flex-wrap gap-2.5">
+                              {Array.from({ length: lithophane?.photosCount || lithophane?.photos?.length || 1 }).map((_, slotIdx) => (
+                                <AdminPhotoThumbnail
+                                  key={slotIdx}
+                                  orderId={order.id}
+                                  itemId={item.id}
+                                  slotIndex={slotIdx}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         {/* STL File Metadata */}
                         {stlMeta && (
@@ -525,7 +683,7 @@ export default function OrderDetail() {
                     )}
 
                     {/* Standard Catalog Customization (e.g. engraving) */}
-                    {!isCustom && !isStand && !isNameplate && !isQrStand && item.customization && (
+                    {!isAny3D && item.customization && (
                       <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted bg-alt/40 p-3 rounded-control border border-line">
                         {Object.entries(item.customization).map(([key, value]) =>
                           value && key !== 'note' ? (

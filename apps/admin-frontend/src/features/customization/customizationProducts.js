@@ -81,4 +81,23 @@ export const CUSTOMIZATION_PRODUCTS = [
     ],
     tags: ['Scannable QR', 'Multi-color Inlay', 'Center Logo'],
   },
+  {
+    id: 'photo-lamp',
+    name: '3D Lithophane Photo Lamp',
+    subtitle: 'Illuminated 3D Relief Sculptures & Lamps',
+    description: 'Design bespoke illuminated lithophane photo lamps with translucent relief carving. Features 9 geometric lamp archetypes, custom engraved pedestals, multi-color LED backlighting, and volume pricing.',
+    status: 'active',
+    statusLabel: 'Active',
+    badge: 'New Studio',
+    badgeColor: 'amber',
+    manageRoute: '/customization/photo-lamp',
+    customerRoute: 'https://www.jasvel3dmakers.co.in/customise/photo-lamp',
+    thumbnail: '/hero-photo-lamp.png',
+    stats: [
+      { label: 'Archetypes', value: '9 Lamp Shapes' },
+      { label: 'Pricing Model', value: 'Base + Volume (cm³) + Add-ons' },
+      { label: 'Manufacturing', value: 'Dual-Part 3MF / STL' },
+    ],
+    tags: ['Translucent Relief', 'LED Puck Base', 'Multi-Photo'],
+  },
 ]

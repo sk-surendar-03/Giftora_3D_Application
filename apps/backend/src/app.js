@@ -17,6 +17,7 @@ import { customizerRouter, customDesignRouter } from './modules/customizer/custo
 import { standDesignerRouter, standDesignRouter } from './modules/standDesigner/standDesignRoutes.js'
 import { nameplateDesignerRouter, nameplateDesignRouter } from './modules/nameplateDesigner/nameplateDesignRoutes.js'
 import { qrStandDesignerRouter, qrStandDesignRouter } from './modules/qrStandDesigner/qrStandDesignRoutes.js'
+import { photoLampDesignerRouter, photoLampDesignRouter } from './modules/lithophaneDesigner/lithophaneDesignRoutes.js'
 import { wishlistRouter } from './modules/wishlist/wishlistRoutes.js'
 import { contactRouter } from './modules/contact/contactRoutes.js'
 import { adminInquiryRouter } from './modules/contact/adminInquiryRoutes.js'
@@ -63,6 +64,8 @@ app.use('/api/v1/nameplate-designer', nameplateDesignerRouter)
 app.use('/api/v1/nameplate-designs', nameplateDesignRouter)
 app.use('/api/v1/qr-stand-designer', qrStandDesignerRouter)
 app.use('/api/v1/qr-stand-designs', qrStandDesignRouter)
+app.use('/api/v1/photo-lamp-designer', photoLampDesignerRouter)
+app.use('/api/v1/photo-lamp-designs', photoLampDesignRouter)
 app.use('/api/v1/wishlist', wishlistRouter)
 app.use('/api/v1/contact', contactRouter)
 

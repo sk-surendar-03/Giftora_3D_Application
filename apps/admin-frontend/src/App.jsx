@@ -20,6 +20,7 @@ import CustomizationSettings from './app/customization/CustomizationSettings.jsx
 import StandCustomizationSettings from './app/customization/StandCustomizationSettings.jsx'
 import NameplateCustomizationSettings from './app/customization/NameplateCustomizationSettings.jsx'
 import QrStandCustomizationSettings from './app/customization/QrStandCustomizationSettings.jsx'
+import PhotoLampCustomizationSettings from './app/customization/PhotoLampCustomizationSettings.jsx'
 
 function App() {
   return (
@@ -54,6 +55,9 @@ function App() {
           <Route path="/customization/nameplate" element={<NameplateCustomizationSettings />} />
           <Route path="/customization/qr-stand" element={<QrStandCustomizationSettings />} />
           <Route path="/customization/qrstand" element={<QrStandCustomizationSettings />} />
+          <Route path="/customization/photo-lamp" element={<PhotoLampCustomizationSettings />} />
+          <Route path="/customization/photolamp" element={<PhotoLampCustomizationSettings />} />
+          <Route path="/customization/lithophane" element={<PhotoLampCustomizationSettings />} />
         </Route>
       </Routes>
       </ToastProvider>
