@@ -153,6 +153,9 @@ export default function PhotoLampCustomiser() {
     frame: null,
   })
 
+  // Processed 2D photo canvas for translucent lithophane texture mapping
+  const [processedCanvas, setProcessedCanvas] = useState(null)
+
   // Snapshot preview captured from WebGL canvas
   const [previewSnapshot, setPreviewSnapshot] = useState(null)
 
@@ -311,6 +314,8 @@ export default function PhotoLampCustomiser() {
           sampleWidth
         )
         if (isCancelled) return
+
+        setProcessedCanvas(processed.canvas)
 
         let lithoGeo
         const gridW = processed.width
@@ -659,6 +664,7 @@ export default function PhotoLampCustomiser() {
               onSnapshotCaptured={handleSnapshotCaptured}
               cameraDistance={340}
               explodedProgress={0}
+              processedCanvas={processedCanvas}
             />
           </div>
 
