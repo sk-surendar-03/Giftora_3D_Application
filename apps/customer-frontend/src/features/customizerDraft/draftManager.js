@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   legacy_keychain: 'giftora_custom_design_draft',
   nameplate: 'giftora_draft_nameplate_v1',
   qrstand: 'giftora_draft_qrstand_v1',
+  photolamp: 'giftora_draft_photolamp_v1',
 }
 
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000 // 7 days draft persistence
@@ -423,6 +424,107 @@ export function sanitizeQrStandDraft(draftData, defaultFallback) {
     decorations: Array.isArray(draftData.decorations) ? draftData.decorations : (fallback.decorations || []),
     colors,
     visibility,
+    updatedAt: isNum(draftData.updatedAt) ? draftData.updatedAt : Date.now(),
+  }
+}
+
+const VALID_LAMP_SHAPES = [
+  'cylinder',
+  'rectangle',
+  'four_sided',
+  'prism_4',
+  'heart',
+  'curved',
+  'moon',
+  'hexagonal',
+  'lantern_6',
+  'circular',
+  'medallion',
+  'rotating',
+  'carousel_3',
+]
+
+/**
+ * Validates and safely sanitizes a Photo Lamp draft.
+ * Strips oversized base64 images to prevent quota exhaustion.
+ */
+export function sanitizePhotoLampDraft(draftData, defaultFallback) {
+  if (!draftData || typeof draftData !== 'object') return null
+  const fallback = defaultFallback || {}
+  const isString = (v) => typeof v === 'string' && v.trim().length > 0
+  const isNum = (v) => typeof v === 'number' && Number.isFinite(v)
+
+  const shape = VALID_LAMP_SHAPES.includes(draftData.shape)
+    ? draftData.shape
+    : fallback.shape || 'cylinder'
+
+  const ps = draftData.printSettings && typeof draftData.printSettings === 'object' ? draftData.printSettings : {}
+  const fbPs = fallback.printSettings || {}
+  const printSettings = {
+    modelHeightMm: isNum(ps.modelHeightMm) ? Math.min(220, Math.max(60, ps.modelHeightMm)) : fbPs.modelHeightMm || 120,
+    modelWidthMm: isNum(ps.modelWidthMm) ? Math.min(200, Math.max(50, ps.modelWidthMm)) : fbPs.modelWidthMm || 90,
+    modelDiameterMm: isNum(ps.modelDiameterMm) ? Math.min(200, Math.max(50, ps.modelDiameterMm)) : fbPs.modelDiameterMm || 90,
+    minThicknessMm: isNum(ps.minThicknessMm) ? Math.min(2.0, Math.max(0.6, ps.minThicknessMm)) : fbPs.minThicknessMm || 0.8,
+    maxThicknessMm: isNum(ps.maxThicknessMm) ? Math.min(5.0, Math.max(2.0, ps.maxThicknessMm)) : fbPs.maxThicknessMm || 3.2,
+    borderWidthMm: isNum(ps.borderWidthMm) ? Math.min(10, Math.max(1, ps.borderWidthMm)) : fbPs.borderWidthMm || 3.0,
+    frameThicknessMm: isNum(ps.frameThicknessMm) ? Math.min(10, Math.max(1, ps.frameThicknessMm)) : fbPs.frameThicknessMm || 4.0,
+    curveAngleDeg: isNum(ps.curveAngleDeg) ? Math.min(180, Math.max(45, ps.curveAngleDeg)) : fbPs.curveAngleDeg || 110,
+    samplingResolution: ['low', 'medium', 'high', 'ultra'].includes(ps.samplingResolution) ? ps.samplingResolution : fbPs.samplingResolution || 'medium',
+    seamPosition: ['auto', 'back', 'corner'].includes(ps.seamPosition) ? ps.seamPosition : fbPs.seamPosition || 'auto',
+    smoothingRadius: isNum(ps.smoothingRadius) ? Math.min(5, Math.max(0, ps.smoothingRadius)) : fbPs.smoothingRadius || 1,
+  }
+
+  const bs = draftData.baseSettings && typeof draftData.baseSettings === 'object' ? draftData.baseSettings : {}
+  const fbBs = fallback.baseSettings || {}
+  const baseSettings = {
+    enabled: typeof bs.enabled === 'boolean' ? bs.enabled : fbBs.enabled ?? true,
+    shape: isString(bs.shape) ? bs.shape : fbBs.shape || 'circular',
+    diameterMm: isNum(bs.diameterMm) ? Math.min(250, Math.max(60, bs.diameterMm)) : fbBs.diameterMm || 96,
+    heightMm: isNum(bs.heightMm) ? Math.min(60, Math.max(10, bs.heightMm)) : fbBs.heightMm || 24,
+    cavityDiameterMm: isNum(bs.cavityDiameterMm) ? Math.min(80, Math.max(30, bs.cavityDiameterMm)) : fbBs.cavityDiameterMm || 45,
+    cavityDepthMm: isNum(bs.cavityDepthMm) ? Math.min(40, Math.max(5, bs.cavityDepthMm)) : fbBs.cavityDepthMm || 16,
+    cableSlotWidthMm: isNum(bs.cableSlotWidthMm) ? Math.min(15, Math.max(2, bs.cableSlotWidthMm)) : fbBs.cableSlotWidthMm || 5.0,
+    slotToleranceMm: isNum(bs.slotToleranceMm) ? Math.min(2, Math.max(0.1, bs.slotToleranceMm)) : fbBs.slotToleranceMm || 0.4,
+    engravedText: typeof bs.engravedText === 'string' ? bs.engravedText.slice(0, 60) : fbBs.engravedText || '',
+    engraveDepthMm: isNum(bs.engraveDepthMm) ? Math.min(3, Math.max(0.2, bs.engraveDepthMm)) : fbBs.engraveDepthMm || 0.8,
+    separateLid: typeof bs.separateLid === 'boolean' ? bs.separateLid : fbBs.separateLid ?? true,
+    surfacePattern: isString(bs.surfacePattern) ? bs.surfacePattern : fbBs.surfacePattern || 'smooth',
+  }
+
+  const lgt = draftData.lighting && typeof draftData.lighting === 'object' ? draftData.lighting : {}
+  const fbLgt = fallback.lighting || {}
+  const lighting = {
+    isOn: typeof lgt.isOn === 'boolean' ? lgt.isOn : fbLgt.isOn ?? true,
+    colorPreset: ['warm', 'cool', 'amber', 'rgb'].includes(lgt.colorPreset) ? lgt.colorPreset : fbLgt.colorPreset || 'warm',
+    customColor: isString(lgt.customColor) ? lgt.customColor : fbLgt.customColor || '#ffbb66',
+    brightness: isNum(lgt.brightness) ? Math.min(100, Math.max(10, lgt.brightness)) : fbLgt.brightness || 85,
+    rgbCycle: typeof lgt.rgbCycle === 'boolean' ? lgt.rgbCycle : fbLgt.rgbCycle ?? false,
+    ambientDarkness: isNum(lgt.ambientDarkness) ? Math.min(100, Math.max(0, lgt.ambientDarkness)) : fbLgt.ambientDarkness || 70,
+  }
+
+  const pers = draftData.personalization && typeof draftData.personalization === 'object' ? draftData.personalization : {}
+  const fbPers = fallback.personalization || {}
+  const personalization = {
+    theme: isString(pers.theme) ? pers.theme : fbPers.theme || 'romantic',
+    titleText: typeof pers.titleText === 'string' ? pers.titleText.slice(0, 60) : fbPers.titleText || '',
+    subtitleText: typeof pers.subtitleText === 'string' ? pers.subtitleText.slice(0, 60) : fbPers.subtitleText || '',
+    dateText: typeof pers.dateText === 'string' ? pers.dateText.slice(0, 30) : fbPers.dateText || '',
+    fontFamily: isString(pers.fontFamily) ? pers.fontFamily : fbPers.fontFamily || 'serif',
+    textStyle: isString(pers.textStyle) ? pers.textStyle : fbPers.textStyle || 'engraved',
+    placement: isString(pers.placement) ? pers.placement : fbPers.placement || 'base',
+    decorativeIcon: isString(pers.decorativeIcon) ? pers.decorativeIcon : fbPers.decorativeIcon || 'heart',
+  }
+
+  return {
+    id: isString(draftData.id) ? draftData.id : fallback.id || `giftora-lamp-${Date.now()}`,
+    name: isString(draftData.name) ? draftData.name : fallback.name || 'Custom 3D Photo Lamp',
+    shape,
+    printSettings,
+    baseSettings,
+    lighting,
+    personalization,
+    photos: fallback.photos || [],
+    activePhotoIndex: isNum(draftData.activePhotoIndex) ? draftData.activePhotoIndex : 0,
     updatedAt: isNum(draftData.updatedAt) ? draftData.updatedAt : Date.now(),
   }
 }

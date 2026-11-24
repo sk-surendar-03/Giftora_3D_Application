@@ -13,15 +13,15 @@ import {
 interface LightingPanelProps {
   lighting: LedLightingSettings;
   onChangeLighting: (updated: Partial<LedLightingSettings>) => void;
-  explodedProgress: number;
-  onChangeExplodedProgress: (val: number) => void;
+  explodedProgress?: number;
+  onChangeExplodedProgress?: (val: number) => void;
 }
 
 export const LightingPanel: React.FC<LightingPanelProps> = ({
   lighting,
   onChangeLighting,
-  explodedProgress,
-  onChangeExplodedProgress,
+  explodedProgress = 0,
+  onChangeExplodedProgress = () => {},
 }) => {
   const PRESET_COLORS = [
     { id: 'warm', label: 'Warm 2700K', hex: '#ffdfa0', desc: 'Cozy golden bedside ambiance' },

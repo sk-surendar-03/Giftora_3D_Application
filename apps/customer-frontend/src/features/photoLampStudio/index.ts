@@ -20,3 +20,4 @@ export * from './components/ExportModal';
 export * from './components/HelpModal';
 export * from './components/SavedProjectsModal';
 export * from './components/StudioLayout';
+export * from './components/PhotoLampStudioControls';

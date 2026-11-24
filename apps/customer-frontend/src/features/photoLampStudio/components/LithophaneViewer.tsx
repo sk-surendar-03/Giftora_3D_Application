@@ -615,7 +615,7 @@ export const LithophaneViewer: React.FC<LithophaneViewerProps> = ({
           </span>
           <span className="text-stone-600">|</span>
           <span className="text-[10px] sm:text-[11px] text-stone-300 font-medium capitalize truncate max-w-[90px] sm:max-w-none">
-            {shape.replace('_', ' ')} Lamp
+            {(shape || 'cylinder').replace('_', ' ')} Lamp
           </span>
         </div>
 
