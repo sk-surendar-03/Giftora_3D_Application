@@ -596,7 +596,7 @@ export default function PhotoLampCustomiser() {
           />
 
           {/* Mobile-only Summary and Actions below controls */}
-          <div className="min-[1041px]:hidden space-y-5 pt-4 pb-16">
+          <div className="min-[1041px]:hidden space-y-5 pt-4">
             <DraftControlsBar
               hasDraft={hasDraft}
               savedAt={savedAt}
@@ -705,27 +705,6 @@ export default function PhotoLampCustomiser() {
             />
           </div>
         </main>
-      </div>
-
-      {/* Mobile Sticky Bottom Purchase Bar */}
-      <div className="min-[1041px]:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line px-4 py-3 flex items-center justify-between shadow-2xl">
-        <div>
-          <span className="text-[11px] text-muted block font-medium">Total Price</span>
-          <span className="text-base font-bold text-ink">
-            {totalPriceRupees != null && !Number.isNaN(totalPriceRupees)
-              ? `₹${Math.round(totalPriceRupees).toLocaleString('en-IN')}`
-              : '₹...'}
-          </span>
-        </div>
-        <Button
-          variant="primary"
-          size="md"
-          onClick={handleAddToCart}
-          disabled={cartBusy || !canAdd}
-          className="font-semibold text-xs px-5 py-2.5 shadow-md shadow-accent/20"
-        >
-          {cartBusy ? (PHASE_LABELS[phase] || 'Adding...') : 'Add to Cart'}
-        </Button>
       </div>
 
       {/* Modals */}

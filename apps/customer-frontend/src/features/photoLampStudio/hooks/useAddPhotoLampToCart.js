@@ -82,6 +82,7 @@ export function useAddPhotoLampToCart() {
         if (!p) continue
 
         let photoKey = p.photoKey
+        let sha256 = p.sha256
         if (!photoKey && (p.dataUrl || p.file || p.blob)) {
           let blob = p.blob || p.file
           if (!blob && p.dataUrl) {
@@ -89,13 +90,16 @@ export function useAddPhotoLampToCart() {
           }
           if (blob) {
             const uploadRes = await uploadPhotoLampImage(blob, blob.type || 'image/jpeg')
-            photoKey = uploadRes.photoKey
+            const photoData = uploadRes?.photo || uploadRes
+            photoKey = photoData?.photoKey || uploadRes?.photoKey
+            sha256 = photoData?.sha256 || uploadRes?.sha256
           }
         }
 
         sanitizedPhotos.push({
           slotIndex: p.slotIndex ?? i,
           photoKey: photoKey || undefined,
+          sha256: sha256 || undefined,
           crop: p.crop || undefined,
           filter: p.filter || undefined,
           aspectRatio: p.aspectRatio,
@@ -131,15 +135,38 @@ export function useAddPhotoLampToCart() {
       }
 
       setPhase('creating-design')
+      const designConfig = {
+        dimensions: {
+          heightMm: printSettings?.modelHeightMm || 120,
+          diameterMm: printSettings?.modelDiameterMm || 90,
+          widthMm: printSettings?.modelWidthMm || 90,
+          minThicknessMm: printSettings?.minThicknessMm || 0.8,
+          maxThicknessMm: printSettings?.maxThicknessMm || 3.2,
+        },
+        base: {
+          type: baseSettings?.enabled ? 'printed' : 'none',
+          profile: baseSettings?.shape || 'circular',
+        },
+        lighting: {
+          puckType: lightingSettings?.isOn ? (lightingSettings.colorPreset === 'cool' ? 'cool_white' : 'warm_white') : 'none',
+        },
+        personalization: {
+          engravedText: personalization?.titleText || baseSettings?.engravedText || '',
+          font: personalization?.fontFamily || 'Cinzel',
+        },
+      }
+
       const createRes = await createPhotoLampDesign({
         title,
         templateId,
         shape,
+        photoKeys: sanitizedPhotos,
+        photos: sanitizedPhotos,
+        designConfig,
         printSettings,
         baseSettings,
         lightingSettings,
         personalization,
-        photos: sanitizedPhotos,
       })
 
       const designId = createRes?.id

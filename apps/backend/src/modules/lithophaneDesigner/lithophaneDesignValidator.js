@@ -34,7 +34,11 @@ export function validateLithophaneDesignInput(input) {
   const templateMeta = TEMPLATE_MAP.get(templateId)
 
   // 3. Photo keys validation
-  const rawPhotos = Array.isArray(input.photoKeys) ? input.photoKeys : []
+  const rawPhotos = Array.isArray(input.photoKeys)
+    ? input.photoKeys
+    : Array.isArray(input.photos)
+    ? input.photos
+    : []
   if (rawPhotos.length === 0) {
     throw bad('At least one uploaded photo is required for the Lithophane Photo Lamp.')
   }
