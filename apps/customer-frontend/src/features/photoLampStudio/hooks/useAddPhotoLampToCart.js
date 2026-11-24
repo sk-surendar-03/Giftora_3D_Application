@@ -37,6 +37,46 @@ function dataUrlToBlob(dataUrl) {
   return new Blob([u8arr], { type: mime })
 }
 
+async function compressImageBlobIfNeeded(blob, maxBytes = 2 * 1024 * 1024, maxDimension = 1200) {
+  if (!blob || blob.size <= maxBytes) return blob
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(blob)
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      let { width, height } = img
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width)
+          width = maxDimension
+        } else {
+          width = Math.round((width * maxDimension) / height)
+          height = maxDimension
+        }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return resolve(blob)
+      ctx.drawImage(img, 0, 0, width, height)
+      canvas.toBlob(
+        (compressedBlob) => {
+          resolve(compressedBlob || blob)
+        },
+        'image/jpeg',
+        0.85
+      )
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve(blob)
+    }
+    img.src = url
+  })
+}
+
 export function useAddPhotoLampToCart() {
   const [phase, setPhase] = useState('idle')
   const [error, setError] = useState(null)
@@ -89,6 +129,7 @@ export function useAddPhotoLampToCart() {
             blob = dataUrlToBlob(p.dataUrl)
           }
           if (blob) {
+            blob = await compressImageBlobIfNeeded(blob)
             const uploadRes = await uploadPhotoLampImage(blob, blob.type || 'image/jpeg')
             const photoData = uploadRes?.photo || uploadRes
             photoKey = photoData?.photoKey || uploadRes?.photoKey
@@ -117,6 +158,9 @@ export function useAddPhotoLampToCart() {
       )
       if (!panelStlBytes || panelStlBytes.byteLength < 84) {
         throw new Error('Could not generate binary STL for lithophane panel.')
+      }
+      if (panelStlBytes.byteLength > 2.95 * 1024 * 1024) {
+        throw new Error('3D model mesh is too large for upload. Please set Print Settings resolution to Medium or Low.')
       }
       const panelSha256 = await sha256Hex(panelStlBytes)
       const panelBlob = new Blob([panelStlBytes], { type: 'application/octet-stream' })

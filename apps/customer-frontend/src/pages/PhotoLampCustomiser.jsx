@@ -303,10 +303,10 @@ export default function PhotoLampCustomiser() {
         const img = await loadImageElement(activePhoto.dataUrl)
         if (isCancelled) return
 
-        let sampleWidth = 200
-        if (project.printSettings.samplingResolution === 'low') sampleWidth = 120
-        else if (project.printSettings.samplingResolution === 'high') sampleWidth = 300
-        else if (project.printSettings.samplingResolution === 'ultra') sampleWidth = 450
+        let sampleWidth = 100
+        if (project.printSettings.samplingResolution === 'low') sampleWidth = 80
+        else if (project.printSettings.samplingResolution === 'high') sampleWidth = 110
+        else if (project.printSettings.samplingResolution === 'ultra') sampleWidth = 115
 
         const processed = processImageForLithophane(
           img,
@@ -344,8 +344,8 @@ export default function PhotoLampCustomiser() {
             lithoGeo = generatePrismLithophane(
               [processed.thicknessMap],
               project.shape === 'four_sided' ? 4 : 6,
-              Math.min(160, gridW),
-              Math.min(160, gridH),
+              Math.min(90, gridW),
+              Math.min(90, gridH),
               project.printSettings
             )
             break
